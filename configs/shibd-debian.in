@@ -7,8 +7,8 @@
 # Default-Stop: S 0 1 6
 # Short-Description: Shibboleth 2 Service Provider Daemon
 # Description: Starts the separate daemon used by the Shibboleth
-# Apache module to manage sessions and to retrieve
-# attributes from Shibboleth Identity Providers.
+#              Apache module to manage sessions and to retrieve
+#              attributes from Shibboleth Identity Providers.
 ### END INIT INFO
 #
 # Written by Quanah Gibson-Mount <quanah@stanford.edu>

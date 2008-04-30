@@ -26,7 +26,7 @@
 /**
  * Default schema catalogs.
  */
-#define SHIBSP_SCHEMAS "/usr/share/xml/xmltooling/catalog.xml:/usr/share/xml/opensaml/saml20-catalog.xml:/usr/share/xml/opensaml/saml11-catalog.xml:/usr/local/share/xml/shibboleth/catalog.xml"
+#define SHIBSP_SCHEMAS "/usr/share/xml/xmltooling/catalog.xml:/usr/share/xml/opensaml/saml20-catalog.xml:/usr/share/xml/opensaml/saml11-catalog.xml:/usr/share/xml/shibboleth/catalog.xml"
 
 /**
  * Default name of SP configuration file.
@@ -41,6 +41,6 @@
 /**
  * Default prefix for installation (used to resolve relative paths).
  */
-#define SHIBSP_PREFIX  "/usr/local"
+#define SHIBSP_PREFIX  "/usr"
 
 #endif /* __shibsp_paths_h__ */

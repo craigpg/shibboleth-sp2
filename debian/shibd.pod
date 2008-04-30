@@ -1,0 +1,69 @@
+=head1 NAME
+
+shibd - Shibboleth daemon
+
+=head1 SYNOPSIS
+
+shibd [B<-dcxtfpvh>]
+
+=head1 DESCRIPTION
+
+B<shibd> is the Shibboleth daemon.
+
+=head1 OPTIONS
+
+B<shibd> takes the following command-line options.
+
+=over 4
+
+=item B<-d> I<pathname>
+
+Installation prefix. Defaults to /usr.
+
+=item B<-c> I<pathname>
+
+Specifies the pathname of shibd's configuration file. Defaults to 
+/etc/shibboleth/shibboleth2.xml or the value of the SHIBSP_CONFIG
+environment variable, if it is set.
+
+=item B<-x> I<pathname>
+
+Specifies the XML schema catalog to use. Defaults to
+/usr/share/xml/shibboleth/catalog.xml.
+
+=item B<-t>
+
+Validates the general correctness of the configuration. Not all problems
+can be detected this way, but the chance of successful startup is high if
+the checking process does not log any errors.
+
+=item B<-f>
+
+Force removal of listener socket.
+
+=item B<-p> I<pathname>
+
+Specifies the pathname to use to write out the shibboleth PID file.
+
+=item B<-v>
+
+Prints out the version string.
+
+=item B<-h>
+
+Prints out a brief summary of the shibboleth options.
+
+=head1 AUTHORS
+
+shibd is part of the Internet 2 Shibboleth project written by
+Scott Cantor <cantor.2@osu.edu>.
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 2005, 2006
+Internet2/MACE
+
+This program is free software; you may redistribute it and/or modify it
+under the terms of the Apache 2.0 License <http://www.apache.org/licenses>.
+
+=cut

@@ -1,0 +1,6 @@
+shibboleth-sp2 (2.0-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Ferenc Wagner <wferi@niif.hu>  Mon, 30 Apr 2008 14:09:35 +0200
+
