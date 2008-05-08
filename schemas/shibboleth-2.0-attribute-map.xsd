@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="urn:mace:shibboleth:2.0:attribute-map"
+        xmlns="http://www.w3.org/2001/XMLSchema"
+        xmlns:am="urn:mace:shibboleth:2.0:attribute-map"
+        elementFormDefault="qualified">
+
+    <annotation>
+        <documentation>
+            This schema maps SAML attributes into Shibboleth internal attributes.
+        </documentation>
+    </annotation>
+
+    <simpleType name="string">
+        <restriction base="string">
+            <minLength value="1"/>
+        </restriction>
+    </simpleType>
+
+    <simpleType name="listOfStrings">
+        <list itemType="am:string"/>
+    </simpleType>
+    
+    <element name="Attributes">
+        <annotation>
+            <documentation>The set of SAML 1/2 attribute mappings.</documentation>
+        </annotation>
+        <complexType>
+            <sequence>
+                <element name="Attribute" type="am:AttributeType" maxOccurs="unbounded"/>
+            </sequence>
+        </complexType>
+    </element>
+
+    <complexType name="AttributeType">
+        <annotation>
+            <documentation>Rule for mapping a SAML 1/2 attribute to an internal attribute.</documentation>
+        </annotation>
+        <sequence>
+            <element name="AttributeDecoder" type="am:AttributeDecoderType" minOccurs="0"/>
+        </sequence>
+        <attribute name="id" type="am:string" use="required">
+            <annotation>
+                <documentation>The internal attribute ID to which this SAML attribute maps.</documentation>
+            </annotation>
+        </attribute>
+        <attribute name="aliases" type="am:listOfStrings">
+            <annotation>
+                <documentation>Optional aliases for the internal attribute to which this SAML attribute maps.</documentation>
+            </annotation>
+        </attribute>
+        <attribute name="name" type="am:string" use="required">
+            <annotation>
+                <documentation>The SAML 1 AttributeName or SAML 2 Name of the attribute.</documentation>
+            </annotation>
+        </attribute>
+        <attribute name="nameFormat" type="am:string">
+            <annotation>
+                <documentation>The SAML 1 Namespace or SAML 2 NameFormat of the attribute.</documentation>
+            </annotation>
+        </attribute>
+    </complexType>
+    
+    <complexType name="AttributeDecoderType" abstract="true">
+        <annotation>
+            <documentation>
+                Decodes a SAML attribute into its Shibboleth-internal representation.
+            </documentation>
+        </annotation>
+        <attribute name="caseSensitive" type="boolean" default="true">
+            <annotation>
+                <documentation>
+                    Flag controlling case sensitivity when comparisons to the attribute's values are done.
+                </documentation>
+            </annotation>
+        </attribute>
+    </complexType>
+    
+    <complexType name="StringAttributeDecoder">
+        <annotation>
+            <documentation>
+                Decoder for attributes with string values.
+            </documentation>
+        </annotation>
+        <complexContent>
+            <extension base="am:AttributeDecoderType" />
+        </complexContent>
+    </complexType>
+
+    <complexType name="ScopedAttributeDecoder">
+        <annotation>
+            <documentation>
+                Decoder for attributes with scoped values.
+            </documentation>
+        </annotation>
+        <complexContent>
+            <extension base="am:AttributeDecoderType">
+                <attribute name="scopeDelimiter" type="am:string" default="@">
+                    <annotation>
+                        <documentation>
+                            The character(s) used to delimit the scoped information from the scope.
+                        </documentation>
+                    </annotation>
+                </attribute>
+            </extension>
+        </complexContent>
+    </complexType>
+    
+    <complexType name="NameIDAttributeDecoder">
+        <annotation>
+            <documentation>
+                Decoder for attributes with NameID values.
+            </documentation>
+        </annotation>
+        <complexContent>
+            <extension base="am:AttributeDecoderType">
+                <attribute name="formatter" type="am:string" default="$Name!!$NameQualifier!!$SPNameQualifier">
+                    <annotation>
+                        <documentation>
+                            The pattern used to generate string versions of the attribute's values.
+                        </documentation>
+                    </annotation>
+                </attribute>
+            </extension>
+        </complexContent>
+    </complexType>
+
+</schema>

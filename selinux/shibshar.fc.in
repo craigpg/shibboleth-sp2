@@ -1,0 +1,4 @@
+# Shibboleth SHAR
+@-SBINDIR-@/shibd	--	system_u:object_r:shibshar_exec_t
+@-VARRUNDIR-@/shib-shar\.sock	-s	system_u:object_r:shibshar_var_run_t
+

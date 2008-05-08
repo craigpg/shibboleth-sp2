@@ -1,0 +1,114 @@
+Release Notes
+
+Shibboleth Native SP
+2.0
+3/17/2008
+
+NOTE: The shibboleth2.xml configuration format in this release
+is compatible with the RC1 release. Upgrading from earlier
+releases is NOT supported without replacing the configuration
+file and reapplying changes.
+
+Fully Supported
+
+- SAML 1.0, 1.1, 2.0 Single Sign-On
+	- Shibboleth 1.x request profile
+	- 1.x POST/Artifact profiles
+	- 2.0 HTTP-Redirect/POST/POST-SimpleSign/Artifact/PAOS bindings
+
+- SAML 1.0, 1.1, 2.0 Attribute Query via Attribute Resolver plugin
+	- SAML SOAP binding
+
+- SAML 2.0 Single Logout
+    - HTTP-Redirect/POST/POST-SimpleSign/Artifact bindings
+    - Front and back-channel application notification of logout
+    - Race detection of late arriving assertions
+
+- SAML 2.0 NameID Management (IdP-initiated only)
+    - HTTP-Redirect/POST/POST-SimpleSign/Artifact bindings
+    - Front and back-channel application notification of changes
+
+- ADFS WS-Federation Support
+    - SSO and SLO
+    - experimental support for SAML 2.0 assertions
+
+- Shibboleth WAYF and SAML DS protocols for IdP Discovery
+
+- Metadata Providers
+	- Bulk resolution via local file, or URL with local file backup
+	- Dynamic resolution and caching based on entityID 
+	- Filtering based on whitelist, blacklist, or signature verification  
+
+- Metadata Generation Handler
+    - Generates and optionally signs SAML metadata based on SP configuration
+
+- Status Handler
+    - Reports on status and configuration of SP
+    
+- Session Handler
+    - Dumps information about an active session 
+
+- Trust Engines
+	- Explicit key and PKIX engines via metadata, superset compatible with 1.3
+	- PKIX trust engine with static root list
+	
+- Configurable per-endpoint Security Policy rules
+	- Replay and freshness detection
+	- XML signing
+	- Simple "blob" signing
+	- TLS X.509 certificate authentication
+
+- Client transport authentication to SOAP endpoints via libcurl
+	- TLS X.509 client certificates
+	- Basic-Auth
+	- Digest-Auth (untested)
+	- NTLM (untested)
+
+- Encryption
+	- All incoming SAML 2 encrypted element types (Assertion, NameID, Attribute)
+	- Optional outgoing encryption of NameID in requests and responses
+
+- Attributes
+	- Decoding and exporting SAML 1 and 2 attributes
+		- Strings
+		- Value/scope pairs (legacy and value@scope syntaxes supported)
+		- NameIDs
+
+- Attribute Filtering
+	- Policy language compatible with IdP filtering, except that references
+		only work within policy files, not across them
+	- Rules based on, attribute issuer, requester, scope, and value, authentication
+		method, based on exact string and regular expressions.
+    - Boolean functions supporting AND, OR, and NOT for use in composing rules
+    - Wildcard rules allowing all unspecified attributes through with no filtering
+
+- Assertion Export
+	- Oversized header replaced with Shib-Assertion-Count and Shib-Assertion-NN headers
+		containing local URL to fetch SAML assertion using HTTP GET
+
+- Enhanced Spoofing Detection
+	- Detects and blocks client headers that would match known attribute headers
+	- Does not support Apache mod_rewrite, but can be disabled when necessary
+
+- ODBC Clustering Support
+	- Tested against a few different servers with various drivers
+
+- RequestMap enhancements
+    - Regular expression matching for hosts and paths
+    - Query string parameter matching
+
+- Error handling enhancements
+    - Reporting of SAML status errors
+    - Optional redirection to custom error handler
+
+- Apache module enhancements
+    - "OR" coexistence with other authorization modules
+    - htaccess-based override of any valid RequestMap property 
+
+- Command line tools
+    - samlsign for manual XML signing and verification
+    - mdquery for interrogating via metadata configuration
+    - resolvertest for exercising attribute extraction, filtering, and resolution
+
+- Migrating 1.3 core configuration file
+    - Stylesheet can handle some common options

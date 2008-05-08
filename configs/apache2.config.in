@@ -1,0 +1,39 @@
+# RPM installations on platforms with a conf.d directory will
+# result in this file being copied into that directory for you.
+# For non-RPM installs, you can add this file to your
+# configuration using an Include command in httpd.conf
+
+######
+## SHIB Config
+######
+
+#
+# Load the SHIBBOLETH module
+#
+LoadModule mod_shib @-PKGLIBDIR-@/mod_shib_20.so
+
+#
+# Used for example logo and style sheet in error templates.
+#
+<IfModule mod_alias.c>
+  <Location /shibboleth-sp>
+    Allow from all
+  </Location>
+  Alias /shibboleth-sp/main.css @-PKGDOCDIR-@/main.css
+  Alias /shibboleth-sp/logo.jpg @-PKGDOCDIR-@/logo.jpg
+</IfModule>
+
+#
+# Configure the module for content
+#
+# You can now do most of this in shibboleth.xml using the RequestMap
+# but you MUST enable AuthType shibboleth for the module to process
+# any requests, and there MUST be a require command as well. To
+# enable Shibboleth but not specify any session/access requirements
+# use "require shibboleth".
+#
+<Location /secure>
+  AuthType shibboleth
+  ShibRequireSession On
+  require valid-user
+</Location>

@@ -1,0 +1,238 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "isapi_shib", "isapi_shib\isapi_shib.vcproj", "{87C25D4E-8D19-4513-B0BA-BC668BC2DEE3}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F7}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_shib13", "apache\mod_shib13.vcproj", "{D243B43E-728E-4F32-BDFF-B3A897037C6D}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F7}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_shib20", "apache\mod_shib20.vcproj", "{68E9568B-476C-4289-B93C-893432378ADC}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F7}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nsapi_shib", "nsapi_shib\nsapi_shib.vcproj", "{1396D80A-8672-4224-9B02-95F3F4207CDB}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F7}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mod_shib22", "apache\mod_shib22.vcproj", "{B44C0852-83B8-4FB2-A86E-097C9C8256D0}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F7}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server Modules", "Server Modules", "{26BA8F84-6E42-41FA-9B13-5D3F4B5B2050}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", "{96AE4FC9-45EF-4C18-9F3B-EDA439E26E4C}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{FED80230-119E-4B2F-9F53-D2660A5F022B}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "odbc-store", "odbc-store\odbc-store.vcproj", "{666A63A7-983F-4C19-8411-207F24305197}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shibsp", "shibsp\shibsp.vcproj", "{81F0F7A6-DC36-46EF-957F-F9E81D4403F6}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shibd", "shibd\shibd.vcproj", "{F13141B5-6C87-40BB-8D4E-5CC56EBB4C59}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F6} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F6}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shibsp-lite", "shibsp\shibsp-lite.vcproj", "{81F0F7A6-DC36-46EF-957F-F9E81D4403F7}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "adfs", "adfs\adfs.vcproj", "{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83A}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F6} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F6}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "adfs-lite", "adfs\adfs-lite.vcproj", "{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83B}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F7}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mdquery", "util\mdquery.vcproj", "{F13141B6-6C87-40BB-8D4E-5CC56EBB4C5A}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F6} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F6}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "resolvertest", "util\resolvertest.vcproj", "{F13141B6-6C87-40BB-8D4E-5CC56EBB4C59}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F6} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F6}
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "fastcgi", "fastcgi", "{8E1AF2CF-24E1-4983-8681-394D89DF9AD2}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shibauthorizer", "fastcgi\shibauthorizer.vcproj", "{8CF7DDFA-EAA0-416E-853E-3DCB210C4AE0}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F7}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shibresponder", "fastcgi\shibresponder.vcproj", "{B2423DCE-048D-4BAA-9AB9-F5D1FCDD3D25}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7} = {81F0F7A6-DC36-46EF-957F-F9E81D4403F7}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{87C25D4E-8D19-4513-B0BA-BC668BC2DEE3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{87C25D4E-8D19-4513-B0BA-BC668BC2DEE3}.Debug|Win32.Build.0 = Debug|Win32
+		{87C25D4E-8D19-4513-B0BA-BC668BC2DEE3}.Release|Win32.ActiveCfg = Release|Win32
+		{87C25D4E-8D19-4513-B0BA-BC668BC2DEE3}.Release|Win32.Build.0 = Release|Win32
+		{D243B43E-728E-4F32-BDFF-B3A897037C6D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D243B43E-728E-4F32-BDFF-B3A897037C6D}.Debug|Win32.Build.0 = Debug|Win32
+		{D243B43E-728E-4F32-BDFF-B3A897037C6D}.Release|Win32.ActiveCfg = Release|Win32
+		{D243B43E-728E-4F32-BDFF-B3A897037C6D}.Release|Win32.Build.0 = Release|Win32
+		{68E9568B-476C-4289-B93C-893432378ADC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{68E9568B-476C-4289-B93C-893432378ADC}.Debug|Win32.Build.0 = Debug|Win32
+		{68E9568B-476C-4289-B93C-893432378ADC}.Release|Win32.ActiveCfg = Release|Win32
+		{68E9568B-476C-4289-B93C-893432378ADC}.Release|Win32.Build.0 = Release|Win32
+		{1396D80A-8672-4224-9B02-95F3F4207CDB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1396D80A-8672-4224-9B02-95F3F4207CDB}.Debug|Win32.Build.0 = Debug|Win32
+		{1396D80A-8672-4224-9B02-95F3F4207CDB}.Release|Win32.ActiveCfg = Release|Win32
+		{1396D80A-8672-4224-9B02-95F3F4207CDB}.Release|Win32.Build.0 = Release|Win32
+		{B44C0852-83B8-4FB2-A86E-097C9C8256D0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B44C0852-83B8-4FB2-A86E-097C9C8256D0}.Debug|Win32.Build.0 = Debug|Win32
+		{B44C0852-83B8-4FB2-A86E-097C9C8256D0}.Release|Win32.ActiveCfg = Release|Win32
+		{B44C0852-83B8-4FB2-A86E-097C9C8256D0}.Release|Win32.Build.0 = Release|Win32
+		{666A63A7-983F-4C19-8411-207F24305197}.Debug|Win32.ActiveCfg = Debug|Win32
+		{666A63A7-983F-4C19-8411-207F24305197}.Debug|Win32.Build.0 = Debug|Win32
+		{666A63A7-983F-4C19-8411-207F24305197}.Release|Win32.ActiveCfg = Release|Win32
+		{666A63A7-983F-4C19-8411-207F24305197}.Release|Win32.Build.0 = Release|Win32
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F6}.Debug|Win32.ActiveCfg = Debug|Win32
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F6}.Debug|Win32.Build.0 = Debug|Win32
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F6}.Release|Win32.ActiveCfg = Release|Win32
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F6}.Release|Win32.Build.0 = Release|Win32
+		{F13141B5-6C87-40BB-8D4E-5CC56EBB4C59}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F13141B5-6C87-40BB-8D4E-5CC56EBB4C59}.Debug|Win32.Build.0 = Debug|Win32
+		{F13141B5-6C87-40BB-8D4E-5CC56EBB4C59}.Release|Win32.ActiveCfg = Release|Win32
+		{F13141B5-6C87-40BB-8D4E-5CC56EBB4C59}.Release|Win32.Build.0 = Release|Win32
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7}.Debug|Win32.Build.0 = Debug|Win32
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7}.Release|Win32.ActiveCfg = Release|Win32
+		{81F0F7A6-DC36-46EF-957F-F9E81D4403F7}.Release|Win32.Build.0 = Release|Win32
+		{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83A}.Debug|Win32.Build.0 = Debug|Win32
+		{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83A}.Release|Win32.ActiveCfg = Release|Win32
+		{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83A}.Release|Win32.Build.0 = Release|Win32
+		{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83B}.Debug|Win32.Build.0 = Debug|Win32
+		{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83B}.Release|Win32.ActiveCfg = Release|Win32
+		{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83B}.Release|Win32.Build.0 = Release|Win32
+		{F13141B6-6C87-40BB-8D4E-5CC56EBB4C5A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F13141B6-6C87-40BB-8D4E-5CC56EBB4C5A}.Debug|Win32.Build.0 = Debug|Win32
+		{F13141B6-6C87-40BB-8D4E-5CC56EBB4C5A}.Release|Win32.ActiveCfg = Release|Win32
+		{F13141B6-6C87-40BB-8D4E-5CC56EBB4C5A}.Release|Win32.Build.0 = Release|Win32
+		{F13141B6-6C87-40BB-8D4E-5CC56EBB4C59}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F13141B6-6C87-40BB-8D4E-5CC56EBB4C59}.Debug|Win32.Build.0 = Debug|Win32
+		{F13141B6-6C87-40BB-8D4E-5CC56EBB4C59}.Release|Win32.ActiveCfg = Release|Win32
+		{F13141B6-6C87-40BB-8D4E-5CC56EBB4C59}.Release|Win32.Build.0 = Release|Win32
+		{8CF7DDFA-EAA0-416E-853E-3DCB210C4AE0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8CF7DDFA-EAA0-416E-853E-3DCB210C4AE0}.Debug|Win32.Build.0 = Debug|Win32
+		{8CF7DDFA-EAA0-416E-853E-3DCB210C4AE0}.Release|Win32.ActiveCfg = Release|Win32
+		{8CF7DDFA-EAA0-416E-853E-3DCB210C4AE0}.Release|Win32.Build.0 = Release|Win32
+		{B2423DCE-048D-4BAA-9AB9-F5D1FCDD3D25}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B2423DCE-048D-4BAA-9AB9-F5D1FCDD3D25}.Debug|Win32.Build.0 = Debug|Win32
+		{B2423DCE-048D-4BAA-9AB9-F5D1FCDD3D25}.Release|Win32.ActiveCfg = Release|Win32
+		{B2423DCE-048D-4BAA-9AB9-F5D1FCDD3D25}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D243B43E-728E-4F32-BDFF-B3A897037C6D} = {26BA8F84-6E42-41FA-9B13-5D3F4B5B2050}
+		{68E9568B-476C-4289-B93C-893432378ADC} = {26BA8F84-6E42-41FA-9B13-5D3F4B5B2050}
+		{1396D80A-8672-4224-9B02-95F3F4207CDB} = {26BA8F84-6E42-41FA-9B13-5D3F4B5B2050}
+		{B44C0852-83B8-4FB2-A86E-097C9C8256D0} = {26BA8F84-6E42-41FA-9B13-5D3F4B5B2050}
+		{87C25D4E-8D19-4513-B0BA-BC668BC2DEE3} = {26BA8F84-6E42-41FA-9B13-5D3F4B5B2050}
+		{8E1AF2CF-24E1-4983-8681-394D89DF9AD2} = {26BA8F84-6E42-41FA-9B13-5D3F4B5B2050}
+		{666A63A7-983F-4C19-8411-207F24305197} = {96AE4FC9-45EF-4C18-9F3B-EDA439E26E4C}
+		{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83A} = {96AE4FC9-45EF-4C18-9F3B-EDA439E26E4C}
+		{26D4FABF-ACDE-4947-9C4A-7AE1B50CD83B} = {96AE4FC9-45EF-4C18-9F3B-EDA439E26E4C}
+		{F13141B6-6C87-40BB-8D4E-5CC56EBB4C5A} = {FED80230-119E-4B2F-9F53-D2660A5F022B}
+		{F13141B6-6C87-40BB-8D4E-5CC56EBB4C59} = {FED80230-119E-4B2F-9F53-D2660A5F022B}
+		{8CF7DDFA-EAA0-416E-853E-3DCB210C4AE0} = {8E1AF2CF-24E1-4983-8681-394D89DF9AD2}
+		{B2423DCE-048D-4BAA-9AB9-F5D1FCDD3D25} = {8E1AF2CF-24E1-4983-8681-394D89DF9AD2}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,11 @@
+PKG=SHIBsp
+VERSION=2.0
+BASEDIR=/
+NAME=shibboleth-sp
+CATEGORY=application,security
+DESC=Shibboleth Service Provider
+VENDOR=Internet2
+HOTLINE=https://bugs.internet2.edu/
+CLASSES=none
+PSTAMP=sunra.internet2.edu 2008-03-17
+EMAIL=cantor.2@osu.edu

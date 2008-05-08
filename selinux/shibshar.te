@@ -1,0 +1,33 @@
+# Shibboleth SHAR
+
+# Define the shibshar daemon.
+daemon_domain(shibshar)
+
+# Transition the shar socket to the shibshar_var_run_t type
+# when the shar creates it
+file_type_auto_trans(shibshar_t, var_run_t, shibshar_var_run_t, sock_file)
+
+# Enable the shar to work
+can_exec(shibshar_t, shibshar_exec_t)
+uses_shlib(shibshar_t)
+can_network(shibshar_t)
+can_tcp_connect(shibshar_t, unconfined_t)
+allow shibshar_t port_type:tcp_socket name_connect;
+allow shibshar_t etc_t:file r_file_perms;
+allow shibshar_t bin_t:dir r_dir_perms;
+allow shibshar_t bin_t:file rx_file_perms;
+allow shibshar_t var_log_t:dir rw_dir_perms;
+allow shibshar_t var_log_t:file rw_file_perms;
+allow shibshar_t var_log_t:file { create };
+
+allow shibshar_t shibshar_t:unix_stream_socket create_stream_socket_perms;
+allow shibshar_t shibshar_t:netlink_route_socket { create bind getattr};
+allow shibshar_t usr_t:dir r_dir_perms;
+allow shibshar_t usr_t:file rx_file_perms;
+
+allow shibshar_t urandom_device_t:chr_file { getattr ioctl read };
+ 
+# Enable HTTPD to connect to the shib-shar socket and read/write to it
+can_unix_connect(httpd_t, shibshar_var_run_t)
+allow httpd_t shibshar_var_run_t:sock_file { write };
+allow httpd_t shibshar_t:unix_stream_socket { connectto };

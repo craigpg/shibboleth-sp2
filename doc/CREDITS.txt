@@ -1,0 +1,89 @@
+Shibboleth Implementation Team
+
+ Documentation
+
+   Nate Klingenstein
+   Internet2
+   ndk@internet2.edu
+
+ Design and Programming
+
+   Derek Atkins
+   IHTFP Consulting, Inc
+   derek@ihtfp.com
+
+   Scott Cantor
+   The Ohio State University
+   cantor.2@osu.edu
+
+   Jim Fox
+   University of Washington
+   fox@washington.edu
+
+   Walter Hoehn
+   The University of Memphis
+   wassa@memphis.edu
+
+   Chad LaJoie
+   Georgetown University
+   lajoie@georgetown.edu
+
+   Derek Morr
+   Penn State University
+   dvm105@psu.edu
+
+   Will Norris
+   USC
+   wnorris@usc.edu
+   
+   Brent Putman
+   Georgetown University
+   putmanb@georgetown.edu
+   
+   Rod Widdowson
+   Steading Software, Inc.
+   rdw@steadingsoftware.com
+   
+ Project Management
+
+   RL "Bob" Morgan
+   University of Washington
+   rlmorgan@washington.edu
+
+   Steven Carmody
+   Brown University
+   Steven_Carmody@brown.edu
+
+   Ken Klingenstein
+   Internet2
+   kjk@internet2.edu
+
+
+Thanks to: 
+
+    Internet2
+
+    The National Science Foundation
+    
+    National Research Council of Canada
+
+    Barbara Jenson (CMU), Parviz Dousti (CMU), Tom Dopirak (CMU), 
+      and Sridhar Muppidi (IBM/Tivoli); for helping to develop 
+      the initial shibboleth prototype
+
+    Brian Pittman (WebAssign), Mark Earnest (PSU), James Shvarts (Columbia), 
+      Ryan Muldoon (Wisconsin), John Hopkins (PSU), Noah Levitt (Columbia), 
+      and David Walker (UCOP); for much help with testing
+      
+    Dave Dearman (NRCC), for contributing a SQL Data Connector for the AA 
+      resolver
+
+    Noah Levitt (Columbia), for simplifying the  logging configuration.
+
+    Joel Murphy (Buffalo), for much help with load testing and generally
+      pushing the software to its limits.
+
+    Vishal Goenka (SunGard SCT) for contributing some useful resolver plugins
+
+	Ian Young for donating XSLT scripts for converting metadata across
+	  Shibboleth versions

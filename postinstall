@@ -1,0 +1,34 @@
+#!/bin/sh
+
+cd /opt/shibboleth-sp/etc/shibboleth
+
+CONFIGFILES=" \
+    native.logger \
+    shibd.logger \
+    syslog.logger \
+    console.logger \
+    accessError.html \
+    sessionError.html \
+    metadataError.html \
+    sslError.html \
+    bindingTemplate.html \
+    discoveryTemplate.html \
+    localLogout.html \
+    globalLogout.html \
+    attribute-map.xml \
+    attribute-policy.xml \
+    example-metadata.xml \
+    shibboleth2.xml"
+
+for f in $CONFIGFILES; do
+    if test ! -f $f; then
+        cp $f.dist $f
+    fi;
+    done
+
+PATH=$PATH:/usr/local/bin
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+export PATH LD_LIBRARY_PATH
+sh ./keygen.sh -b
+
+exit 0
