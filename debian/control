@@ -10,7 +10,7 @@ Standards-Version: 3.7.2
 Package: libapache2-mod-shib2
 Section: web
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, xmltooling-schemas, opensaml2-schemas
 Recommends: apache2
 Conflicts: libapache2-mod-shib
 Description: Open source system for attribute-based Web SSO
