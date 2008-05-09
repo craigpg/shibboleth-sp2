@@ -72,6 +72,7 @@ install:
 
 	# Add here commands to install the the package into debian/tmp.
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	rm $(CURDIR)/debian/tmp/usr/share/doc/shibboleth/{{FASTCGI,LOG4CPP,OPENSSL}.LICENSE,{NOTICE,LICENSE}.txt}
 	rm $(CURDIR)/debian/tmp/usr/share/xml/shibboleth/WS-Trust.xsd
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/*.{dist,config}
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-redhat
