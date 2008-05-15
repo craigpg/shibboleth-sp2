@@ -1,6 +1,6 @@
 Source: shibboleth-sp2
 Section: web
-Priority: optional
+Priority: extra
 Maintainer: Debian Shib Team <pkg-shibboleth-devel@lists.alioth.debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Ferenc Wagner <wferi@niif.hu>
 Build-Depends: debhelper (>= 5), autotools-dev, libxerces27-dev | libxerces28-dev, libsaml2-dev,
