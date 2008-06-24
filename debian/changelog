@@ -1,6 +1,7 @@
 shibboleth-sp2 (2.0.dfsg1-1) unstable; urgency=low
 
-  * Initial release (Closes: #480290)  <nnnn is the bug number of your ITP>
+  [ Ferenc Wágner ]
+  * Initial release (Closes: #480290)
 
- -- Ferenc Wagner <wferi@niif.hu>  Mon, 30 Apr 2008 14:09:35 +0200
+ -- Russ Allbery <rra@debian.org>  Tue, 24 Jun 2008 11:27:37 -0700
 
