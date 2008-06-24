@@ -69,6 +69,7 @@ clean:
 	dh_testroot
 	rm -f configure-stamp build-stamp install-stamp
 	[ ! -f Makefile ] || $(MAKE) distclean
+	find . -name Makefile.in -print0 | xargs -0r rm
 	dh_clean aclocal.m4 config.h config.h.in config.status configure \
 	    config.guess config.sub libtool.m4 ltmain.sh
 
