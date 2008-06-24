@@ -30,6 +30,25 @@ else
 	CFLAGS += -O2
 endif
 
+# These variable is used only by get-orig-source, which will normally only be
+# run by maintainers.
+VERSION = 2.0
+DEBVERS = dfsg1
+URL     = http://shibboleth.internet2.edu/downloads/shibboleth/cppsp
+
+# Download the upstrema source and do the repackaging that we have to do for
+# DFSG reasons.  Depends on wget and svn-buildpackage.
+get-orig-source:
+	wget $(URL)/$(VERSION)/shibboleth-sp-$(VERSION).tar.gz
+	tar xfz shibboleth-sp-$(VERSION).tar.gz
+	rm shibboleth-sp-$(VERSION).tar.gz
+	rm shibboleth-$(VERSION)/schemas/WS-Trust.xsd
+	mv shibboleth-$(VERSION) shibboleth-sp_$(VERSION).$(DEBVERS).orig
+	tar cf shibboleth-sp_$(VERSION).$(DEBVERS).orig.tar \
+	    shibboleth-sp_$(VERSION).$(DEBVERS).orig
+	rm -r shibboleth-sp_$(VERSION).$(DEBVERS).orig
+	gzip -9 shibboleth-sp_$(VERSION).$(DEBVERS).orig.tar
+
 config.status: configure
 	dh_testdir
 	# Add here commands to configure the package.
