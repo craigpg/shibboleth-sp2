@@ -44,11 +44,16 @@ endif
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
+	rm -f libtool.m4
+	libtoolize --force
+	autoreconf --force
+	rm -rf autom4te.cache
 	cp /usr/share/misc/config.guess config.guess
 	cp /usr/share/misc/config.sub config.sub
-	CFLAGS="$(CFLAGS)" ./configure --enable-apache-22 \
-	    --prefix=/usr --sysconfdir=/etc --localstatedir=/var \
-	    --disable-dependency-tracking $(SYSTEM) $(DEBUG)
+	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" ./configure --prefix=/usr \
+	    --sysconfdir=/etc --libexecdir=/usr/lib/shibboleth \
+	    --localstatedir=/var --enable-apache-22 \
+	    --with-apxs2=/usr/bin/apxs2 --disable-dependency-tracking
 	touch $@
 
 build: build-arch build-indep
@@ -64,7 +69,8 @@ clean:
 	dh_testroot
 	rm -f configure-stamp build-stamp install-stamp
 	[ ! -f Makefile ] || $(MAKE) distclean
-	dh_clean config.guess config.sub
+	dh_clean aclocal.m4 config.h config.h.in config.status configure \
+	    config.guess config.sub libtool.m4 ltmain.sh
 
 install: install-stamp
 install-stamp:

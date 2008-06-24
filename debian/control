@@ -3,9 +3,10 @@ Section: web
 Priority: extra
 Maintainer: Debian Shib Team <pkg-shibboleth-devel@lists.alioth.debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Ferenc Wagner <wferi@niif.hu>
-Build-Depends: debhelper (>= 5), autotools-dev, apache2-threaded-dev,
- doxygen, liblog4cpp5-dev, libxerces-c2-dev, libsaml2-dev, opensaml2-schemas,
- libssl-dev, zlib1g-dev, libxmltooling-dev, xmltooling-schemas, libxml-security-c-dev (>=1.4)
+Build-Depends: debhelper (>= 5), autotools-dev, autoconf, automake,
+ libtool, apache2-threaded-dev, doxygen, liblog4cpp5-dev, libsaml2-dev,
+ libssl-dev, libxerces-c2-dev, libxml-security-c-dev (>= 1.4),
+ libxmltooling-dev, opensaml2-schemas, xmltooling-schemas
 Standards-Version: 3.8.0
 Homepage: http://shibboleth.internet2.edu
 Vcs-Git: git://git.debian.org/git/pkg-shibboleth/shibboleth-sp2.git
