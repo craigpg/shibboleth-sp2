@@ -1,2 +1,4 @@
 version=3
-http://shibboleth.internet2.edu/downloads/shibboleth/cppsp/2.0/shibboleth-sp-(.*)\.tar\.gz
+opts=dversionmangle=s/\.dfsg\d+$// \
+    http://shibboleth.internet2.edu/downloads/shibboleth/cppsp/(2[\d.]+)/ \
+    shibboleth-sp-([\d.]+)\.tar\.gz
