@@ -17,7 +17,7 @@ Architecture: any
 Depends: ${shlibs:Depends}, xmltooling-schemas, opensaml2-schemas
 Recommends: apache2
 Conflicts: libapache2-mod-shib
-Description: Federated identity-based authentication and authorization system (runtime)
+Description: Federated identity-based authorization system (runtime)
  Shibboleth, a project of Internet2/MACE, is developing architectures,
  policy structures, practical technologies, and an open source
  implementation to support inter-institutional sharing of web resources
@@ -33,7 +33,7 @@ Architecture: any
 Depends: libapache2-mod-shib2 (= ${binary:Version}), libsaml2-dev, libxerces-c2-dev,
  libxmltooling-dev
 Suggests: libshib2-doc (= ${source:Version})
-Description: Federated identity-based authentication and authorization system (development)
+Description: Federated identity-based authorization system (development)
  Shibboleth, a project of Internet2/MACE, is developing architectures,
  policy structures, practical technologies, and an open source
  implementation to support inter-institutional sharing of web resources
@@ -47,7 +47,7 @@ Description: Federated identity-based authentication and authorization system (d
 Package: libshib2-doc
 Section: doc
 Architecture: all
-Description: Federated identity-based authentication and authorization system (API docs)
+Description: Federated identity-based authorization system (API docs)
  Shibboleth, a project of Internet2/MACE, is developing architectures,
  policy structures, practical technologies, and an open source
  implementation to support inter-institutional sharing of web resources
