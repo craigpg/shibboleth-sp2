@@ -27,6 +27,7 @@
 #include "handler/AbstractHandler.h"
 #include "handler/RemotedHandler.h"
 
+#include <memory>
 #include <xercesc/framework/LocalFileInputSource.hpp>
 #include <xercesc/framework/Wrapper4InputSource.hpp>
 
