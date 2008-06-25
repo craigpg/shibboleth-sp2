@@ -25,6 +25,7 @@
 #include "ServiceProvider.h"
 #include "remoting/impl/SocketListener.h"
 
+#include <memory>
 #include <errno.h>
 #include <stack>
 #include <sstream>

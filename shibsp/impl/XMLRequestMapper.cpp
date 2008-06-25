@@ -27,6 +27,7 @@
 #include "util/DOMPropertySet.h"
 #include "util/SPConstants.h"
 
+#include <memory>
 #include <xmltooling/util/NDC.h>
 #include <xmltooling/util/ReloadableXMLFile.h>
 #include <xmltooling/util/XMLHelper.h>

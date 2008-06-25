@@ -48,6 +48,7 @@
 #include <xmltooling/util/URLEncoder.h>
 #include <xmltooling/util/XMLHelper.h>
 #include <xercesc/util/XMLUniDefs.hpp>
+#include <memory>
 
 #ifndef SHIBSP_LITE
 # include <shibsp/attribute/resolver/ResolutionContext.h>

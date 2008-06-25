@@ -27,6 +27,7 @@
 #include "handler/AbstractHandler.h"
 #include "handler/LogoutHandler.h"
 #include "util/SPConstants.h"
+#include <memory>
 
 #ifndef SHIBSP_LITE
 # include "SessionCacheEx.h"
