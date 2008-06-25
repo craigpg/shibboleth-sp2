@@ -109,7 +109,6 @@ binary-indep: install-stamp
 	dh_testroot
 	dh_installchangelogs
 	dh_installdocs -A doc/NOTICE.txt
-	dh_link
 	dh_compress
 	dh_fixperms
 	dh_installdeb
