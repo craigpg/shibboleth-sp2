@@ -1,6 +1,5 @@
 debian/tmp/usr/bin
 debian/tmp/usr/sbin
-debian/tmp/usr/share/xml/shibboleth
 debian/tmp/etc/shibboleth
 debian/tmp/usr/lib/shibboleth
 debian/tmp/var/run/shibboleth

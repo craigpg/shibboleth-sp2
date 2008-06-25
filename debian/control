@@ -33,7 +33,8 @@ Description: Federated web single sign-on system (Apache module)
 Package: libshibsp1
 Section: libs
 Architecture: any
-Depends: ${shlibs:Depends}, opensaml2-schemas, xmltooling-schemas
+Depends: ${shlibs:Depends}, opensaml2-schemas, shibboleth-sp2-schemas,
+ xmltooling-schemas
 Description: Federated web single sign-on system (runtime)
  The Shibboleth System is a standards based software package for web
  single sign-on across or within organizational boundaries.  It supports
@@ -73,3 +74,17 @@ Description: Federated web single sign-on system (API docs)
  establish their identities with their local authentication systems.
  .
  This package contains the Shibboleth SP library API documentation.
+
+Package: shibboleth-sp2-schemas
+Section: text
+Architecture: all
+Conflicts: libapache2-mod-shib
+Description: Federated web single sign-on system (schemas)
+ The Shibboleth System is a standards based software package for web
+ single sign-on across or within organizational boundaries.  It supports
+ authorization and attribute exchange using the OASIS SAML 2.0 protocol.
+ Shibboleth allows sites to make informed authorization decisions for
+ individual access of protected online resources while allowing users to
+ establish their identities with their local authentication systems.
+ .
+ This package contains the additional schemas used by the Shibboleth SP.
