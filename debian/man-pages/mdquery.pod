@@ -1,0 +1,95 @@
+=head1 NAME
+
+mdquery - Query Shibboleth metadata
+
+=head1 SYNOPSIS
+
+B<mdquery> B<-e> I<entity> [B<-a> I<app>] [B<-nostrict>]
+
+B<mdquery> B<-e> I<entity> B<-r> I<role> B<-p> I<protocol> [B<-a> I<app>]
+    [B<-ns> I<namespace>] [B<-nostrict>]
+
+=head1 DESCRIPTION
+
+B<mdquery> queries and displays Shibboleth SP metadata.  It is primarily a
+debugging tool to use in conjunction with advice from the Shibboleth
+mantaininers.  It can display either the metadata for an entity or the
+metadata for a particular role.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-a> I<app>
+
+Specifies the application ID for which to retrieve metadata.  If not given
+the default is C<default>.
+
+=item B<-e> I<entity>
+
+Specifies the entity ID for which to show metadata.  Normally this is the
+entity descriptor ID for an entity with which one is having a problem
+(such as the entity ID for the local SP).
+
+=item B<-nostrict>
+
+Relax the strictness of checking (such as of expiration dates).
+
+=item B<-ns> I<namespace>
+
+When retrieving metadata for a particular role, specify the namespace.  If
+not given, the default is the SAML20MD namespace.
+
+=item B<-p> I<protocol>
+
+Specify a protocol when retrieving metadata for a particular role.
+Normally one would use the B<-saml10>, B<-saml11>, or B<-saml2> options to
+specify the protocol name, but this option allows an arbitrary protocol to
+be specified.
+
+=item B<-saml10>
+
+Specify a protocol of SAML 1.0.
+
+=item B<-saml11>
+
+Specify a protocol of SAML 1.1.
+
+=item B<-saml2>
+
+Specify a protocol of SAML 2.0.
+
+=item B<-r> I<role>
+
+Retrieve the metadata for a particular role.  Normally one would use the
+B<-idp>, B<-aa>, B<-pdp>, or B<-sp> options to specify the role name, but
+this option allows an arbitrary role to be specified.
+
+=item B<-idp>
+
+Specify a role of IDPSSODescriptor.
+
+=item B<-aa>
+
+Specify a role of AttributeAuthorityDescriptor.
+
+=item B<-pdp>
+
+Specify a role of PDPDescriptor.
+
+=item B<-sp>
+
+Specify a role of SPSSODescriptor.
+
+=back
+
+=head1 AUTHOR
+
+This manual page was written by Russ Allbery for Debian GNU/Linux.
+
+=head1 COPYRIGHT
+
+Copyright 2008 Russ Allbery.  This manual page is hereby placed into the
+public domain by its author.
+
+=cut

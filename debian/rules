@@ -92,8 +92,14 @@ install-stamp:
 	mv $(CURDIR)/debian/tmp/usr/lib/shibboleth/mod_shib_22.so \
 	    $(CURDIR)/debian/libapache2-mod-shib2/usr/lib/apache2/modules
 	rm $(CURDIR)/debian/tmp/usr/lib/shibboleth/mod_shib_22.la
-	pod2man $(CURDIR)/debian/shibd.pod --section 8 --center 'Shibboleth' \
-	    --release 2.0 \
+	pod2man $(CURDIR)/debian/man-pages/mdquery.pod --section 1 \
+	    --center 'Shibboleth' --release 2.0 \
+	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man1/mdquery.1
+	pod2man $(CURDIR)/debian/man-pages/resolvertest.pod --section 1 \
+	    --center 'Shibboleth' --release 2.0 \
+	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man1/resolvertest.1
+	pod2man $(CURDIR)/debian/man-pages/shibd.pod --section 8 \
+	    --center 'Shibboleth' --release 2.0 \
 	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man8/shibd.8
 	dh_install -s -i --fail-missing
 	touch $@
