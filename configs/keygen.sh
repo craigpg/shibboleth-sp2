@@ -27,7 +27,7 @@ if  [ -s sp-key.pem -o -s sp-cert.pem ] ; then
 fi
 
 if [ -z "$FQDN" ] ; then
-    FQDN=`hostname`
+    FQDN=`hostname --fqdn`
 fi
 
 if [ -z "$YEARS" ] ; then
