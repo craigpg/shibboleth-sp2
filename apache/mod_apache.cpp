@@ -46,6 +46,7 @@
 #include <xmltooling/util/Threads.h>
 #include <xmltooling/util/XMLConstants.h>
 #include <xmltooling/util/XMLHelper.h>
+#include <memory>
 
 #ifdef WIN32
 # include <winsock.h>
