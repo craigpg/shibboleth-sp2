@@ -3,9 +3,13 @@ Section: web
 Priority: extra
 Maintainer: Debian Shib Team <pkg-shibboleth-devel@lists.alioth.debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Ferenc Wagner <wferi@niif.hu>
-Build-Depends: debhelper (>= 5), autotools-dev, libxerces27-dev | libxerces28-dev, libsaml2-dev,
- libssl-dev, zlib1g-dev, liblog4cpp5-dev, apache2-threaded-dev, libxml-security-c-dev (>=1.4)
+Build-Depends: debhelper (>= 5), autotools-dev, apache2-threaded-dev,
+ liblog4cpp5-dev, libxerces-c2-dev, libsaml2-dev,
+ libssl-dev, zlib1g-dev, libxml-security-c-dev (>=1.4)
 Standards-Version: 3.7.2
+Homepage: http://shibboleth.internet2.edu
+Vcs-Git: git://git.debian.org/git/pkg-shibboleth/shibboleth-sp2.git
+Vcs-Browser: http://git.debian.org/?p=pkg-shibboleth/shibboleth-sp2.git
 
 Package: libapache2-mod-shib2
 Section: web
