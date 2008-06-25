@@ -1,0 +1,13 @@
+Document: libshib2-doc
+Title: Shibboleth2 API documentation
+Author: Scott Cantor
+Abstract: Doxygen generated HTML documentation of the Shibboleth
+ library version 2.
+Section: Programming/C++
+
+Format: HTML
+Index: /usr/share/doc/libshibsp-doc/html/index.html
+Files: /usr/share/doc/libshibsp-doc/html/*.html
+ /usr/share/doc/libshibsp-doc/html/*.png
+ /usr/share/doc/libshibsp-doc/html/*.gif
+ /usr/share/doc/libshibsp-doc/html/*.css

@@ -1,14 +1,5 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
-# Sample debian/rules that uses debhelper.
-#
-# This file was originally written by Joey Hess and Craig Small.
-# As a special exception, when this file is copied by dh-make into a
-# dh-make output file, you may use that output file without restriction.
-# This special exception was added by Craig Small in version 0.37 of dh-make.
-#
-# Modified to make a template file for a multi-binary package with separated
-# build-arch and build-indep targets  by Bill Allombert 2001
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
@@ -16,112 +7,127 @@
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
-# These are used for cross-compiling and for saving the configure script
-# from having to guess our platform (since we know it already)
-DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
-DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
-
-
-CFLAGS = -Wall -g
-
+CFLAGS = -g
+CXXFLAGS = -g
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -O0
+    DEBUG = --enable-debug
 else
-	CFLAGS += -O2
+    DEBUG =
 endif
 
-config.status: configure
+# Tell Autoconf the correct system types.
+DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+    SYSTEM = --build $(DEB_HOST_GNU_TYPE)
+else
+    SYSTEM = --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
+endif
+
+# These variable is used only by get-orig-source, which will normally only be
+# run by maintainers.
+VERSION = 2.0
+DEBVERS = dfsg1
+URL     = http://shibboleth.internet2.edu/downloads/shibboleth/cppsp
+
+# Download the upstream source and do the repackaging that we have to do for
+# DFSG reasons.  Depends on wget.
+get-orig-source:
+	wget $(URL)/$(VERSION)/shibboleth-sp-$(VERSION).tar.gz
+	tar xfz shibboleth-sp-$(VERSION).tar.gz
+	rm shibboleth-sp-$(VERSION).tar.gz
+	rm shibboleth-$(VERSION)/schemas/WS-Trust.xsd
+	mv shibboleth-$(VERSION) shibboleth-sp_$(VERSION).$(DEBVERS).orig
+	tar cf shibboleth-sp2_$(VERSION).$(DEBVERS).orig.tar \
+	    shibboleth-sp_$(VERSION).$(DEBVERS).orig
+	rm -r shibboleth-sp_$(VERSION).$(DEBVERS).orig
+	gzip -9 shibboleth-sp_$(VERSION).$(DEBVERS).orig.tar
+
+configure: configure-stamp
+configure-stamp:
 	dh_testdir
-	# Add here commands to configure the package.
-	./configure --host=$(DEB_HOST_GNU_TYPE) --build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr --sysconfdir=/etc --localstatedir=/var CFLAGS="$(CFLAGS)" --disable-dependency-tracking
+	rm -f libtool.m4
+	libtoolize --force
+	autoreconf --force
+	rm -rf autom4te.cache
+	cp /usr/share/misc/config.guess config.guess
+	cp /usr/share/misc/config.sub config.sub
+	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" ./configure --prefix=/usr \
+	    --sysconfdir=/etc --libexecdir=/usr/lib/shibboleth \
+	    --localstatedir=/var --enable-apache-22 \
+	    --with-apxs2=/usr/bin/apxs2 --disable-dependency-tracking \
+	    $(SYSTEM)
+	touch $@
 
-
-#Architecture 
 build: build-arch build-indep
-
 build-arch: build-stamp
-
-build-indep: build-stamp
-
-build-stamp: config.status
+build-indep:
+build-stamp: configure-stamp
+	dh_testdir
 	$(MAKE)
 	touch $@
 
 clean:
 	dh_testdir
 	dh_testroot
-	rm -f build-stamp #CONFIGURE-STAMP#
+	rm -f configure-stamp build-stamp install-stamp
+	[ ! -f Makefile ] || $(MAKE) distclean
+	find . -name Makefile.in -print0 | xargs -0r rm
+	dh_clean aclocal.m4 config.h config.h.in config.status configure \
+	    config.guess config.sub libtool.m4 ltmain.sh
 
-	# Add here commands to clean up after the build process.
-	-$(MAKE) distclean
-ifneq "$(wildcard /usr/share/misc/config.sub)" ""
-	cp -f /usr/share/misc/config.sub config.sub
-endif
-ifneq "$(wildcard /usr/share/misc/config.guess)" ""
-	cp -f /usr/share/misc/config.guess config.guess
-endif
-
-
-	dh_clean 
-
-install:
+install: install-stamp
+install-stamp:
 	dh_testdir
 	dh_testroot
-	dh_clean -k -i -s
-	dh_installdirs -i -s
-
-	# Add here commands to install the the package into debian/tmp.
+	dh_clean -k
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
-	rm $(CURDIR)/debian/tmp/usr/share/xml/shibboleth/WS-Trust.xsd
+	rm -r $(CURDIR)/debian/tmp/usr/share/doc/shibboleth
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/*.{dist,config}
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-redhat
 	chmod +x $(CURDIR)/debian/tmp/etc/shibboleth/keygen.sh
-	mv $(CURDIR)/debian/tmp/etc/shibboleth/shibd-debian $(CURDIR)/debian/libapache2-mod-shib2.shibd.init
-	mv $(CURDIR)/debian/tmp/usr/lib/shibboleth/mod_shib_22.so $(CURDIR)/debian/libapache2-mod-shib2/usr/lib/apache2/modules
+	mv $(CURDIR)/debian/tmp/etc/shibboleth/shibd-debian \
+	    $(CURDIR)/debian/libapache2-mod-shib2.shibd.init
+	dh_installdirs -s -i
+	mv $(CURDIR)/debian/tmp/usr/lib/shibboleth/mod_shib_22.so \
+	    $(CURDIR)/debian/libapache2-mod-shib2/usr/lib/apache2/modules
 	rm $(CURDIR)/debian/tmp/usr/lib/shibboleth/mod_shib_22.la
-	pod2man  $(CURDIR)/debian/shibd.pod --section 8 --center 'Shibboleth' --release 2.0 \
+	pod2man $(CURDIR)/debian/shibd.pod --section 8 --center 'Shibboleth' \
+	    --release 2.0 \
 	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man8/shibd.8
+	dh_install -s -i --fail-missing
+	touch $@
 
-	dh_install -i -s --fail-missing
-
-# Must not depend on anything. This is to be called by
-# binary-arch/binary-indep
-# in another 'make' thread.
-binary-common:
+binary: binary-arch binary-indep
+binary-arch: DH_OPTIONS=-a
+binary-arch: install-stamp
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs 
-	dh_installdocs
-	dh_installexamples
-#	dh_installmenu
-#	dh_installdebconf	
-#	dh_installlogrotate	
-#	dh_installemacsen
-#	dh_installpam
-#	dh_installmime
-#	dh_python
+	dh_installchangelogs
+	dh_installdocs -A doc/NOTICE.txt
 	dh_installinit --name=shibd
-#	dh_installcron
-#	dh_installinfo
-	dh_installman
-	dh_link
 	dh_strip
-	dh_compress 
+	dh_compress
 	dh_fixperms
-#	dh_perl
 	dh_makeshlibs
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
-# Build architecture independant packages using the common target.
-binary-indep: build-indep install
-	$(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
 
-# Build architecture dependant packages using the common target.
-binary-arch: build-arch install
-	$(MAKE) -f debian/rules DH_OPTIONS=-s binary-common
+binary-indep: DH_OPTIONS=-i
+binary-indep: install-stamp
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_installdocs -A doc/NOTICE.txt
+	dh_compress
+	dh_fixperms
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
 
-binary: binary-arch binary-indep
-.PHONY: build clean binary-indep binary-arch binary install
+.PHONY: binary binary-arch binary-indep build build-arch build-indep clean
+.PHONY: install
