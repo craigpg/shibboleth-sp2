@@ -5,7 +5,7 @@ Maintainer: Debian Shib Team <pkg-shibboleth-devel@lists.alioth.debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Ferenc Wagner <wferi@niif.hu>
 Build-Depends: debhelper (>= 5), autotools-dev, apache2-threaded-dev,
  doxygen, liblog4cpp5-dev, libxerces-c2-dev, libsaml2-dev,
- libssl-dev, zlib1g-dev, libxml-security-c-dev (>=1.4)
+ libssl-dev, zlib1g-dev, libxmltooling-dev, libxml-security-c-dev (>=1.4)
 Standards-Version: 3.8.0
 Homepage: http://shibboleth.internet2.edu
 Vcs-Git: git://git.debian.org/git/pkg-shibboleth/shibboleth-sp2.git
@@ -30,7 +30,7 @@ Description: Federated identity-based authentication and authorization system (r
 Package: libshib2-dev
 Section: libdevel
 Architecture: any
-Depends: libapache2-mod-shib2 (= ${binary:Version})
+Depends: libapache2-mod-shib2 (= ${binary:Version}), libsaml2-dev
 Suggests: libshib2-doc (= ${source:Version})
 Description: Federated identity-based authentication and authorization system (development)
  Shibboleth, a project of Internet2/MACE, is developing architectures,
