@@ -31,7 +31,7 @@ Description: Federated web single sign-on system (Apache module)
  supporting shibd daemon.
 
 Package: libshibsp1
-Section: web
+Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, opensaml2-schemas, xmltooling-schemas
 Description: Federated web single sign-on system (runtime)
