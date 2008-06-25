@@ -1,1 +1,1 @@
-debian/tmp/usr/share/doc/shibboleth/api/*	usr/share/doc/libshib2-doc
+doc/api/*	usr/share/doc/libshib2-doc
