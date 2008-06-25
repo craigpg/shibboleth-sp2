@@ -104,7 +104,7 @@ binary-arch: install-stamp
 	dh_testdir
 	dh_testroot
 	dh_installchangelogs
-	dh_installdocs -A doc/NOTICE.txt doc/CREDITS.txt doc/README.txt doc/RELEASE.txt
+	dh_installdocs -A doc/NOTICE.txt
 	dh_installinit --name=shibd
 	dh_strip
 	dh_compress
@@ -121,7 +121,7 @@ binary-indep: install-stamp
 	dh_testdir
 	dh_testroot
 	dh_installchangelogs
-	dh_installdocs -A doc/NOTICE.txt doc/CREDITS.txt doc/README.txt doc/RELEASE.txt
+	dh_installdocs -A doc/NOTICE.txt
 	dh_compress
 	dh_fixperms
 	dh_installdeb
