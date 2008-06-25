@@ -27,7 +27,7 @@ get-orig-source:
 	rm shibboleth-sp-$(VERSION).tar.gz
 	rm shibboleth-$(VERSION)/schemas/WS-Trust.xsd
 	mv shibboleth-$(VERSION) shibboleth-sp_$(VERSION).$(DEBVERS).orig
-	tar cf shibboleth-sp_$(VERSION).$(DEBVERS).orig.tar \
+	tar cf shibboleth-sp2_$(VERSION).$(DEBVERS).orig.tar \
 	    shibboleth-sp_$(VERSION).$(DEBVERS).orig
 	rm -r shibboleth-sp_$(VERSION).$(DEBVERS).orig
 	gzip -9 shibboleth-sp_$(VERSION).$(DEBVERS).orig.tar
