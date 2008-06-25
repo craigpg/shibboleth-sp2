@@ -14,7 +14,7 @@ Vcs-Browser: http://git.debian.org/?p=pkg-shibboleth/shibboleth-sp2.git
 Package: libapache2-mod-shib2
 Section: web
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, xmltooling-schemas, opensaml2-schemas
+Depends: ${shlibs:Depends}, xmltooling-schemas, opensaml2-schemas
 Recommends: apache2
 Conflicts: libapache2-mod-shib
 Description: Federated identity-based authentication and authorization system (runtime)
@@ -30,7 +30,8 @@ Description: Federated identity-based authentication and authorization system (r
 Package: libshib2-dev
 Section: libdevel
 Architecture: any
-Depends: libapache2-mod-shib2 (= ${binary:Version}), libsaml2-dev
+Depends: libapache2-mod-shib2 (= ${binary:Version}), libsaml2-dev, libxerces-c2-dev,
+ libxmltooling-dev
 Suggests: libshib2-doc (= ${source:Version})
 Description: Federated identity-based authentication and authorization system (development)
  Shibboleth, a project of Internet2/MACE, is developing architectures,
