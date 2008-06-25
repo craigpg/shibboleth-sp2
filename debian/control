@@ -15,7 +15,7 @@ Vcs-Browser: http://git.debian.org/?p=pkg-shibboleth/shibboleth-sp2.git
 Package: libapache2-mod-shib2
 Section: web
 Architecture: any
-Depends: ${shlibs:Depends}, xmltooling-schemas, opensaml2-schemas
+Depends: ${shlibs:Depends}
 Recommends: apache2
 Conflicts: libapache2-mod-shib
 Description: Federated web single sign-on system (Apache module)
@@ -27,12 +27,27 @@ Description: Federated web single sign-on system (Apache module)
  establish their identities with their local authentication systems.
  .
  This package contains the Shibboleth Apache module for service providers
- (web servers providing resources protected by Shibboleth).
+ (web servers providing resources protected by Shibboleth) and the
+ supporting shibd daemon.
 
-Package: libshib2-dev
+Package: libshibsp1
+Section: web
+Architecture: any
+Depends: ${shlibs:Depends}, opensaml2-schemas, xmltooling-schemas
+Description: Federated web single sign-on system (runtime)
+ The Shibboleth System is a standards based software package for web
+ single sign-on across or within organizational boundaries.  It supports
+ authorization and attribute exchange using the OASIS SAML 2.0 protocol.
+ Shibboleth allows sites to make informed authorization decisions for
+ individual access of protected online resources while allowing users to
+ establish their identities with their local authentication systems.
+ .
+ This package contains the Shibboleth SP runtime library.
+
+Package: libshibsp-dev
 Section: libdevel
 Architecture: any
-Depends: libapache2-mod-shib2 (= ${binary:Version}), libsaml2-dev, libxerces-c2-dev,
+Depends: libshibsp1 (= ${binary:Version}), libsaml2-dev, libxerces-c2-dev,
  libxmltooling-dev
 Suggests: libshib2-doc (= ${source:Version})
 Description: Federated web single sign-on system (development)
@@ -46,7 +61,7 @@ Description: Federated web single sign-on system (development)
  This package contains the headers and other necessary files to build
  applications that use the Shibboleth SP library.
 
-Package: libshib2-doc
+Package: libshibsp-doc
 Section: doc
 Architecture: all
 Description: Federated web single sign-on system (API docs)
