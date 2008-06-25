@@ -7,10 +7,21 @@
 # This has to be exported to make some magic below work.
 export DH_OPTIONS
 
+CFLAGS = -g
+CXXFLAGS = -g
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
     DEBUG = --enable-debug
 else
     DEBUG =
+endif
+
+# Tell Autoconf the correct system types.
+DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
+ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+    SYSTEM = --build $(DEB_HOST_GNU_TYPE)
+else
+    SYSTEM = --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
 endif
 
 # These variable is used only by get-orig-source, which will normally only be
@@ -32,15 +43,6 @@ get-orig-source:
 	rm -r shibboleth-sp_$(VERSION).$(DEBVERS).orig
 	gzip -9 shibboleth-sp_$(VERSION).$(DEBVERS).orig.tar
 
-# Tell Autoconf the correct system types.
-DEB_HOST_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
-DEB_BUILD_GNU_TYPE ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
-ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
-    SYSTEM = --build $(DEB_HOST_GNU_TYPE)
-else
-    SYSTEM = --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
-endif
-
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
@@ -53,7 +55,8 @@ configure-stamp:
 	CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" ./configure --prefix=/usr \
 	    --sysconfdir=/etc --libexecdir=/usr/lib/shibboleth \
 	    --localstatedir=/var --enable-apache-22 \
-	    --with-apxs2=/usr/bin/apxs2 --disable-dependency-tracking
+	    --with-apxs2=/usr/bin/apxs2 --disable-dependency-tracking \
+	    $(SYSTEM)
 	touch $@
 
 build: build-arch build-indep
@@ -83,11 +86,14 @@ install-stamp:
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/*.{dist,config}
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-redhat
 	chmod +x $(CURDIR)/debian/tmp/etc/shibboleth/keygen.sh
-	mv $(CURDIR)/debian/tmp/etc/shibboleth/shibd-debian $(CURDIR)/debian/libapache2-mod-shib2.shibd.init
+	mv $(CURDIR)/debian/tmp/etc/shibboleth/shibd-debian \
+	    $(CURDIR)/debian/libapache2-mod-shib2.shibd.init
 	dh_installdirs -s -i
-	mv $(CURDIR)/debian/tmp/usr/lib/shibboleth/mod_shib_22.so $(CURDIR)/debian/libapache2-mod-shib2/usr/lib/apache2/modules
+	mv $(CURDIR)/debian/tmp/usr/lib/shibboleth/mod_shib_22.so \
+	    $(CURDIR)/debian/libapache2-mod-shib2/usr/lib/apache2/modules
 	rm $(CURDIR)/debian/tmp/usr/lib/shibboleth/mod_shib_22.la
-	pod2man  $(CURDIR)/debian/shibd.pod --section 8 --center 'Shibboleth' --release 2.0 \
+	pod2man $(CURDIR)/debian/shibd.pod --section 8 --center 'Shibboleth' \
+	    --release 2.0 \
 	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man8/shibd.8
 	dh_install -s -i --fail-missing
 	touch $@
