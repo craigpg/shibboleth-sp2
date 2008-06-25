@@ -30,8 +30,8 @@ Description: Open source system for attribute-based Web SSO
 Package: libshib2-dev
 Section: libdevel
 Architecture: any
-Depends: libapache2-mod-shib2 (= ${Source-Version})
-Suggests: libshib2-doc (= ${Source-Version})
+Depends: libapache2-mod-shib2 (= ${binary:Version})
+Suggests: libshib2-doc (= ${source:Version})
 Description: Shibboleth development headers
  Shibboleth, a project of Internet2/MACE, is developing architectures,
  policy structures, practical technologies, and an open source
