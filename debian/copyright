@@ -6,7 +6,7 @@ Original-Source-Location:
  http://shibboleth.internet2.edu/downloads/shibboleth/cpp/2.0/
 
 The original upstream source was repackaged to remove the WS-Trust.xsd
-schema, which was not distributed uder a DFSG-free license.
+schema, which was not distributed under a DFSG-free license.
 
 Files: *
 Copyright: 2001-2007 Internet2

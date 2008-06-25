@@ -36,8 +36,8 @@ VERSION = 2.0
 DEBVERS = dfsg1
 URL     = http://shibboleth.internet2.edu/downloads/shibboleth/cppsp
 
-# Download the upstrema source and do the repackaging that we have to do for
-# DFSG reasons.  Depends on wget and svn-buildpackage.
+# Download the upstream source and do the repackaging that we have to do for
+# DFSG reasons.  Depends on wget.
 get-orig-source:
 	wget $(URL)/$(VERSION)/shibboleth-sp-$(VERSION).tar.gz
 	tar xfz shibboleth-sp-$(VERSION).tar.gz
