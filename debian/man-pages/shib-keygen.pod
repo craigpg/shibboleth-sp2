@@ -1,0 +1,83 @@
+=head1 NAME
+
+shib-keygen - Generate a key pair for a Shibboleth SP
+
+=head1 SYNOPSIS
+
+B<shib-keygen> [B<-bf>] [B<-e> I<entity-id>] [B<-h> I<hostname>]
+    [B<-y> I<years>]
+
+=head1 DESCRIPTION
+
+Generate a self-signed X.509 certificate for a Shibboleth SP.  By default,
+the certificate will be for the local fully-qualified (as returned by
+C<hostname --fqdn>) hostname.  An entity ID can be specified with the
+B<-e> flag.  The B<openssl> command-line client is used to generate the
+key pair.  The public certificate will be created in
+F</etc/shibboleth/sp-cert.pem> and the private key in
+F</etc/shibboleth/sp-key.pem>.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-b>
+
+Suppress all standard error output when creating the certificate.  This
+option is normally only used by the package build.
+
+=item B<-e> I<entity-id>
+
+Add I<entity-id> (which should be a URI) as an alternative name for the
+certificate.
+
+=item B<-f>
+
+Remove F</etc/shibboleth/sp-cert.pem> and F</etc/shibboleth/sp-key.pem>
+before generating a new certificate.  Without this option, if those files
+already exist, B<shib-keygen> prints an error and exits rather than
+overwriting them.
+
+=item B<-h> I<hostname>
+
+Specify the fully-qualified domain name for which to generate a
+certificate.  If this option isn't given, the hostname defaults to the
+result of C<hostname --fqdn>.
+
+=item B<-y> I<years>
+
+The number of years for which the certificate should be valid.  The
+default expiration time is ten years into the future.
+
+=back
+
+=head1 FILES
+
+=over 4
+
+=item F</etc/shibboleth/sp-cert.cnf>
+
+The OpenSSL configuration file used for generating the self-signed
+certificate.  This configuration file is generated when the script is run
+and deleted afterwards.
+
+=item F</etc/shibboelth/sp-cert.pem>
+
+The public certificate created by this script.
+
+=item F</etc/shibboleth/sp-key.pem>
+
+The private key for the certificate created by this script.
+
+=back
+
+=head1 AUTHOR
+
+This manual page was written by Russ Allbery for Debian GNU/Linux.
+
+=head1 COPYRIGHT
+
+Copyright 2008 Russ Allbery.  This manual page is hereby placed into the
+public domain by its author.
+
+=cut

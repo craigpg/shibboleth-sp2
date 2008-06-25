@@ -1,5 +1,10 @@
 #! /bin/sh
 
+# Added for Debian.  The upstream version is installed in /etc/shibboleth and
+# for Debian we wanted to move it to /usr/bin, so change directories so that
+# it puts files in the correct location.
+cd /etc/shibboleth
+
 while getopts h:e:y:bf c
      do
          case $c in
@@ -26,6 +31,7 @@ if  [ -s sp-key.pem -o -s sp-cert.pem ] ; then
     exit 0
 fi
 
+# --fqdn flag added for Debian to generate better names for certificates.
 if [ -z "$FQDN" ] ; then
     FQDN=`hostname --fqdn`
 fi

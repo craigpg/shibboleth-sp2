@@ -16,7 +16,7 @@ Package: libapache2-mod-shib2
 Section: web
 Architecture: any
 Depends: ${shlibs:Depends}
-Recommends: apache2
+Recommends: apache2, openssl
 Conflicts: libapache2-mod-shib
 Description: Federated web single sign-on system (Apache module)
  The Shibboleth System is a standards based software package for web
