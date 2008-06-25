@@ -8,7 +8,5 @@ debian/tmp/var/run/shibboleth
 
 debian/shib.load	etc/apache2/mods-available
 
-debian/tmp/usr/share/doc/shibboleth/logo.jpg	usr/share/shibboleth
-debian/tmp/usr/share/doc/shibboleth/main.css	usr/share/shibboleth
-
-debian/tmp/usr/share/doc/shibboleth/*.txt	usr/share/doc/libapache2-mod-shib2
+doc/logo.jpg	usr/share/shibboleth
+doc/main.css	usr/share/shibboleth
