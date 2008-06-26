@@ -26,10 +26,23 @@ log4j.category.XMLTooling.libcurl=INFO
 
 # define the appender
 
-log4j.appender.native_log=org.apache.log4j.RollingFileAppender
-log4j.appender.native_log.fileName=@-SHIRELOGDIR-@/native.log
-log4j.appender.native_log.maxFileSize=1000000
-log4j.appender.native_log.maxBackupIndex=10
-#log4j.appender.native_log.layout=org.apache.log4j.BasicLayout
-log4j.appender.native_log.layout=org.apache.log4j.PatternLayout
-log4j.appender.native_log.layout.ConversionPattern=%d{%Y-%m-%d %H:%M:%S} %p %c %x: %m%n
+# This is the default, but it's essentially useless under normal
+# circumstances since Apache doesn't have access to write to that
+# directory.
+#log4j.appender.native_log=org.apache.log4j.RollingFileAppender
+#log4j.appender.native_log.fileName=@-SHIRELOGDIR-@/native.log
+#log4j.appender.native_log.maxFileSize=1000000
+#log4j.appender.native_log.maxBackupIndex=10
+##log4j.appender.native_log.layout=org.apache.log4j.BasicLayout
+#log4j.appender.native_log.layout=org.apache.log4j.PatternLayout
+#log4j.appender.native_log.layout.ConversionPattern=%d{%Y-%m-%d %H:%M:%S} %p %c %x: %m%n
+
+# Use syslog instead, since then at least the messages will go somewhere.
+# That facility is (3 << 3) or LOG_DAEMON, since log4cpp apparently
+# doesn't recognize symbolic log facilities.
+#
+# This is a Debian-specific change.
+log4j.appender.native_log=org.apache.log4j.LocalSyslogAppender
+log4j.appender.native_log.syslogName=shibboleth-sp
+log4j.appender.native_log.facility=24
+log4j.appender.native_log.layout=org.apache.log4j.BasicLayout
