@@ -1,0 +1,81 @@
+                       Shibboleth 2.0 SP for Debian
+
+Introduction
+
+  This package provides the Shibboleth Apache module and accompanying
+  daemon for a service provider.  In Shibboleth terminology, this is a web
+  server serving some content that should be secured via Shibboleth.  In
+  order for someone to access protected content from a Shibboleth SP, they
+  will have to authenticate to a Shibboleth IdP (Identity Provider),
+  either one that the Shibboleth SP points to directly or one that is part
+  of a federation that is trusted by the Shibboleth SP.
+
+  This is the Shibboleth 2.0 version of the SP.  For the 1.x version of
+  the Shibboleth SP (if it is still available), see libapache-mod-shib.
+
+Installation and Configuration
+
+  After installing this package, the module is available but not enabled.
+  It's not enabled automatically since some configuration is required
+  before it will work (at least creating a certificate for the SP to use
+  to authenticate to IdPs).
+
+  To generate a self-signed certificate for the Shibboleth SP, run
+  shib-keygen.  See its manual page for more information.  This may or may
+  not be what you want to do depending on which federation you plan on
+  joining; some federations may want you to follow other procedures for
+  generating a certificate.
+
+  The default error messages from Shibboleth are located in
+  /etc/shibboleth/*.html.  The paths to those error messages are
+  configured in /etc/shibboleth/shibboleth2.xml in the <Errors> tag.  If
+  you customize them, you may want to copy them somewhere else and change
+  /etc/shibboleth/shibboleth2.xml to point to the new locations.  Also in
+  that <Errors> tag you can set the URLs to the logo and style sheet used
+  by the default errors.  If you want to use the default URL (under
+  /shibboleth-sp), add this to your Apache configuration:
+
+    <Location /shibboleth-sp>
+        Allow from all
+    </Location>
+    Alias /shibboleth-sp/main.css /usr/share/shibboleth/main.css
+    Alias /shibboleth-sp/logo.jpg /usr/share/shibboleth/logo.jpg
+
+  For Shibboleth to work properly, you will need to extensively customize
+  /etc/shibboleth/shibboleth2.xml for your site.  In particular, the
+  <ApplicationDefaults> section will have to be customized for the
+  federations your SP will trust and the <CredentialResolver> section of
+  <Applications> needs to list the credentials that your SP will use to
+  authenticate when communicating with IdPs.  Your local site may provide
+  a standard shibboleth2.xml for you to use.
+
+  Finally, you will want to protect some web content with Shibboleth.  The
+  most basic configuration is:
+
+    <Location /secure>
+        AuthType shibboleth
+        ShibRequireSession On
+        require valid-user
+    </Location>
+
+  for some <Location>, <Directory>, or <Files> block.  You can also put
+  similar code in an .htaccess file.  This will require authorization
+  using the default federation defined in /etc/shibboleth/shibboleth2.xml.
+
+Changes in Debian Package
+
+  The logging configuration for the native.log file has been changed to
+  use syslog, since the upstream default tries to write to a file that
+  Apache has no privileges to write to.  See /etc/shibboleth/native.logger
+  for more details.  If you want the other parts of Shibboleth to also log
+  to syslog, change the other /etc/shibboleth/*.logger files similarly.
+
+Further Information
+
+  For further installation information, see:
+
+    https://spaces.internet2.edu/display/SHIB2/Home
+
+  and in particular the "Configuration" link.
+
+ -- Russ Allbery <rra@debian.org>, Wed, 25 Jun 2008 17:20:05 -0700
