@@ -70,6 +70,58 @@ Changes in Debian Package
   for more details.  If you want the other parts of Shibboleth to also log
   to syslog, change the other /etc/shibboleth/*.logger files similarly.
 
+Testing with TestShib
+
+  If you don't have a local Shibboleth Federation you can easily join but
+  want to test your Shibboleth installation, you can use the TestShib
+  federation (which exists primarily for this purpose).  To do this, use
+  the following instructions (but test them against the details on the
+  testshib.org web pages in case anything has changed):
+
+  1. If you do not have an OpenIDP identity, go to <http://openidp.org/>
+     and create one.
+
+  2. Go to <http://testshib.org/>, click on Join, and then Create and
+     manage metadata entries.  Log in with your OpenIDP identity.
+
+  3. Click on New Service Provider (unless you've already created an entry
+     for this host, in which case reuse it).  Enter your hostname, your
+     public certificate, and your first and last name, and then click on
+     Continue.  Verify the information and click on Submit.
+
+  4. Note the URL in quotes at the top of the page for which the
+     credentials were "successfully stored."  This URL is your server's
+     providerID; save it for later.
+
+  5. Now select Configure, scroll down to Service Provider Configuration,
+     choose Other for the platform, and click on Create Me.  Save the
+     resulting configuration file as /etc/shibboleth/shibboleth2.xml.
+
+  6. Create some part of your web site that's protected with Shibboleth as
+     described above, restart Apache with apache2ctl restart, restart
+     shibd with /etc/init.d/shibd restart, and then go to that URL.  You
+     should be redirected to the testshib.org IdP, and then get a basic
+     auth dialog box prompting for a username and password.  Enter
+     "myself" and "myself".  You should now be redirected back to your
+     protected page.  The best test page to use is a CGI script that
+     prints out the environment; you can then confirm that you see the
+     Shibboleth attributes as environment variables.  If this doesn't work
+     immediately, wait a few minutes and try again; sometimes the
+     testshib.org metadata takes a little bit to update.
+
+  These directions should work as of June 2008, but note that the
+  testshib.org service may have changed since then.  TestShib is useful
+  *only* for testing, not for any production use.  Those of us who have
+  worked on the Debian package are not affiliated with testshib.org, just
+  personally find it useful, and make no guarantees that it will work
+  properly.  You should read over the shibboleth2.xml file that you
+  download from testshib.org before using it to make sure that there's
+  nothing strange in it.
+
+  If the above instructions don't work or there are changes in the
+  TestShib service, please file a bug against the Debian
+  libapache2-mod-shib2 package and let us know.
+
 Further Information
 
   For further installation information, see:
@@ -78,4 +130,4 @@ Further Information
 
   and in particular the "Configuration" link.
 
- -- Russ Allbery <rra@debian.org>, Wed, 25 Jun 2008 17:20:05 -0700
+ -- Russ Allbery <rra@debian.org>, Wed, 25 Jun 2008 19:46:06 -0700
