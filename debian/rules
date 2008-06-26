@@ -74,7 +74,8 @@ clean:
 	[ ! -f Makefile ] || $(MAKE) distclean
 	find . -name Makefile.in -print0 | xargs -0r rm
 	dh_clean aclocal.m4 config.h config.h.in config.status configure \
-	    config.guess config.sub libtool.m4 ltmain.sh
+	    config.guess config.sub libtool.m4 ltmain.sh \
+	    debian/libapache2-mod-shib2.shibd.init
 
 install: install-stamp
 install-stamp:
@@ -84,16 +85,29 @@ install-stamp:
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 	rm -r $(CURDIR)/debian/tmp/usr/share/doc/shibboleth
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/*.{dist,config}
+	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-osx.plist
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-redhat
+	rm $(CURDIR)/debian/tmp/etc/shibboleth/sp-*.pem
 	chmod +x $(CURDIR)/debian/tmp/etc/shibboleth/keygen.sh
+	mv $(CURDIR)/debian/tmp/etc/shibboleth/keygen.sh \
+	    $(CURDIR)/debian/tmp/usr/sbin/shib-keygen
 	mv $(CURDIR)/debian/tmp/etc/shibboleth/shibd-debian \
 	    $(CURDIR)/debian/libapache2-mod-shib2.shibd.init
 	dh_installdirs -s -i
 	mv $(CURDIR)/debian/tmp/usr/lib/shibboleth/mod_shib_22.so \
 	    $(CURDIR)/debian/libapache2-mod-shib2/usr/lib/apache2/modules
 	rm $(CURDIR)/debian/tmp/usr/lib/shibboleth/mod_shib_22.la
-	pod2man $(CURDIR)/debian/shibd.pod --section 8 --center 'Shibboleth' \
-	    --release 2.0 \
+	pod2man $(CURDIR)/debian/man-pages/mdquery.pod --section 1 \
+	    --center 'Shibboleth' --release 2.0 \
+	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man1/mdquery.1
+	pod2man $(CURDIR)/debian/man-pages/resolvertest.pod --section 1 \
+	    --center 'Shibboleth' --release 2.0 \
+	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man1/resolvertest.1
+	pod2man $(CURDIR)/debian/man-pages/shib-keygen.pod --section 8 \
+	    --center 'Shibboleth' --release 2.0 \
+	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man1/shib-keygen.8
+	pod2man $(CURDIR)/debian/man-pages/shibd.pod --section 8 \
+	    --center 'Shibboleth' --release 2.0 \
 	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man8/shibd.8
 	dh_install -s -i --fail-missing
 	touch $@
@@ -109,7 +123,7 @@ binary-arch: install-stamp
 	dh_strip
 	dh_compress
 	dh_fixperms
-	dh_makeshlibs
+	DH_OPTIONS="" dh_makeshlibs -plibshibsp1
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol

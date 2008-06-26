@@ -1,0 +1,69 @@
+=head1 NAME
+
+resolvertest - Test Shibboleth SP attribute resolver
+
+=head1 SYNOPSIS
+
+B<resolvertest> B<-n> I<name> B<-i> I<idp> B<-p> I<protocol>
+    [B<-f> I<format-uri>] [B<-a> I<app>]
+
+B<resolvertest> [B<-a> I<app>] < I<assertion>
+
+=head1 DESCRIPTION
+
+B<resolvertest> queries the Shibboleth SP attribute resolver and can be
+used to test attribute release policies and related configuration for a
+Shibboleth SP.  Either a name, IdP, and protocol may be specified on the
+command-line or B<resolvertest> can take an assertion in XML on standard
+input.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<-a> I<app>
+
+The application ID.  If not given, the default is C<default>.
+
+=item B<-i> I<idp>
+
+The Identity Provider to query for attributes.
+
+=item B<-f> I<format-uri>
+
+The URI for the attribute format.
+
+=item B<-n> I<name>
+
+The name to look up.
+
+=item B<-p> I<protocol>
+
+The protocol to use.  Normally, one of the B<-saml10>, B<-saml11>, or
+B<-saml2> options should be used to specify the protocol, but B<-p> can be
+used to specify an arbitrary protocol.
+
+=item B<-saml10>
+
+Use the SAML 1.0 protocol.
+
+=item B<-saml11>
+
+Use the SAML 1.1 protocol.
+
+=item B<-saml2>
+
+Use the SAML 2 protocol.
+
+=back
+
+=head1 AUTHOR
+
+This manual page was written by Russ Allbery for Debian GNU/Linux.
+
+=head1 COPYRIGHT
+
+Copyright 2008 Russ Allbery.  This manual page is hereby placed into the
+public domain by its author.
+
+=cut
