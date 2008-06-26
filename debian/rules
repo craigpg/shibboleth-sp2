@@ -105,7 +105,7 @@ install-stamp:
 	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man1/resolvertest.1
 	pod2man $(CURDIR)/debian/man-pages/shib-keygen.pod --section 8 \
 	    --center 'Shibboleth' --release 2.0 \
-	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man1/shib-keygen.8
+	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man8/shib-keygen.8
 	pod2man $(CURDIR)/debian/man-pages/shibd.pod --section 8 \
 	    --center 'Shibboleth' --release 2.0 \
 	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man8/shibd.8
