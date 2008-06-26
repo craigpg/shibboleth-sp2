@@ -3,5 +3,5 @@ shibboleth-sp2 (2.0.dfsg1-1) unstable; urgency=low
   [ Ferenc Wágner ]
   * Initial release (Closes: #480290)
 
- -- Russ Allbery <rra@debian.org>  Tue, 24 Jun 2008 11:27:37 -0700
+ -- Russ Allbery <rra@debian.org>  Wed, 25 Jun 2008 20:06:10 -0700
 
