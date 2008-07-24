@@ -1,3 +1,10 @@
+shibboleth-sp2 (2.0.dfsg1-2) unstable; urgency=low
+
+  * Apply upstream fix for variable sizes in the ODBC code.  Fixes a
+    FTBFS on 64-bit platforms.  (Closes: #492101)
+
+ -- Russ Allbery <rra@debian.org>  Thu, 24 Jul 2008 08:44:50 -0700
+
 shibboleth-sp2 (2.0.dfsg1-1) unstable; urgency=low
 
   [ Ferenc Wágner ]
