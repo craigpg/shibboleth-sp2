@@ -1,4 +1,11 @@
-shibboleth-sp2 (2.0.dfsg1-2) unstable; urgency=low
+shibboleth-sp2 (2.0.dfsg1-3) unstable; urgency=low
+
+  * Avoid brace expansion in debian/rules, dash does not like it.
+    (Closes: #493408)
+
+ -- Ferenc Wagner <wferi@niif.hu>  Sat, 02 Aug 2008 21:47:08 +0200
+
+shibboleth-sp2 (2.0.d fsg1-2) unstable; urgency=low
 
   * Apply upstream fix for variable sizes in the ODBC code.  Fixes a
     FTBFS on 64-bit platforms.  (Closes: #492101)
