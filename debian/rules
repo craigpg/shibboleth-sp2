@@ -121,6 +121,7 @@ binary-arch: install-stamp
 	dh_installchangelogs
 	dh_installdocs -A doc/NOTICE.txt
 	dh_installinit --name=shibd
+	dh_installlogcheck
 	dh_strip
 	dh_compress
 	dh_fixperms
