@@ -1,7 +1,13 @@
 shibboleth-sp2 (2.0.dfsg1-3) unstable; urgency=low
 
+  [ Ferenc Wagner ]
   * Avoid brace expansion in debian/rules, dash does not like it.
     (Closes: #493408)
+
+  [ Russ Allbery ]
+  * Add logcheck rules to ignore some of the routine messages from the
+    Apache module.  This only covers startup and teardown; more will
+    need to be added.
 
  -- Ferenc Wagner <wferi@niif.hu>  Sat, 02 Aug 2008 21:47:08 +0200
 
