@@ -8,6 +8,7 @@ shibboleth-sp2 (2.0.dfsg1-3) unstable; urgency=low
   * Add logcheck rules to ignore some of the routine messages from the
     Apache module.  This only covers startup and teardown; more will
     need to be added.
+  * Fix watch file for new upstream tarball naming.
 
  -- Ferenc Wagner <wferi@niif.hu>  Sat, 02 Aug 2008 21:47:08 +0200
 
