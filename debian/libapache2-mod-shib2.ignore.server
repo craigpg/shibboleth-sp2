@@ -1,0 +1,8 @@
+^\w{3} [ :0-9]{11} [._[:alnum:]-]+ shibboleth-sp: [0-9]+ INFO Shibboleth\.Config : shibboleth [0-9.]+ library (shutting down|shutdown complete)$
+^\w{3} [ :0-9]{11} [._[:alnum:]-]+ shibboleth-sp: [0-9]+ INFO Shibboleth.SessionCache : cleanup thread exiting$
+^\w{3} [ :0-9]{11} [._[:alnum:]-]+ shibboleth-sp: [0-9]+ INFO XMLTooling.XMLToolingConfig : xmltooling [0-9.]+ library shutdown complete$
+^\w{3} [ :0-9]{11} [._[:alnum:]-]+ shibboleth-sp: [0-9]+ INFO Shibboleth\.Config : building ListenerService of type UnixListener\.\.\.$
+^\w{3} [ :0-9]{11} [._[:alnum:]-]+ shibboleth-sp: [0-9]+ INFO Shibboleth\.Config : building RequestMapper of type Native\.\.\.$
+^\w{3} [ :0-9]{11} [._[:alnum:]-]+ shibboleth-sp: [0-9]+ INFO Shibboleth\.Config : building SessionCache of type StorageService\.\.\.$
+^\w{3} [ :0-9]{11} [._[:alnum:]-]+ shibboleth-sp: [0-9]+ INFO Shibboleth\.SessionCache : cleanup thread started\.\.\.run every [0-9]+ secs; timeout after [0-9]+ secs$
+^\w{3} [ :0-9]{11} [._[:alnum:]-]+ shibboleth-sp: [0-9]+ INFO Shibboleth.SessionCache : purging [0-9]+ old sessions$

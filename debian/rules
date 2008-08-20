@@ -84,7 +84,8 @@ install-stamp:
 	dh_clean -k
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 	rm -r $(CURDIR)/debian/tmp/usr/share/doc/shibboleth
-	rm $(CURDIR)/debian/tmp/etc/shibboleth/*.{dist,config}
+	rm $(CURDIR)/debian/tmp/etc/shibboleth/*.dist
+	rm $(CURDIR)/debian/tmp/etc/shibboleth/*.config
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-osx.plist
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-redhat
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/sp-*.pem
@@ -120,6 +121,7 @@ binary-arch: install-stamp
 	dh_installchangelogs
 	dh_installdocs -A doc/NOTICE.txt
 	dh_installinit --name=shibd
+	dh_installlogcheck
 	dh_strip
 	dh_compress
 	dh_fixperms

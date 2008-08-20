@@ -1,3 +1,17 @@
+shibboleth-sp2 (2.0.dfsg1-3) unstable; urgency=low
+
+  [ Ferenc Wagner ]
+  * Avoid brace expansion in debian/rules, dash does not like it.
+    (Closes: #493408)
+
+  [ Russ Allbery ]
+  * Add logcheck rules to ignore some of the routine messages from the
+    Apache module.  This only covers startup and teardown; more will
+    need to be added.
+  * Fix watch file for new upstream tarball naming.
+
+ -- Russ Allbery <rra@debian.org>  Tue, 19 Aug 2008 19:04:35 -0700
+
 shibboleth-sp2 (2.0.dfsg1-2) unstable; urgency=low
 
   * Apply upstream fix for variable sizes in the ODBC code.  Fixes a
