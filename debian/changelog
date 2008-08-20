@@ -10,7 +10,7 @@ shibboleth-sp2 (2.0.dfsg1-3) unstable; urgency=low
     need to be added.
   * Fix watch file for new upstream tarball naming.
 
- -- Ferenc Wagner <wferi@niif.hu>  Sat, 02 Aug 2008 21:47:08 +0200
+ -- Russ Allbery <rra@debian.org>  Tue, 19 Aug 2008 19:04:35 -0700
 
 shibboleth-sp2 (2.0.dfsg1-2) unstable; urgency=low
 
