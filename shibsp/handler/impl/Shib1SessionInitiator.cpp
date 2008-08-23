@@ -31,6 +31,7 @@
 #include "util/SPConstants.h"
 
 #ifndef SHIBSP_LITE
+# include "metadata/MetadataProviderCriteria.h"
 # include <saml/saml2/metadata/Metadata.h>
 # include <saml/saml2/metadata/EndpointManager.h>
 #endif
@@ -224,7 +225,7 @@ pair<bool,long> Shib1SessionInitiator::doRequest(
     // Use metadata to invoke the SSO service directly.
     MetadataProvider* m=app.getMetadataProvider();
     Locker locker(m);
-    MetadataProvider::Criteria mc(entityID, &IDPSSODescriptor::ELEMENT_QNAME, shibspconstants::SHIB1_PROTOCOL_ENUM);
+    MetadataProviderCriteria mc(app, entityID, &IDPSSODescriptor::ELEMENT_QNAME, shibspconstants::SHIB1_PROTOCOL_ENUM);
     pair<const EntityDescriptor*,const RoleDescriptor*> entity = m->getEntityDescriptor(mc);
     if (!entity.first) {
         m_log.warn("unable to locate metadata for provider (%s)", entityID);

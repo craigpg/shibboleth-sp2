@@ -35,6 +35,7 @@
 #include <shibsp/exceptions.h>
 #include <shibsp/SPConfig.h>
 #include <shibsp/ServiceProvider.h>
+#include <shibsp/metadata/MetadataProviderCriteria.h>
 #include <shibsp/util/SPConstants.h>
 #include <saml/saml2/metadata/Metadata.h>
 #include <xmltooling/logging.h>
@@ -106,7 +107,7 @@ int main(int argc,char* argv[])
     XMLToolingConfig::getConfig().log_config(getenv("SHIBSP_LOGGING") ? getenv("SHIBSP_LOGGING") : SHIBSP_LOGGING);
 
     SPConfig& conf=SPConfig::getConfig();
-    conf.setFeatures(SPConfig::Metadata | SPConfig::OutOfProcess);
+    conf.setFeatures(SPConfig::Metadata | SPConfig::Trust | SPConfig::OutOfProcess | SPConfig::Credentials);
     if (!conf.init(path))
         return -1;
 
@@ -153,7 +154,7 @@ int main(int argc,char* argv[])
     }
 
     app->getMetadataProvider()->lock();
-    MetadataProvider::Criteria mc(entityID, NULL, NULL, strict);
+    MetadataProviderCriteria mc(*app, entityID, NULL, NULL, strict);
     if (rname) {
         const XMLCh* ns = rns ? XMLString::transcode(rns) : samlconstants::SAML20MD_NS;
         auto_ptr_XMLCh n(rname);

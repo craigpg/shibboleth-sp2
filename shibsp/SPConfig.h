@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,8 +16,8 @@
 
 /**
  * @file shibsp/SPConfig.h
- * 
- * Library configuration 
+ *
+ * Library configuration
  */
 
 #ifndef __shibsp_config_h__
@@ -75,7 +75,7 @@ namespace shibsp {
 
         /**
          * Returns the global configuration object for the library.
-         * 
+         *
          * @return reference to the global library configuration object
          */
         static SPConfig& getConfig();
@@ -98,10 +98,10 @@ namespace shibsp {
             Logging = 512,
             Handlers = 1024
         };
-        
+
         /**
          * Set a bitmask of subsystems to activate.
-         * 
+         *
          * @param enabled   bitmask of component constants
          */
         void setFeatures(unsigned long enabled) {
@@ -110,51 +110,61 @@ namespace shibsp {
 
         /**
          * Test whether a subsystem is enabled.
-         * 
+         *
          * @param feature   subsystem/component to test
          * @return true iff feature is enabled
          */
         bool isEnabled(components_t feature) {
             return (m_features & feature)>0;
         }
-        
+
         /**
          * Initializes library
-         * 
+         *
          * Each process using the library MUST call this function exactly once
          * before using any library classes.
-         * 
+         *
          * @param catalog_path  delimited set of schema catalog files to load
          * @param inst_prefix   installation prefix for software
-         * @return true iff initialization was successful 
+         * @return true iff initialization was successful
          */
         virtual bool init(const char* catalog_path=NULL, const char* inst_prefix=NULL);
-        
+
         /**
          * Shuts down library
-         * 
+         *
          * Each process using the library SHOULD call this function exactly once
          * before terminating itself.
          */
         virtual void term();
-        
+
         /**
          * Sets the global ServiceProvider instance.
          * This method must be externally synchronized with any code that uses the object.
          * Any previously set object is destroyed.
-         * 
+         *
          * @param serviceProvider   new ServiceProvider instance to store
          */
         void setServiceProvider(ServiceProvider* serviceProvider);
-        
+
         /**
          * Returns the global ServiceProvider instance.
-         * 
+         *
          * @return  global ServiceProvider or NULL
          */
         ServiceProvider* getServiceProvider() const {
             return m_serviceProvider;
         }
+
+        /**
+         * Instantiates and installs a ServiceProvider instance based on an XML configuration string
+         * or a configuration pathname.
+         *
+         * @param config    a snippet of XML to parse (it <strong>MUST</strong> contain a type attribute) or a pathname
+         * @param rethrow   true iff caught exceptions should be rethrown instead of just returning the status
+         * @return true iff instantiation was successful
+         */
+        virtual bool instantiate(const char* config=NULL, bool rethrow=false);
 
 #ifndef SHIBSP_LITE
         /**
@@ -162,17 +172,17 @@ namespace shibsp {
          *
          * <p>This method must be externally synchronized with any code that uses the object.
          * Any previously set object is destroyed.
-         * 
+         *
          * @param artifactResolver   new ArtifactResolver instance to store
          */
         void setArtifactResolver(opensaml::MessageDecoder::ArtifactResolver* artifactResolver) {
             delete m_artifactResolver;
             m_artifactResolver = artifactResolver;
         }
-        
+
         /**
          * Returns the global ArtifactResolver instance.
-         * 
+         *
          * @return  global ArtifactResolver or NULL
          */
         opensaml::MessageDecoder::ArtifactResolver* getArtifactResolver() const {
@@ -182,7 +192,7 @@ namespace shibsp {
 
         /** Separator for serialized values of multi-valued attributes. */
         char attribute_value_delimeter;
-        
+
         /**
          * Manages factories for AccessControl plugins.
          */

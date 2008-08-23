@@ -31,6 +31,7 @@
 using namespace shibsp;
 #ifndef SHIBSP_LITE
 # include "SessionCache.h"
+# include "metadata/MetadataProviderCriteria.h"
 # include <saml/version.h>
 using namespace opensaml::saml2md;
 using namespace opensaml;
@@ -426,10 +427,10 @@ pair<bool,long> StatusHandler::processMessage(
         if (param) {
             MetadataProvider* m = application.getMetadataProvider();
             Locker mlock(m);
-            relyingParty = application.getRelyingParty(m->getEntityDescriptor(MetadataProvider::Criteria(param)).first);
+            relyingParty = application.getRelyingParty(m->getEntityDescriptor(MetadataProviderCriteria(application, param)).first);
         }
         else {
-            relyingParty = application.getRelyingParty(NULL);
+            relyingParty = &application;
         }
 
         s << "<Application id='" << application.getId() << "' entityID='" << relyingParty->getString("entityID").second << "'/>";

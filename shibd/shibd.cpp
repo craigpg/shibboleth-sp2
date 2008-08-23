@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -124,27 +124,9 @@ int real_main(int preinit)
             fprintf(stderr, "configuration is invalid, see console for specific problems\n");
             return -1;
         }
-        
-        if (!shar_config)
-            shar_config=getenv("SHIBSP_CONFIG");
-        if (!shar_config)
-            shar_config=SHIBSP_CONFIG;
 
-        try {
-            static const XMLCh path[] = UNICODE_LITERAL_4(p,a,t,h);
-            static const XMLCh validate[] = UNICODE_LITERAL_8(v,a,l,i,d,a,t,e);
-            xercesc::DOMDocument* dummydoc=XMLToolingConfig::getConfig().getParser().newDocument();
-            XercesJanitor<xercesc::DOMDocument> docjanitor(dummydoc);
-            xercesc::DOMElement* dummy = dummydoc->createElementNS(NULL,path);
-            auto_ptr_XMLCh src(shar_config);
-            dummy->setAttributeNS(NULL,path,src.get());
-            dummy->setAttributeNS(NULL,validate,xmlconstants::XML_ONE);
-    
-            conf.setServiceProvider(conf.ServiceProviderManager.newPlugin(XML_SERVICE_PROVIDER,dummy));
-            conf.getServiceProvider()->init();
-        }
-        catch (exception& ex) {
-            fprintf(stderr, "caught exception while loading configuration: %s\n", ex.what());
+        if (!conf.instantiate(shar_config)) {
+            fprintf(stderr, "configuration is invalid, check console for specific problems\n");
             conf.term();
             return -2;
         }
@@ -289,26 +271,8 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    if (!shar_config)
-        shar_config=getenv("SHIBSP_CONFIG");
-    if (!shar_config)
-        shar_config=SHIBSP_CONFIG;
-    
-    try {
-        static const XMLCh path[] = UNICODE_LITERAL_4(p,a,t,h);
-        static const XMLCh validate[] = UNICODE_LITERAL_8(v,a,l,i,d,a,t,e);
-        xercesc::DOMDocument* dummydoc=XMLToolingConfig::getConfig().getParser().newDocument();
-        XercesJanitor<xercesc::DOMDocument> docjanitor(dummydoc);
-        xercesc::DOMElement* dummy = dummydoc->createElementNS(NULL,path);
-        auto_ptr_XMLCh src(shar_config);
-        dummy->setAttributeNS(NULL,path,src.get());
-        dummy->setAttributeNS(NULL,validate,xmlconstants::XML_ONE);
-
-        conf.setServiceProvider(conf.ServiceProviderManager.newPlugin(XML_SERVICE_PROVIDER,dummy));
-        conf.getServiceProvider()->init();
-    }
-    catch (exception& ex) {
-        fprintf(stderr, "caught exception while loading configuration: %s\n", ex.what());
+    if (!conf.instantiate(shar_config)) {
+        fprintf(stderr, "configuration is invalid, check console for specific problems\n");
         conf.term();
         return -2;
     }
@@ -327,7 +291,7 @@ int main(int argc, char *argv[])
                 perror(pidfile);  // keep running though
             }
         }
-    
+
         // Run the listener
         if (!conf.getServiceProvider()->getListenerService()->run(&shibd_shutdown)) {
             fprintf(stderr, "listener failed to enter listen loop\n");

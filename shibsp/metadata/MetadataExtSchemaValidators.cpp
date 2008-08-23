@@ -24,9 +24,12 @@
 #include "exceptions.h"
 #include "metadata/MetadataExt.h"
 
+#include <saml/SAMLConfig.h>
+#include <saml/saml2/metadata/MetadataProvider.h>
 #include <xmltooling/validation/ValidatorSuite.h>
 
 using namespace shibsp;
+using namespace opensaml::saml2md;
 using namespace xmltooling;
 using namespace std;
 
@@ -38,6 +41,8 @@ namespace shibsp {
     BEGIN_XMLOBJECTVALIDATOR(SHIBSP_DLLLOCAL,KeyAuthority);
         XMLOBJECTVALIDATOR_NONEMPTY(KeyAuthority,KeyInfo);
     END_XMLOBJECTVALIDATOR;
+    
+    SHIBSP_DLLLOCAL PluginManager<MetadataProvider,string,const DOMElement*>::Factory DynamicMetadataProviderFactory;
 };
 
 #define REGISTER_ELEMENT(cname) \
@@ -49,4 +54,6 @@ void shibsp::registerMetadataExtClasses() {
     QName q;
     REGISTER_ELEMENT(Scope);
     REGISTER_ELEMENT(KeyAuthority);
+
+    opensaml::SAMLConfig::getConfig().MetadataProviderManager.registerFactory(DYNAMIC_METADATA_PROVIDER, DynamicMetadataProviderFactory);
 }

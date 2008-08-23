@@ -79,7 +79,7 @@ namespace shibsp {
          * @param cache         true iff the request should hold the Session lock itself and unlock during cleanup
          * @return pointer to Session, or NULL
          */
-        virtual Session* getSession(bool checkTimeout=true, bool ignoreAddress=false, bool cache=true) const=0;
+        virtual Session* getSession(bool checkTimeout=true, bool ignoreAddress=false, bool cache=true)=0;
 
         /**
          * Returns the effective base Handler URL for a resource,

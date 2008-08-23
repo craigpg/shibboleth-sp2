@@ -79,7 +79,8 @@ liteinclude_HEADERS = \
 	lite/SAMLConstants.h
 
 mdinclude_HEADERS = \
-	metadata/MetadataExt.h
+	metadata/MetadataExt.h \
+	metadata/MetadataProviderCriteria.h
 
 reminclude_HEADERS = \
 	remoting/ddf.h \
@@ -153,6 +154,7 @@ libshibsp_lite_la_SOURCES = \
 libshibsp_la_SOURCES = \
 	${common_sources} \
 	attribute/NameIDAttributeDecoder.cpp \
+	attribute/NameIDFromScopedAttributeDecoder.cpp \
 	attribute/ScopedAttributeDecoder.cpp \
 	attribute/StringAttributeDecoder.cpp \
 	attribute/filtering/impl/AttributeFilter.cpp \
@@ -183,6 +185,7 @@ libshibsp_la_SOURCES = \
 	attribute/resolver/impl/XMLAttributeExtractor.cpp \
 	binding/impl/ArtifactResolver.cpp \
 	binding/impl/SOAPClient.cpp \
+	metadata/DynamicMetadataProvider.cpp \
 	metadata/MetadataExtImpl.cpp \
 	metadata/MetadataExtSchemaValidators.cpp \
 	security/PKIXTrustEngine.cpp \
@@ -190,8 +193,8 @@ libshibsp_la_SOURCES = \
 
 # this is different from the project version
 # http://sources.redhat.com/autobook/autobook/autobook_91.html
-libshibsp_la_LDFLAGS = $(XMLSEC_LIBS) -version-info 1:0:0
-libshibsp_lite_la_LDFLAGS = $(LITE_LIBS) -version-info 1:0:0
+libshibsp_la_LDFLAGS = $(XMLSEC_LIBS) -version-info 2:0:0
+libshibsp_lite_la_LDFLAGS = $(LITE_LIBS) -version-info 2:0:0
 libshibsp_lite_la_CPPFLAGS = -DSHIBSP_LITE
 
 paths.h: ${srcdir}/paths.h.in Makefile ${top_builddir}/config.status

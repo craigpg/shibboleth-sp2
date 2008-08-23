@@ -38,6 +38,7 @@
 #include <shibsp/attribute/Attribute.h>
 #include <shibsp/attribute/resolver/ResolutionContext.h>
 #include <shibsp/handler/AssertionConsumerService.h>
+#include <shibsp/metadata/MetadataProviderCriteria.h>
 #include <shibsp/util/SPConstants.h>
 
 #include <saml/saml1/core/Assertions.h>
@@ -216,7 +217,7 @@ int main(int argc,char* argv[])
 
             MetadataProvider* m=app->getMetadataProvider();
             xmltooling::Locker mlocker(m);
-            MetadataProvider::Criteria mc(i_param, &IDPSSODescriptor::ELEMENT_QNAME, protocol);
+            MetadataProviderCriteria mc(*app, i_param, &IDPSSODescriptor::ELEMENT_QNAME, protocol);
             pair<const EntityDescriptor*,const RoleDescriptor*> site=m->getEntityDescriptor(mc);
             if (!site.first)
                 throw MetadataException("Unable to locate metadata for IdP ($1).", params(1,i_param));
@@ -287,7 +288,7 @@ int main(int argc,char* argv[])
 
             MetadataProvider* m=app->getMetadataProvider();
             xmltooling::Locker mlocker(m);
-            MetadataProvider::Criteria mc(issuer, &IDPSSODescriptor::ELEMENT_QNAME, protocol);
+            MetadataProviderCriteria mc(*app, issuer, &IDPSSODescriptor::ELEMENT_QNAME, protocol);
             pair<const EntityDescriptor*,const RoleDescriptor*> site=m->getEntityDescriptor(mc);
             if (!site.first) {
                 auto_ptr_char temp(issuer);
