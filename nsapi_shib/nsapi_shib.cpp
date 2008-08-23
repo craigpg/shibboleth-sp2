@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * nsapi_shib.cpp
- * 
+ *
  * Shibboleth NSAPI filter
  */
 
@@ -44,8 +44,10 @@
 #include <xmltooling/util/XMLHelper.h>
 #include <xercesc/util/XMLUniDefs.hpp>
 
+#include <memory>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 
 #ifdef WIN32
 # include <process.h>
@@ -139,22 +141,9 @@ extern "C" NSAPI_PUBLIC int nsapi_shib_init(pblock* pb, ::Session* sn, Request* 
 
     g_Config->RequestMapperManager.registerFactory(XML_REQUEST_MAPPER,&SunRequestMapFactory);
 
-    const char* config=pblock_findval("shib-config",pb);
-    if (!config)
-        config=getenv("SHIBSP_CONFIG");
-    if (!config)
-        config=SHIBSP_CONFIG;
-
     try {
-        xercesc::DOMDocument* dummydoc=XMLToolingConfig::getConfig().getParser().newDocument();
-        XercesJanitor<xercesc::DOMDocument> docjanitor(dummydoc);
-        xercesc::DOMElement* dummy = dummydoc->createElementNS(NULL,path);
-        auto_ptr_XMLCh src(config);
-        dummy->setAttributeNS(NULL,path,src.get());
-        dummy->setAttributeNS(NULL,validate,xmlconstants::XML_ONE);
-
-        g_Config->setServiceProvider(g_Config->ServiceProviderManager.newPlugin(XML_SERVICE_PROVIDER,dummy));
-        g_Config->getServiceProvider()->init();
+        if (!g_Config->instantiate(pblock_findval("shib-config",pb), true))
+            throw runtime_error("unknown error");
     }
     catch (exception& ex) {
         pblock_nvinsert("error",ex.what(),pb);
@@ -259,7 +248,7 @@ public:
     if (level>=SPError)
         log_error(LOG_FAILURE, "nsapi_shib", m_sn, m_rq, const_cast<char*>(msg.c_str()));
   }
-  const char* getQueryString() const { 
+  const char* getQueryString() const {
     return pblock_findval("query", m_rq->reqpb);
   }
   const char* getRequestBody() const {
@@ -468,7 +457,7 @@ public:
     Lockable* lock() { return m_mapper->lock(); }
     void unlock() { m_stKey->setData(NULL); m_propsKey->setData(NULL); m_mapper->unlock(); }
     Settings getSettings(const HTTPRequest& request) const;
-    
+
     const PropertySet* getParent() const { return NULL; }
     void setParent(const PropertySet*) {}
     pair<bool,bool> getBool(const char* name, const char* ns=NULL) const;

@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * StringAttributeDecoder.cpp
- * 
+ *
  * Decodes SAML into SimpleAttributes
  */
 
@@ -61,7 +61,7 @@ shibsp::Attribute* StringAttributeDecoder::decode(
     vector<string>& dest = simple->getValues();
     vector<XMLObject*>::const_iterator v,stop;
 
-    Category& log = Category::getInstance(SHIBSP_LOGCAT".AttributeDecoder");
+    Category& log = Category::getInstance(SHIBSP_LOGCAT".AttributeDecoder.String");
 
     if (xmlObject && XMLString::equals(opensaml::saml1::Attribute::LOCAL_NAME,xmlObject->getElementQName().getLocalPart())) {
         const opensaml::saml2::Attribute* saml2attr = dynamic_cast<const opensaml::saml2::Attribute*>(xmlObject);

@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,8 +16,8 @@
 
 /**
  * AbstractSPRequest.cpp
- * 
- * Abstract base for SPRequest implementations  
+ *
+ * Abstract base for SPRequest implementations
  */
 
 #include "internal.h"
@@ -69,11 +69,11 @@ const Application& AbstractSPRequest::getApplication() const
         m_app=m_sp->getApplication(getRequestSettings().first->getString("applicationId").second);
         if (!m_app)
             throw ConfigurationException("Unable to map request to application settings, check configuration.");
-    }    
+    }
     return *m_app;
 }
 
-Session* AbstractSPRequest::getSession(bool checkTimeout, bool ignoreAddress, bool cache) const
+Session* AbstractSPRequest::getSession(bool checkTimeout, bool ignoreAddress, bool cache)
 {
     // Only attempt this once.
     if (cache && m_sessionTried)
@@ -82,7 +82,7 @@ Session* AbstractSPRequest::getSession(bool checkTimeout, bool ignoreAddress, bo
         m_sessionTried = true;
 
     // Need address checking and timeout settings.
-    time_t timeout=0;
+    time_t timeout=3600;
     if (checkTimeout || !ignoreAddress) {
         const PropertySet* props=getApplication().getPropertySet("Sessions");
         if (props) {
@@ -160,7 +160,7 @@ const char* AbstractSPRequest::getRequestURL() const
         int port = getPort();
         const char* scheme = getScheme();
         m_url = string(scheme) + "://" + getHostname();
-        if ((!strcmp(scheme,"http") && port!=80) || (!strcmp(scheme,"https") && port!=443)) { 
+        if ((!strcmp(scheme,"http") && port!=80) || (!strcmp(scheme,"https") && port!=443)) {
             ostringstream portstr;
             portstr << port;
             m_url += ":" + portstr.str();
@@ -174,7 +174,7 @@ const char* AbstractSPRequest::getParameter(const char* name) const
 {
     if (!m_parser)
         m_parser=new CGIParser(*this);
-    
+
     pair<CGIParser::walker,CGIParser::walker> bounds=m_parser->getParameters(name);
     return (bounds.first==bounds.second) ? NULL : bounds.first->second;
 }
@@ -199,7 +199,7 @@ const char* AbstractSPRequest::getHandlerURL(const char* resource) const
 
     if (!m_handlerURL.empty() && resource && !strcmp(getRequestURL(),resource))
         return m_handlerURL.c_str();
-        
+
 #ifdef HAVE_STRCASECMP
     if (!resource || (strncasecmp(resource,"http://",7) && strncasecmp(resource,"https://",8)))
 #else
@@ -207,7 +207,7 @@ const char* AbstractSPRequest::getHandlerURL(const char* resource) const
 #endif
         throw ConfigurationException("Target resource was not an absolute URL.");
 
-    bool ssl_only=false;
+    bool ssl_only=true;
     const char* handler=NULL;
     const PropertySet* props=m_app->getPropertySet("Sessions");
     if (props) {
@@ -218,7 +218,7 @@ const char* AbstractSPRequest::getHandlerURL(const char* resource) const
         if (p2.first)
             handler=p2.second;
     }
-    
+
     // Should never happen...
     if (!handler || (*handler!='/' && strncmp(handler,"http:",5) && strncmp(handler,"https:",6)))
         throw ConfigurationException(

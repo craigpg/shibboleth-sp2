@@ -29,9 +29,9 @@
 #include "handler/RemotedHandler.h"
 #include "handler/SessionInitiator.h"
 #include "util/SPConstants.h"
-#include <memory>
 
 #ifndef SHIBSP_LITE
+# include "metadata/MetadataProviderCriteria.h"
 # include <saml/SAMLConfig.h>
 # include <saml/saml2/core/Protocols.h>
 # include <saml/saml2/metadata/EndpointManager.h>
@@ -245,11 +245,9 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         option = request.getParameter("target");
         if (option)
             target = option;
-        if (acsByIndex.first && !acsByIndex.second) {
-            // Since we're passing the ACS by value, we need to compute the return URL,
-            // so we'll need the target resource for real.
-            recoverRelayState(request.getApplication(), request, request, target, false);
-        }
+            
+        // Always need to recover target URL to compute handler below.
+        recoverRelayState(request.getApplication(), request, request, target, false);
 
         pair<bool,bool> flag;
         option = request.getParameter("isPassive");
@@ -533,7 +531,7 @@ pair<bool,long> SAML2SessionInitiator::doRequest(
     }
     else {
         // Use metadata to locate the IdP's SSO service.
-        MetadataProvider::Criteria mc(entityID, &IDPSSODescriptor::ELEMENT_QNAME, samlconstants::SAML20P_NS);
+        MetadataProviderCriteria mc(app, entityID, &IDPSSODescriptor::ELEMENT_QNAME, samlconstants::SAML20P_NS);
         entity=m->getEntityDescriptor(mc);
         if (!entity.first) {
             m_log.warn("unable to locate metadata for provider (%s)", entityID);
@@ -611,8 +609,11 @@ pair<bool,long> SAML2SessionInitiator::doRequest(
             cref->setReference(wideclass.get());
             reqContext->getAuthnContextClassRefs().push_back(cref);
         }
-        if (authnContextComparison &&
-                (!reqContext->getAuthnContextClassRefs().empty() || !reqContext->getAuthnContextDeclRefs().empty())) {
+        
+        if (reqContext->getAuthnContextClassRefs().empty() && reqContext->getAuthnContextDeclRefs().empty()) {
+        	req->setRequestedAuthnContext(NULL);
+        }
+        else if (authnContextComparison) {
             auto_ptr_XMLCh widecomp(authnContextComparison);
             reqContext->setComparison(widecomp.get());
         }

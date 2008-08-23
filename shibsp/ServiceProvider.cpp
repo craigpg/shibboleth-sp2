@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * ServiceProvider.cpp
- * 
+ *
  * Interface to a Shibboleth ServiceProvider instance.
  */
 
@@ -87,7 +87,7 @@ namespace shibsp {
         request.setContentType("text/html");
         request.setResponseHeader("Expires","01-Jan-1997 12:00:00 GMT");
         request.setResponseHeader("Cache-Control","private,no-store,no-cache");
-    
+
         if (!pathname.first && props) {
             if (mderror)
                 pathname=props->getString("metadata");
@@ -104,17 +104,17 @@ namespace shibsp {
                 return request.sendResponse(str);
             }
         }
-        
+
         if (!strcmp(page,"access")) {
             istringstream msg("Access Denied");
             return request.sendResponse(msg, HTTPResponse::XMLTOOLING_HTTP_STATUS_UNAUTHORIZED);
         }
-    
+
         log.error("sendError could not process error template (%s)", page);
         istringstream msg("Internal Server Error. Please contact the site administrator.");
         return request.sendError(msg);
     }
-    
+
     void SHIBSP_DLLLOCAL clearHeaders(SPRequest& request) {
         request.clearHeader("Shib-Session-ID", "HTTP_SHIB_SESSION_ID");
         request.clearHeader("Shib-Identity-Provider", "HTTP_SHIB_IDENTITY_PROVIDER");
@@ -172,7 +172,7 @@ pair<bool,long> ServiceProvider::doAuthentication(SPRequest& request, bool handl
                 }
             }
         }
-        
+
         const char* handlerURL=request.getHandlerURL(targetURL.c_str());
         if (!handlerURL)
             throw ConfigurationException("Cannot determine handler from resource URL, check configuration.");
@@ -222,7 +222,7 @@ pair<bool,long> ServiceProvider::doAuthentication(SPRequest& request, bool handl
                 return make_pair(true,request.returnOK());
 
             // No session, but we require one. Initiate a new session using the indicated method.
-            const Handler* initiator=NULL;
+            const SessionInitiator* initiator=NULL;
             if (requireSessionWith.first) {
                 initiator=app->getSessionInitiatorById(requireSessionWith.second);
                 if (!initiator) {
@@ -291,7 +291,7 @@ pair<bool,long> ServiceProvider::doAuthorization(SPRequest& request) const
             catch (exception& e) {
                 log.warn("unable to obtain session to pass to access control provider: %s", e.what());
             }
-	
+
             Locker acllock(settings.second);
             switch (settings.second->authorized(request,session)) {
                 case AccessControl::shib_acl_true:
@@ -354,7 +354,7 @@ pair<bool,long> ServiceProvider::doExport(SPRequest& request, bool requireSessio
         	else
         		return make_pair(false,0L);	// just bail silently
         }
-        
+
         request.setHeader("Shib-Application-ID", app->getId());
         request.setHeader("Shib-Session-ID", session->getID());
 
@@ -373,7 +373,7 @@ pair<bool,long> ServiceProvider::doExport(SPRequest& request, bool requireSessio
         hval = session->getAuthnContextDeclRef();
         if (hval)
             request.setHeader("Shib-AuthnContext-Decl", hval);
-        
+
         // Maybe export the assertion keys.
         pair<bool,bool> exp=settings.first->getBool("exportAssertion");
         if (exp.first && exp.second) {
@@ -505,7 +505,7 @@ pair<bool,long> ServiceProvider::doHandler(SPRequest& request) const
 
         // Process incoming request.
         pair<bool,bool> handlerSSL=sessionProps->getBool("handlerSSL");
-      
+
         // Make sure this is SSL, if it should be
         if ((!handlerSSL.first || handlerSSL.second) && !request.isSecure())
             throw opensaml::FatalProfileException("Blocked non-SSL access to Shibboleth handler.");
@@ -521,7 +521,7 @@ pair<bool,long> ServiceProvider::doHandler(SPRequest& request) const
         // Did the handler run successfully?
         if (hret.first)
             return hret;
-       
+
         throw ConfigurationException("Configured Shibboleth handler failed to process the request.");
     }
     catch (exception& e) {

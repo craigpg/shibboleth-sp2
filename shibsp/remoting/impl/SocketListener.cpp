@@ -25,7 +25,6 @@
 #include "ServiceProvider.h"
 #include "remoting/impl/SocketListener.h"
 
-#include <memory>
 #include <errno.h>
 #include <stack>
 #include <sstream>
@@ -306,7 +305,8 @@ DDF SocketListener::send(const DDF& in)
     log->debug("send completed, reading response message");
 
     // Read the message.
-    if (recv(sock,(char*)&len,sizeof(len)) != sizeof(len)) {
+    while (recv(sock,(char*)&len,sizeof(len)) != sizeof(len)) {
+    	if (errno == EINTR) continue;	// Apparently this happens when a signal interrupts the blocking call.
         log->error("error reading size of output message");
         this->close(sock);
         throw ListenerException("Failure receiving response to remoted message ($1).", params(1,in.name()));
@@ -316,9 +316,15 @@ DDF SocketListener::send(const DDF& in)
     char buf[16384];
     int size_read;
     stringstream is;
-    while (len && (size_read = recv(sock, buf, sizeof(buf))) > 0) {
-        is.write(buf, size_read);
-        len -= size_read;
+    while (len) {
+    	size_read = recv(sock, buf, sizeof(buf));
+    	if (size_read > 0) {
+            is.write(buf, size_read);
+            len -= size_read;
+    	}
+    	else if (errno != EINTR) {
+    		break;
+    	}
     }
     
     if (len) {

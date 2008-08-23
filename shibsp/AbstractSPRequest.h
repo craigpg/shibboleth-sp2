@@ -66,7 +66,7 @@ namespace shibsp {
 
         const Application& getApplication() const;
         
-        Session* getSession(bool checkTimeout=true, bool ignoreAddress=false, bool cache=true) const;
+        Session* getSession(bool checkTimeout=true, bool ignoreAddress=false, bool cache=true);
 
         const char* getRequestURI() const {
             return m_uri.c_str();
