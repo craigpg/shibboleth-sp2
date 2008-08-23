@@ -26,7 +26,7 @@ endif
 
 # These variable is used only by get-orig-source, which will normally only be
 # run by maintainers.
-VERSION = 2.0
+VERSION = 2.1
 DEBVERS = dfsg1
 URL     = http://shibboleth.internet2.edu/downloads/shibboleth/cppsp
 
