@@ -13,6 +13,7 @@
         <Rule xsi:type="AttributeValueString" value="member"/>
         <Rule xsi:type="AttributeValueString" value="affiliate"/>
         <Rule xsi:type="AttributeValueString" value="employee"/>
+        <Rule xsi:type="AttributeValueString" value="library-walk-in"/>
     </afp:PermitValueRule>
     
     <!--

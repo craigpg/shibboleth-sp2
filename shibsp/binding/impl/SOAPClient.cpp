@@ -67,6 +67,7 @@ void SOAPClient::send(const soap11::Envelope& env, const char* from, MetadataCre
             // Reset criteria back.
             to.setKeyAlgorithm(NULL);
             to.setKeySize(0);
+            to.getKeyNames().clear();
 
             if (cred) {
                 // Check for message.
@@ -133,6 +134,7 @@ void SOAPClient::prepareTransport(SOAPTransport& transport)
             if (authType.first)
                 m_criteria->getKeyNames().insert(authType.second);
             const Credential* cred = m_credResolver->resolve(m_criteria);
+            m_criteria->getKeyNames().clear();
             if (cred) {
                 if (!transport.setCredential(cred))
                     log.error("failed to load Credential into SOAPTransport");

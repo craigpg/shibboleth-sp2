@@ -67,8 +67,8 @@ using namespace std;
 
 /* table definitions
 CREATE TABLE version (
-    major tinyint NOT NULL,
-    minor tinyint NOT NULL
+    major int NOT NULL,
+    minor int NOT NULL
     )
 
 CREATE TABLE strings (
@@ -457,7 +457,7 @@ bool ODBCStorageService::createRow(const char* table, const char* context, const
     }
     m_log.debug("SQLPrepare succeeded. SQL: %s", q.c_str());
 
-    SQLINTEGER b_ind = SQL_NTS;
+    SQLLEN b_ind = SQL_NTS;
     sr = SQLBindParam(stmt, 1, SQL_C_CHAR, SQL_VARCHAR, 255, 0, const_cast<char*>(context), &b_ind);
     if (!SQL_SUCCEEDED(sr)) {
         m_log.error("SQLBindParam failed (context = %s)", context);
@@ -562,7 +562,7 @@ int ODBCStorageService::readRow(
         return version; // nothing's changed, so just echo back the version
 
     if (pvalue) {
-        SQLINTEGER len;
+        SQLLEN len;
         SQLCHAR buf[LONGDATA_BUFLEN];
         while ((sr=SQLGetData(stmt,pexpiration ? 3 : 2,SQL_C_CHAR,buf,sizeof(buf),&len)) != SQL_NO_DATA) {
             if (!SQL_SUCCEEDED(sr)) {
@@ -656,7 +656,7 @@ int ODBCStorageService::updateRow(const char *table, const char* context, const 
     }
     m_log.debug("SQLPrepare succeeded. SQL: %s", q.c_str());
 
-    SQLINTEGER b_ind = SQL_NTS;
+    SQLLEN b_ind = SQL_NTS;
     if (value) {
         if (strcmp(table, TEXT_TABLE)==0)
             sr = SQLBindParam(stmt, 1, SQL_C_CHAR, SQL_LONGVARCHAR, strlen(value), 0, const_cast<char*>(value), &b_ind);

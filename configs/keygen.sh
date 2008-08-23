@@ -66,4 +66,5 @@ else
     openssl req -config sp-cert.cnf -new -x509 -days $DAYS -keyout sp-key.pem -out sp-cert.pem 2> /dev/null
 fi
 
+chmod 600 sp-key.pem
 rm sp-cert.cnf

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <schema targetNamespace="urn:mace:shibboleth:2.0:afp:mf:saml" xmlns="http://www.w3.org/2001/XMLSchema"
-    xmlns:saml="urn:mace:shibboleth:2.0:afp:mf:saml" xmlns:afp="urn:mace:shibboleth:2.0:afp">
+    xmlns:saml="urn:mace:shibboleth:2.0:afp:mf:saml" xmlns:afp="urn:mace:shibboleth:2.0:afp" version="2.0">
 
     <import namespace="urn:mace:shibboleth:2.0:afp" schemaLocation="classpath:/schema/shibboleth-2.0-afp.xsd" />
 
@@ -26,7 +26,7 @@
     <complexType name="AttributeIssuerInEntityGroup">
         <annotation>
             <documentation>
-                A match function that evaluates to true if the attribute producer is found in metadata and is a member
+                A match function that evaluates to true if the attribute issuer is found in metadata and is a member
                 of the given entity group.
             </documentation>
         </annotation>
@@ -50,7 +50,7 @@
     <complexType name="AttributeScopeMatchesShibMDScope">
         <annotation>
             <documentation>
-                A match function that ensures that an attributes value's scope matches a scope given in metadata for the entity or role.
+                A match function that ensures that an attribute value's scope matches a scope given in metadata for the entity or role.
             </documentation>
         </annotation>
         <complexContent>

@@ -27,6 +27,10 @@
 #include "handler/AbstractHandler.h"
 #include "handler/RemotedHandler.h"
 
+#ifndef SHIBSP_LITE
+# include "metadata/MetadataProviderCriteria.h"
+#endif
+
 #include <xercesc/framework/LocalFileInputSource.hpp>
 #include <xercesc/framework/Wrapper4InputSource.hpp>
 
@@ -211,11 +215,11 @@ pair<bool,long> MetadataGenerator::processMessage(
     if (entityID) {
         MetadataProvider* m=application.getMetadataProvider();
         Locker locker(m);
-        MetadataProvider::Criteria mc(entityID);
+        MetadataProviderCriteria mc(application, entityID);
         relyingParty = application.getRelyingParty(m->getEntityDescriptor(mc).first);
     }
     else {
-        relyingParty = application.getRelyingParty(NULL);
+        relyingParty = &application;
     }
 
     EntityDescriptor* entity;

@@ -2,7 +2,8 @@
 <schema targetNamespace="urn:mace:shibboleth:2.0:attribute-map"
         xmlns="http://www.w3.org/2001/XMLSchema"
         xmlns:am="urn:mace:shibboleth:2.0:attribute-map"
-        elementFormDefault="qualified">
+        elementFormDefault="qualified"
+        version="2.1">
 
     <annotation>
         <documentation>
@@ -12,6 +13,12 @@
 
     <simpleType name="string">
         <restriction base="string">
+            <minLength value="1"/>
+        </restriction>
+    </simpleType>
+
+    <simpleType name="anyURI">
+        <restriction base="anyURI">
             <minLength value="1"/>
         </restriction>
     </simpleType>
@@ -94,7 +101,7 @@
         </annotation>
         <complexContent>
             <extension base="am:AttributeDecoderType">
-                <attribute name="scopeDelimiter" type="am:string" default="@">
+                <attribute name="scopeDelimiter" type="am:string">
                     <annotation>
                         <documentation>
                             The character(s) used to delimit the scoped information from the scope.
@@ -113,7 +120,34 @@
         </annotation>
         <complexContent>
             <extension base="am:AttributeDecoderType">
-                <attribute name="formatter" type="am:string" default="$Name!!$NameQualifier!!$SPNameQualifier">
+                <attribute name="formatter" type="am:string">
+                    <annotation>
+                        <documentation>
+                            The pattern used to generate string versions of the attribute's values.
+                        </documentation>
+                    </annotation>
+                </attribute>
+            </extension>
+        </complexContent>
+    </complexType>
+
+    <complexType name="NameIDFromScopedAttributeDecoder">
+        <annotation>
+            <documentation>
+                Decoder for attributes with scoped values that produces a NameID attribute with
+                the scope dropped and the NameQualifiers defaulted.
+            </documentation>
+        </annotation>
+        <complexContent>
+            <extension base="am:ScopedAttributeDecoder">
+                <attribute name="format" type="am:anyURI">
+                    <annotation>
+                        <documentation>
+                            Value to use as the NameID Format.
+                        </documentation>
+                    </annotation>
+                </attribute>
+                <attribute name="formatter" type="am:string">
                     <annotation>
                         <documentation>
                             The pattern used to generate string versions of the attribute's values.

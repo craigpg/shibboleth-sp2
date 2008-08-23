@@ -28,17 +28,25 @@
     
     <!-- A persistent id attribute that supports personalized anonymous access. -->
     
-    <!-- First, the deprecated version: -->
+    <!-- First, the deprecated version, decoded as a scoped string: -->
     <Attribute name="urn:mace:dir:attribute-def:eduPersonTargetedID" id="targeted-id">
         <AttributeDecoder xsi:type="ScopedAttributeDecoder"/>
+        <!-- <AttributeDecoder xsi:type="NameIDFromScopedAttributeDecoder" formatter="$NameQualifier!$SPNameQualifier!$Name"/> -->
     </Attribute>
-
-    <!-- Second, the new version (note the OID-style name): -->
+    
+    <!-- Second, an alternate decoder that will turn the deprecated form into the newer form. -->
+    <!--
+    <Attribute name="urn:mace:dir:attribute-def:eduPersonTargetedID" id="persistent-id">
+        <AttributeDecoder xsi:type="NameIDFromScopedAttributeDecoder" formatter="$NameQualifier!$SPNameQualifier!$Name"/>
+    </Attribute>
+    -->
+    
+    <!-- Third, the new version (note the OID-style name): -->
     <Attribute name="urn:oid:1.3.6.1.4.1.5923.1.1.1.10" id="persistent-id">
         <AttributeDecoder xsi:type="NameIDAttributeDecoder" formatter="$NameQualifier!$SPNameQualifier!$Name"/>
     </Attribute>
 
-    <!-- Third, the SAML 2.0 NameID Format: -->
+    <!-- Fourth, the SAML 2.0 NameID Format: -->
     <Attribute name="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent" id="persistent-id">
         <AttributeDecoder xsi:type="NameIDAttributeDecoder" formatter="$NameQualifier!$SPNameQualifier!$Name"/>
     </Attribute>
