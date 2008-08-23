@@ -29,7 +29,6 @@
 #include "handler/RemotedHandler.h"
 #include "handler/SessionInitiator.h"
 #include "util/SPConstants.h"
-#include <memory>
 
 #ifndef SHIBSP_LITE
 # include "metadata/MetadataProviderCriteria.h"

@@ -32,7 +32,6 @@
 #include "remoting/ListenerService.h"
 #include "util/DOMPropertySet.h"
 #include "util/SPConstants.h"
-#include <memory>
 
 #if defined(XMLTOOLING_LOG4SHIB)
 # include <log4shib/PropertyConfigurator.hh>

@@ -27,7 +27,6 @@
 #include "handler/AbstractHandler.h"
 #include "handler/RemotedHandler.h"
 #include "util/CGIParser.h"
-#include <memory>
 
 using namespace shibsp;
 #ifndef SHIBSP_LITE

@@ -30,6 +30,7 @@
 #ifndef SHIBSP_LITE
 # include "metadata/MetadataProviderCriteria.h"
 #endif
+
 #include <xercesc/framework/LocalFileInputSource.hpp>
 #include <xercesc/framework/Wrapper4InputSource.hpp>
 

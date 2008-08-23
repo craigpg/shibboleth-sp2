@@ -28,7 +28,6 @@
 #include "handler/AbstractHandler.h"
 #include "handler/RemotedHandler.h"
 #include "util/SPConstants.h"
-#include <memory>
 
 using namespace shibspconstants;
 using namespace shibsp;

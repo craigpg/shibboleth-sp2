@@ -25,7 +25,6 @@
 #include "attribute/filtering/FilterPolicyContext.h"
 #include "util/SPConstants.h"
 
-#include <memory>
 #include <xercesc/util/XMLUniDefs.hpp>
 #include <xmltooling/util/XMLHelper.h>
 

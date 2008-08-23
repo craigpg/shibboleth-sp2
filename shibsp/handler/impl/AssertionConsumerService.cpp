@@ -27,7 +27,6 @@
 #include "handler/AssertionConsumerService.h"
 #include "util/SPConstants.h"
 
-# include <memory>
 # include <ctime>
 #ifndef SHIBSP_LITE
 # include "attribute/Attribute.h"
