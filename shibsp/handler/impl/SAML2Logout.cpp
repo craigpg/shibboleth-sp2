@@ -31,6 +31,7 @@
 #ifndef SHIBSP_LITE
 # include "SessionCacheEx.h"
 # include "security/SecurityPolicy.h"
+# include "metadata/MetadataProviderCriteria.h"
 # include "util/TemplateParameters.h"
 # include <fstream>
 # include <saml/SAMLConfig.h>
@@ -284,7 +285,7 @@ pair<bool,long> SAML2Logout::doRequest(const Application& application, const HTT
         // We need metadata to issue a response.
         MetadataProvider* m = application.getMetadataProvider();
         Locker metadataLocker(m);
-        MetadataProvider::Criteria mc(request.getParameter("entityID"), &IDPSSODescriptor::ELEMENT_QNAME, samlconstants::SAML20P_NS);
+        MetadataProviderCriteria mc(application, request.getParameter("entityID"), &IDPSSODescriptor::ELEMENT_QNAME, samlconstants::SAML20P_NS);
         pair<const EntityDescriptor*,const RoleDescriptor*> entity = m->getEntityDescriptor(mc);
         if (!entity.first) {
             throw MetadataException(

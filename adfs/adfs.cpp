@@ -34,6 +34,8 @@
 # define ADFS_EXPORTS
 #endif
 
+#include <memory>
+
 #include <shibsp/base.h>
 #include <shibsp/exceptions.h>
 #include <shibsp/Application.h>
@@ -51,6 +53,7 @@
 
 #ifndef SHIBSP_LITE
 # include <shibsp/attribute/resolver/ResolutionContext.h>
+# include <shibsp/metadata/MetadataProviderCriteria.h>
 # include <saml/SAMLConfig.h>
 # include <saml/saml1/core/Assertions.h>
 # include <saml/saml1/profile/AssertionValidator.h>
@@ -178,7 +181,7 @@ namespace {
 #endif
     };
 
-    class SHIBSP_DLLLOCAL ADFSLogoutInitiator : public AbstractHandler, public RemotedHandler
+    class SHIBSP_DLLLOCAL ADFSLogoutInitiator : public AbstractHandler, public LogoutHandler
     {
     public:
         ADFSLogoutInitiator(const DOMElement* e, const char* appId)
@@ -214,7 +217,7 @@ namespace {
 #endif
 
     private:
-        pair<bool,long> doRequest(const Application& application, const char* entityID, HTTPResponse& httpResponse) const;
+        pair<bool,long> doRequest(const Application& application, const HTTPRequest& httpRequest, HTTPResponse& httpResponse, Session* session) const;
 
         string m_appId;
         auto_ptr_XMLCh m_binding;
@@ -453,7 +456,7 @@ pair<bool,long> ADFSSessionInitiator::doRequest(
     // Use metadata to invoke the SSO service directly.
     MetadataProvider* m=app.getMetadataProvider();
     Locker locker(m);
-    MetadataProvider::Criteria mc(entityID, &IDPSSODescriptor::ELEMENT_QNAME, m_binding.get());
+    MetadataProviderCriteria mc(app, entityID, &IDPSSODescriptor::ELEMENT_QNAME, m_binding.get());
     pair<const EntityDescriptor*,const RoleDescriptor*> entity=m->getEntityDescriptor(mc);
     if (!entity.first) {
         m_log.warn("unable to locate metadata for provider (%s)", entityID);
@@ -540,8 +543,10 @@ XMLObject* ADFSDecoder::decode(string& relayState, const GenericRequest& generic
     auto_ptr<XMLObject> xmlObject(XMLObjectBuilder::buildOneFromElement(doc->getDocumentElement(), true));
     janitor.release();
 
-    if (!XMLHelper::isNodeNamed(xmlObject->getDOM(), m_ns.get(), RequestSecurityTokenResponse))
+    if (!XMLString::equals(xmlObject->getElementQName().getLocalPart(), RequestSecurityTokenResponse)) {
+    	log.error("unrecognized root element on message: %s", xmlObject->getElementQName().toString().c_str());
         throw BindingException("Decoded message was not of the appropriate type.");
+    }
 
     if (!policy.getValidating())
         SchemaValidators.validate(xmlObject.get());
@@ -569,13 +574,21 @@ void ADFSConsumer::implementProtocol(
     const ElementProxy* response = dynamic_cast<const ElementProxy*>(&xmlObject);
     if (!response || !response->hasChildren())
         throw FatalProfileException("Incoming message was not of the proper type or contains no security token.");
-    response = dynamic_cast<const ElementProxy*>(response->getUnknownXMLObjects().front());
-    if (!response || !response->hasChildren())
-        throw FatalProfileException("Token wrapper element did not contain a security token.");
-    const Assertion* token = dynamic_cast<const Assertion*>(response->getUnknownXMLObjects().front());
-    if (!token || !token->getSignature())
-        throw FatalProfileException("Incoming message did not contain a signed SAML assertion.");
-
+    
+    const Assertion* token = NULL;
+    for (vector<XMLObject*>::const_iterator xo = response->getUnknownXMLObjects().begin(); xo != response->getUnknownXMLObjects().end(); ++xo) {
+    	// Look for the RequestedSecurityToken element.
+    	if (XMLString::equals((*xo)->getElementQName().getLocalPart(), RequestedSecurityToken)) {
+    	    response = dynamic_cast<const ElementProxy*>(*xo);
+    	    if (!response || !response->hasChildren())
+    	        throw FatalProfileException("Token wrapper element did not contain a security token.");
+    	    token = dynamic_cast<const Assertion*>(response->getUnknownXMLObjects().front());
+    	    if (!token || !token->getSignature())
+    	        throw FatalProfileException("Incoming message did not contain a signed SAML assertion.");
+    	    break;
+    	}
+    }
+    
     // Extract message and issuer details from assertion.
     extractMessageDetails(*token, m_protocol.get(), policy);
 
@@ -761,15 +774,14 @@ pair<bool,long> ADFSLogoutInitiator::run(SPRequest& request, bool isHandler) con
 
     if (SPConfig::getConfig().isEnabled(SPConfig::OutOfProcess)) {
         // When out of process, we run natively.
-        return doRequest(request.getApplication(), entityID.c_str(), request);
+        return doRequest(request.getApplication(), request, request, session);
     }
     else {
         // When not out of process, we remote the request.
-        Locker locker(session, false);
-        DDF out,in(m_address.c_str());
+        session->unlock();
+        vector<string> headers(1,"Cookie");
+        DDF out,in = wrap(request,&headers);
         DDFJanitor jin(in), jout(out);
-        in.addmember("application_id").string(request.getApplication().getId());
-        in.addmember("entity_id").string(entityID.c_str());
         out=request.getServiceProvider().getListenerService()->send(in);
         return unwrap(request, out);
     }
@@ -778,6 +790,10 @@ pair<bool,long> ADFSLogoutInitiator::run(SPRequest& request, bool isHandler) con
 void ADFSLogoutInitiator::receive(DDF& in, ostream& out)
 {
 #ifndef SHIBSP_LITE
+    // Defer to base class for notifications
+    if (in["notify"].integer() == 1)
+        return LogoutHandler::receive(in, out);
+
     // Find application.
     const char* aid=in["application_id"].string();
     const Application* app=aid ? SPConfig::getConfig().getServiceProvider()->getApplication(aid) : NULL;
@@ -787,59 +803,103 @@ void ADFSLogoutInitiator::receive(DDF& in, ostream& out)
         throw ConfigurationException("Unable to locate application for logout, deleted?");
     }
     
+    // Unpack the request.
+    auto_ptr<HTTPRequest> req(getRequest(in));
+
     // Set up a response shim.
     DDF ret(NULL);
     DDFJanitor jout(ret);
     auto_ptr<HTTPResponse> resp(getResponse(ret));
     
-    // Since we're remoted, the result should either be a throw, which we pass on,
-    // a false/0 return, which we just return as an empty structure, or a response/redirect,
-    // which we capture in the facade and send back.
-    doRequest(*app, in["entity_id"].string(), *resp.get());
+    Session* session = NULL;
+    try {
+         session = app->getServiceProvider().getSessionCache()->find(*app, *req.get(), NULL, NULL);
+    }
+    catch (exception& ex) {
+        m_log.error("error accessing current session: %s", ex.what());
+    }
 
+    // With no session, we just skip the request and let it fall through to an empty struct return.
+    if (session) {
+        if (session->getEntityID()) {
+            // Since we're remoted, the result should either be a throw, which we pass on,
+            // a false/0 return, which we just return as an empty structure, or a response/redirect,
+            // which we capture in the facade and send back.
+            doRequest(*app, *req.get(), *resp.get(), session);
+        }
+        else {
+             m_log.error("no issuing entityID found in session");
+             session->unlock();
+             app->getServiceProvider().getSessionCache()->remove(*app, *req.get(), resp.get());
+        }
+    }
     out << ret;
 #else
     throw ConfigurationException("Cannot perform logout using lite version of shibsp library.");
 #endif
 }
 
-pair<bool,long> ADFSLogoutInitiator::doRequest(const Application& application, const char* entityID, HTTPResponse& response) const
+pair<bool,long> ADFSLogoutInitiator::doRequest(
+    const Application& application, const HTTPRequest& httpRequest, HTTPResponse& httpResponse, Session* session
+    ) const
 {
-#ifndef SHIBSP_LITE
-    try {
-        if (!entityID)
-            throw ConfigurationException("Missing entityID parameter.");
+    // Do back channel notification.
+    vector<string> sessions(1, session->getID());
+    if (!notifyBackChannel(application, httpRequest.getRequestURL(), sessions, false)) {
+        session->unlock();
+        application.getServiceProvider().getSessionCache()->remove(application, httpRequest, &httpResponse);
+        return sendLogoutPage(application, httpRequest, httpResponse, true, "Partial logout failure.");
+    }
 
+#ifndef SHIBSP_LITE
+    pair<bool,long> ret = make_pair(false,0L);
+
+    try {
         // With a session in hand, we can create a request message, if we can find a compatible endpoint.
         MetadataProvider* m=application.getMetadataProvider();
-        Locker locker(m);
-        MetadataProvider::Criteria mc(entityID, &IDPSSODescriptor::ELEMENT_QNAME, m_binding.get());
+        Locker metadataLocker(m);
+        MetadataProviderCriteria mc(application, session->getEntityID(), &IDPSSODescriptor::ELEMENT_QNAME, m_binding.get());
         pair<const EntityDescriptor*,const RoleDescriptor*> entity=m->getEntityDescriptor(mc);
-        if (!entity.first)
-            throw MetadataException("Unable to locate metadata for identity provider ($entityID)", namedparams(1, "entityID", entityID));
-        else if (!entity.second)
-            throw MetadataException("Unable to locate ADFS IdP role for identity provider ($entityID).", namedparams(1, "entityID", entityID));
-
+        if (!entity.first) {
+            throw MetadataException(
+                "Unable to locate metadata for identity provider ($entityID)", namedparams(1, "entityID", session->getEntityID())
+                );
+        }
+        else if (!entity.second) {
+            throw MetadataException(
+                "Unable to locate ADFS IdP role for identity provider ($entityID).", namedparams(1, "entityID", session->getEntityID())
+                );
+        }
+        
         const EndpointType* ep = EndpointManager<SingleLogoutService>(
             dynamic_cast<const IDPSSODescriptor*>(entity.second)->getSingleLogoutServices()
             ).getByBinding(m_binding.get());
         if (!ep) {
             throw MetadataException(
-                "Unable to locate ADFS single logout service for identity provider ($entityID).",
-                namedparams(1, "entityID", entityID)
+                "Unable to locate ADFS single logout service for identity provider ($entityID).", namedparams(1, "entityID", session->getEntityID())
                 );
         }
 
+        const URLEncoder* urlenc = XMLToolingConfig::getConfig().getURLEncoder();
+        const char* returnloc = httpRequest.getParameter("return");
         auto_ptr_char dest(ep->getLocation());
-
         string req=string(dest.get()) + (strchr(dest.get(),'?') ? '&' : '?') + "wa=wsignout1.0";
-        return make_pair(true,response.sendRedirect(req.c_str()));
+        if (returnloc)
+            req += "&wreply=" + urlenc->encode(returnloc);
+        ret.second = httpResponse.sendRedirect(req.c_str());
+        ret.first = true;
     }
     catch (exception& ex) {
         m_log.error("error issuing ADFS logout request: %s", ex.what());
     }
 
-    return make_pair(false,0L);
+    if (session) {
+        session->unlock();
+        session = NULL;
+        application.getServiceProvider().getSessionCache()->remove(application, httpRequest, &httpResponse);
+    }
+
+    return ret;
 #else
     throw ConfigurationException("Cannot perform logout using lite version of shibsp library.");
 #endif

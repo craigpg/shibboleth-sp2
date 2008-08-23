@@ -34,7 +34,14 @@
                     <element ref="afp:PermitValueRule" minOccurs="0" maxOccurs="unbounded">
                         <annotation>
                             <documentation>
-                                Defines an attribute value filter that may be reused across multiple attribute rules.
+                                Defines a permit value rule that may be reused across multiple attribute rules.
+                            </documentation>
+                        </annotation>
+                    </element>
+                    <element ref="afp:DenyValueRule" minOccurs="0" maxOccurs="unbounded">
+                        <annotation>
+                            <documentation>
+                                Defines a deny value rule that may be reused across multiple attribute rules.
                             </documentation>
                         </annotation>
                     </element>
@@ -89,7 +96,7 @@
                         <element name="PolicyRequirementRuleReference" type="afp:ReferenceType">
                             <annotation>
                                 <documentation>
-                                    Rerfence to a PolicyRequirement defined within this policy group or another.
+                                    Reference to a PolicyRequirement defined within this policy group or another.
                                 </documentation>
                             </annotation>
                         </element>
@@ -105,7 +112,7 @@
                         <element name="AttributeRuleReference" type="afp:ReferenceType">
                             <annotation>
                                 <documentation>
-                                    Rerfence to a AttribtueRule defined within this policy group or another.
+                                    Reference to a AttributeRule defined within this policy group or another.
                                 </documentation>
                             </annotation>
                         </element>
@@ -124,21 +131,26 @@
         <complexContent>
             <extension base="afp:IdentityType">
                 <choice>
-                    <element ref="afp:PermitValueRule">
-                        <annotation>
-                            <documentation>
-                                A filter for attribute values. If the filter evaluates to true the value is permitted,
-                                otherwise it is filtered out.
-                            </documentation>
-                        </annotation>
-                    </element>
-                    <element name="PermitValueRuleReference" type="afp:ReferenceType">
-                        <annotation>
-                            <documentation>
-                                Rerfence to a PermitValueRule defined within this policy group or another.
-                            </documentation>
-                        </annotation>
-                    </element>
+                    <choice minOccurs="0">
+                        <element ref="afp:PermitValueRule" />
+                        <element name="PermitValueRuleReference" type="afp:ReferenceType">
+                            <annotation>
+                                <documentation>
+                                    Reference to a PermitValueRule defined within this policy group or another.
+                                </documentation>
+                            </annotation>
+                        </element>
+                    </choice>
+                    <choice minOccurs="0">
+                        <element ref="afp:DenyValueRule" />
+                        <element name="DenyValueRuleReference" type="afp:ReferenceType">
+                            <annotation>
+                                <documentation>
+                                    Reference to a DenyValueRule defined within this policy group or another.
+                                </documentation>
+                            </annotation>
+                        </element>
+                    </choice>
                 </choice>
                 <attribute name="attributeID" type="string" use="required">
                     <annotation>
@@ -157,8 +169,14 @@
     <element name="PermitValueRule" type="afp:MatchFunctorType">
         <annotation>
             <documentation>
-                A filter for attribtue values. If the filter evaluates to true the value is permitted, otherwise it is
-                filtered out.
+                A filter for attribute values. If the filter evaluates to true the value is permitted to be released.
+            </documentation>
+        </annotation>
+    </element>
+    <element name="DenyValueRule" type="afp:MatchFunctorType">
+        <annotation>
+            <documentation>
+                A filter for attribute values. If the filter evaluates to true the value is denied and may not be released.
             </documentation>
         </annotation>
     </element>

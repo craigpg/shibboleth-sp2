@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,8 +16,8 @@
 
 /**
  * AssertionConsumerService.cpp
- * 
- * Base class for handlers that create sessions by consuming SSO protocol responses. 
+ *
+ * Base class for handlers that create sessions by consuming SSO protocol responses.
  */
 
 #include "internal.h"
@@ -35,6 +35,7 @@
 # include "attribute/resolver/AttributeExtractor.h"
 # include "attribute/resolver/AttributeResolver.h"
 # include "attribute/resolver/ResolutionContext.h"
+# include "metadata/MetadataProviderCriteria.h"
 # include "security/SecurityPolicy.h"
 # include <saml/SAMLConfig.h>
 # include <saml/saml1/core/Assertions.h>
@@ -87,7 +88,7 @@ pair<bool,long> AssertionConsumerService::run(SPRequest& request, bool isHandler
 {
     string relayState;
     SPConfig& conf = SPConfig::getConfig();
-    
+
     if (conf.isEnabled(SPConfig::OutOfProcess)) {
         // When out of process, we run natively and directly process the message.
         return processMessage(request.getApplication(), request, request);
@@ -112,7 +113,7 @@ void AssertionConsumerService::receive(DDF& in, ostream& out)
         m_log.error("couldn't find application (%s) for new session", aid ? aid : "(missing)");
         throw ConfigurationException("Unable to locate application for new session, deleted?");
     }
-    
+
     // Unpack the request.
     auto_ptr<HTTPRequest> req(getRequest(in));
 
@@ -137,7 +138,7 @@ pair<bool,long> AssertionConsumerService::processMessage(
     pair<bool,const char*> policyId = getString("policyId", m_configNS.get());  // namespace-qualified if inside handler element
     if (!policyId.first)
         policyId = application.getString("policyId");   // unqualified in Application(s) element
-        
+
     // Access policy properties.
     const PropertySet* settings = application.getServiceProvider().getPolicySettings(policyId.second);
     pair<bool,bool> validate = settings->getBool("validate");
@@ -147,7 +148,7 @@ pair<bool,long> AssertionConsumerService::processMessage(
 
     // Create the policy.
     shibsp::SecurityPolicy policy(application, &m_role, validate.first && validate.second);
-    
+
     string relayState;
 
     try {
@@ -159,7 +160,7 @@ pair<bool,long> AssertionConsumerService::processMessage(
         implementProtocol(application, httpRequest, httpResponse, policy, settings, *msg.get());
 
         auto_ptr_char issuer(policy.getIssuer() ? policy.getIssuer()->getName() : NULL);
-        
+
         // History cookie.
         if (issuer.get() && *issuer.get())
             maintainHistory(application, httpRequest, httpResponse, issuer.get());
@@ -181,7 +182,7 @@ void AssertionConsumerService::checkAddress(const Application& application, cons
 {
     if (!issuedTo || !*issuedTo)
         return;
-    
+
     const PropertySet* props=application.getPropertySet("Sessions");
     pair<bool,bool> checkAddress = props ? props->getBool("checkAddress") : make_pair(false,true);
     if (!checkAddress.first)
@@ -327,7 +328,7 @@ ResolutionContext* AssertionConsumerService::resolveAttributes(
             }
         }
     }
-    
+
     try {
         AttributeResolver* resolver = application.getAttributeResolver();
         if (resolver) {
@@ -367,7 +368,7 @@ ResolutionContext* AssertionConsumerService::resolveAttributes(
     catch (exception& ex) {
         m_log.error("attribute resolution failed: %s", ex.what());
     }
-    
+
     if (!resolvedAttributes.empty()) {
         // Attach global prefix if needed.
         pair<bool,const char*> prefix = application.getString("attributePrefix");
@@ -410,8 +411,16 @@ void AssertionConsumerService::extractMessageDetails(const Assertion& assertion,
             return;
         }
         m_log.debug("searching metadata for assertion issuer...");
-        MetadataProvider::Criteria mc(policy.getIssuer()->getName(), &IDPSSODescriptor::ELEMENT_QNAME, protocol);
-        pair<const EntityDescriptor*,const RoleDescriptor*> entity = policy.getMetadataProvider()->getEntityDescriptor(mc);
+        pair<const EntityDescriptor*,const RoleDescriptor*> entity;
+        shibsp::SecurityPolicy* sppol = dynamic_cast<shibsp::SecurityPolicy*>(&policy);
+        if (sppol) {
+            MetadataProviderCriteria mc(sppol->getApplication(), policy.getIssuer()->getName(), &IDPSSODescriptor::ELEMENT_QNAME, protocol);
+            entity = policy.getMetadataProvider()->getEntityDescriptor(mc);
+        }
+        else {
+            MetadataProvider::Criteria mc(policy.getIssuer()->getName(), &IDPSSODescriptor::ELEMENT_QNAME, protocol);
+            entity = policy.getMetadataProvider()->getEntityDescriptor(mc);
+        }
         if (!entity.first) {
             auto_ptr_char iname(policy.getIssuer()->getName());
             m_log.warn("no metadata found, can't establish identity of issuer (%s)", iname.get());
@@ -436,7 +445,7 @@ void AssertionConsumerService::maintainHistory(
     const PropertySet* sessionProps=application.getPropertySet("Sessions");
     pair<bool,bool> idpHistory=sessionProps->getBool("idpHistory");
 
-    if (!idpHistory.first || idpHistory.second) {
+    if (idpHistory.first && idpHistory.second) {
         pair<bool,const char*> cookieProps=sessionProps->getString("cookieProps");
         if (!cookieProps.first)
             cookieProps.second=defProps;

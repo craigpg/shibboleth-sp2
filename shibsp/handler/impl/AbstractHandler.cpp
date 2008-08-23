@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,8 +16,8 @@
 
 /**
  * AbstractHandler.cpp
- * 
- * Base class for handlers based on a DOMPropertySet. 
+ *
+ * Base class for handlers based on a DOMPropertySet.
  */
 
 #include "internal.h"
@@ -31,8 +31,6 @@
 #include "util/SPConstants.h"
 
 #ifndef SHIBSP_LITE
-# include <saml/SAMLConfig.h>
-# include <saml/binding/SAMLArtifact.h>
 # include <saml/saml1/core/Protocols.h>
 # include <saml/saml2/core/Protocols.h>
 # include <saml/saml2/metadata/Metadata.h>
@@ -67,12 +65,28 @@ namespace shibsp {
     SHIBSP_DLLLOCAL PluginManager< Handler,string,pair<const DOMElement*,const char*> >::Factory MetadataGeneratorFactory;
     SHIBSP_DLLLOCAL PluginManager< Handler,string,pair<const DOMElement*,const char*> >::Factory StatusHandlerFactory;
     SHIBSP_DLLLOCAL PluginManager< Handler,string,pair<const DOMElement*,const char*> >::Factory SessionHandlerFactory;
+
+    void SHIBSP_DLLLOCAL generateRandomHex(std::string& buf, unsigned int len) {
+        static char DIGITS[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+        int r;
+        unsigned char b1,b2;
+        buf.erase();
+        for (unsigned int i=0; i<len; i+=4) {
+            r = rand();
+            b1 = (0x00FF & r);
+            b2 = (0xFF00 & r)  >> 8;
+            buf += (DIGITS[(0xF0 & b1) >> 4 ]);
+            buf += (DIGITS[0x0F & b1]);
+            buf += (DIGITS[(0xF0 & b2) >> 4 ]);
+            buf += (DIGITS[0x0F & b2]);
+        }
+    }
 };
 
 void SHIBSP_API shibsp::registerHandlers()
 {
     SPConfig& conf=SPConfig::getConfig();
-    
+
     conf.AssertionConsumerServiceManager.registerFactory(SAML1_PROFILE_BROWSER_ARTIFACT, SAML1ConsumerFactory);
     conf.AssertionConsumerServiceManager.registerFactory(SAML1_PROFILE_BROWSER_POST, SAML1ConsumerFactory);
     conf.AssertionConsumerServiceManager.registerFactory(SAML20_BINDING_HTTP_POST, SAML2ConsumerFactory);
@@ -256,16 +270,20 @@ void AbstractHandler::preserveRelayState(const Application& application, HTTPRes
     if (!strcmp(mech.second, "cookie")) {
         // Here we store the state in a cookie and send a fixed
         // value so we can recognize it on the way back.
-        if (relayState != "cookie") {
+        if (relayState.find("cookie:") != 0) {
             const URLEncoder* urlenc = XMLToolingConfig::getConfig().getURLEncoder();
             pair<string,const char*> shib_cookie=application.getCookieNameProps("_shibstate_");
             string stateval = urlenc->encode(relayState.c_str()) + shib_cookie.second;
+            // Generate a random key for the cookie name instead of the fixed name.
+            string rsKey;
+            generateRandomHex(rsKey,5);
+            shib_cookie.first = "_shibstate_" + rsKey;
             response.setCookie(shib_cookie.first.c_str(),stateval.c_str());
-            relayState = "cookie";
+            relayState = "cookie:" + rsKey;
         }
     }
     else if (strstr(mech.second,"ss:")==mech.second) {
-        if (relayState.find("ss:")!=0) {
+        if (relayState.find("ss:") != 0) {
             mech.second+=3;
             if (*mech.second) {
                 if (SPConfig::getConfig().isEnabled(SPConfig::OutOfProcess)) {
@@ -273,8 +291,7 @@ void AbstractHandler::preserveRelayState(const Application& application, HTTPRes
                     StorageService* storage = application.getServiceProvider().getStorageService(mech.second);
                     if (storage) {
                         string rsKey;
-                        SAMLConfig::getConfig().generateRandomBytes(rsKey,10);
-                        rsKey = SAMLArtifact::toHex(rsKey);
+                        generateRandomHex(rsKey,5);
                         if (!storage->createString("RelayState", rsKey.c_str(), relayState.c_str(), time(NULL) + 600))
                             throw IOException("Attempted to insert duplicate storage key.");
                         relayState = string(mech.second-3) + ':' + rsKey;
@@ -357,21 +374,29 @@ void AbstractHandler::recoverRelayState(
             }
         }
     }
-    
-    if (relayState == "cookie") {
-        // Pull the value from the "relay state" cookie.
-        pair<string,const char*> relay_cookie = application.getCookieNameProps("_shibstate_");
-        const char* state = request.getCookie(relay_cookie.first.c_str());
-        if (state && *state) {
-            // URL-decode the value.
-            char* rscopy=strdup(state);
-            XMLToolingConfig::getConfig().getURLEncoder()->decode(rscopy);
-            relayState = rscopy;
-            free(rscopy);
-            
-            if (clear)
-                response.setCookie(relay_cookie.first.c_str(),relay_cookie.second);
-            return;
+
+    // Look for cookie-backed state of the form "cookie:key".
+    if (strstr(state,"cookie:")==state) {
+        state += 7;
+        if (*state) {
+            // Pull the value from the "relay state" cookie.
+            pair<string,const char*> relay_cookie = application.getCookieNameProps("_shibstate_");
+            relay_cookie.first = string("_shibstate_") + state;
+            state = request.getCookie(relay_cookie.first.c_str());
+            if (state && *state) {
+                // URL-decode the value.
+                char* rscopy=strdup(state);
+                XMLToolingConfig::getConfig().getURLEncoder()->decode(rscopy);
+                relayState = rscopy;
+                free(rscopy);
+
+                if (clear) {
+                    string exp(relay_cookie.second);
+                    exp += "; expires=Mon, 01 Jan 2001 00:00:00 GMT";
+                    response.setCookie(relay_cookie.first.c_str(), exp.c_str());
+                }
+                return;
+            }
         }
 
         relayState.erase();

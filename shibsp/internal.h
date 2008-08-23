@@ -43,6 +43,7 @@
 #include "base.h"
 #include "SPConfig.h"
 
+#include <memory>
 #include <xmltooling/logging.h>
 
 using namespace xmltooling::logging;

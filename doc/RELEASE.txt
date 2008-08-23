@@ -1,13 +1,14 @@
 Release Notes
 
 Shibboleth Native SP
-2.0
-3/17/2008
+2.1
+8/8/2008
 
 NOTE: The shibboleth2.xml configuration format in this release
-is compatible with the RC1 release. Upgrading from earlier
-releases is NOT supported without replacing the configuration
-file and reapplying changes.
+is fully compatible with the 2.0 release.
+
+List of issues addressed by this release:
+https://bugs.internet2.edu/jira/secure/IssueNavigator.jspa?reset=true&&pid=10011&fixfor=10129&status=5&status=6&sorter/field=issuekey&sorter/order=ASC
 
 Fully Supported
 

@@ -136,13 +136,13 @@ pair<bool,long> LogoutHandler::notifyFrontChannel(
     loc = loc + (strchr(loc.c_str(),'?') ? '&' : '?') + "action=logout";
 
     // Now we create a second URL representing the return location back to us.
+    ostringstream locstr;
     const char* start = request.getRequestURL();
     const char* end = strchr(start,'?');
     string tempstr(start, end ? end-start : strlen(start));
-    ostringstream locstr(tempstr);
 
     // Add a signal that we're coming back from notification and the next index.
-    locstr << "?notifying=1&index=" << index;
+    locstr << tempstr << "?notifying=1&index=" << index;
 
     // Add return if set.
     if (param)

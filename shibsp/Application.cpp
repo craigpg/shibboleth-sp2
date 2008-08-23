@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * Application.cpp
- * 
+ *
  * Interface to a Shibboleth Application instance.
  */
 
@@ -42,12 +42,19 @@ Application::~Application()
     delete m_lock;
 }
 
-pair<string,const char*> Application::getCookieNameProps(const char* prefix) const
+pair<string,const char*> Application::getCookieNameProps(const char* prefix, time_t* lifetime) const
 {
     static const char* defProps="; path=/";
-    
+
+    if (lifetime)
+        *lifetime = 0;
     const PropertySet* props=getPropertySet("Sessions");
     if (props) {
+        if (lifetime) {
+            pair<bool,unsigned int> lt = props->getUnsignedInt("cookieLifetime");
+            if (lt.first)
+                *lifetime = lt.second;
+        }
         pair<bool,const char*> p=props->getString("cookieProps");
         if (!p.first)
             p.second=defProps;
@@ -56,7 +63,7 @@ pair<string,const char*> Application::getCookieNameProps(const char* prefix) con
             return make_pair(string(prefix) + p2.second,p.second);
         return make_pair(string(prefix) + getHash(),p.second);
     }
-    
+
     // Shouldn't happen, but just in case..
     return pair<string,const char*>(prefix,defProps);
 }
