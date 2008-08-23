@@ -1,7 +1,7 @@
 
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,8 +17,8 @@
 
 /**
  * SPConfig.cpp
- * 
- * Library configuration 
+ *
+ * Library configuration
  */
 
 #include "internal.h"
@@ -60,13 +60,17 @@
 # include <xmltooling/XMLToolingConfig.h>
 #endif
 
+#include <ctime>
+#include <xercesc/util/XMLUniDefs.hpp>
 #include <xmltooling/util/NDC.h>
 #include <xmltooling/util/PathResolver.h>
 #include <xmltooling/util/TemplateEngine.h>
+#include <xmltooling/util/XMLHelper.h>
 
 using namespace shibsp;
 using namespace opensaml;
 using namespace xmltooling;
+using namespace std;
 
 DECL_XMLTOOLING_EXCEPTION_FACTORY(AttributeException,shibsp);
 DECL_XMLTOOLING_EXCEPTION_FACTORY(AttributeExtractionException,shibsp);
@@ -108,13 +112,19 @@ bool SPConfig::init(const char* catalog_path, const char* inst_prefix)
         inst_prefix = getenv("SHIBSP_PREFIX");
     if (!inst_prefix)
         inst_prefix = SHIBSP_PREFIX;
-    
+    std::string inst_prefix2;
+    while (*inst_prefix) {
+        inst_prefix2.push_back((*inst_prefix=='\\') ? ('/') : (*inst_prefix));
+        ++inst_prefix;
+    }
+
     const char* loglevel=getenv("SHIBSP_LOGGING");
     if (!loglevel)
         loglevel = SHIBSP_LOGGING;
     std::string ll(loglevel);
     PathResolver localpr;
-    XMLToolingConfig::getConfig().log_config(localpr.resolve(ll, PathResolver::XMLTOOLING_CFG_FILE, PACKAGE_NAME, inst_prefix).c_str());
+    localpr.setDefaultPrefix(inst_prefix2.c_str());
+    XMLToolingConfig::getConfig().log_config(localpr.resolve(ll, PathResolver::XMLTOOLING_CFG_FILE, PACKAGE_NAME).c_str());
 
     Category& log=Category::getInstance(SHIBSP_LOGCAT".Config");
     log.debug("%s library initialization started", PACKAGE_STRING);
@@ -136,12 +146,12 @@ bool SPConfig::init(const char* catalog_path, const char* inst_prefix)
         log.fatal("failed to initialize XMLTooling library");
         return false;
     }
-#endif    
+#endif
     XMLToolingConfig::getConfig().getPathResolver()->setDefaultPackageName(PACKAGE_NAME);
-    XMLToolingConfig::getConfig().getPathResolver()->setDefaultPrefix(inst_prefix);
+    XMLToolingConfig::getConfig().getPathResolver()->setDefaultPrefix(inst_prefix2.c_str());
     XMLToolingConfig::getConfig().setTemplateEngine(new TemplateEngine());
     XMLToolingConfig::getConfig().getTemplateEngine()->setTagPrefix("shibmlp");
-    
+
     REGISTER_XMLTOOLING_EXCEPTION_FACTORY(AttributeException,shibsp);
     REGISTER_XMLTOOLING_EXCEPTION_FACTORY(AttributeExtractionException,shibsp);
     REGISTER_XMLTOOLING_EXCEPTION_FACTORY(AttributeFilteringException,shibsp);
@@ -195,6 +205,7 @@ bool SPConfig::init(const char* catalog_path, const char* inst_prefix)
     if (isEnabled(OutOfProcess))
         m_artifactResolver = new ArtifactResolver();
 #endif
+    srand(static_cast<unsigned int>(std::time(NULL)));
 
     log.info("%s library initialization complete", PACKAGE_STRING);
     return true;
@@ -250,4 +261,54 @@ void SPConfig::term()
     XMLToolingConfig::getConfig().term();
 #endif
     log.info("%s library shutdown complete", PACKAGE_STRING);
+}
+
+bool SPConfig::instantiate(const char* config, bool rethrow)
+{
+#ifdef _DEBUG
+    NDC ndc("instantiate");
+#endif
+    if (!config)
+        config = getenv("SHIBSP_CONFIG");
+    if (!config)
+        config = SHIBSP_CONFIG;
+    try {
+        xercesc::DOMDocument* dummydoc;
+        if (*config == '"' || *config == '\'') {
+            throw ConfigurationException("The value of SHIBSP_CONFIG started with a quote.");
+        }
+        else if (*config != '<') {
+
+            // Mock up some XML.
+            string resolved(config);
+            stringstream snippet;
+            snippet
+                << "<Dummy path='"
+                << XMLToolingConfig::getConfig().getPathResolver()->resolve(resolved, PathResolver::XMLTOOLING_CFG_FILE)
+                << "' validate='1'/>";
+            dummydoc = XMLToolingConfig::getConfig().getParser().parse(snippet);
+            XercesJanitor<xercesc::DOMDocument> docjanitor(dummydoc);
+            setServiceProvider(ServiceProviderManager.newPlugin(XML_SERVICE_PROVIDER, dummydoc->getDocumentElement()));
+        }
+        else {
+            stringstream snippet(config);
+            dummydoc = XMLToolingConfig::getConfig().getParser().parse(snippet);
+            XercesJanitor<xercesc::DOMDocument> docjanitor(dummydoc);
+            static const XMLCh _type[] = UNICODE_LITERAL_4(t,y,p,e);
+            auto_ptr_char type(dummydoc->getDocumentElement()->getAttributeNS(NULL,_type));
+            if (type.get() && *type.get())
+                setServiceProvider(ServiceProviderManager.newPlugin(type.get(), dummydoc->getDocumentElement()));
+            else
+                throw ConfigurationException("The supplied XML bootstrapping configuration did not include a type attribute.");
+        }
+
+        getServiceProvider()->init();
+        return true;
+    }
+    catch (exception& ex) {
+        if (rethrow)
+            throw;
+        Category::getInstance(SHIBSP_LOGCAT".Config").fatal("caught exception while loading configuration: %s", ex.what());
+    }
+    return false;
 }

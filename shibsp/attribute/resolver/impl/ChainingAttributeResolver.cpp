@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * ChainingAttributeResolver.cpp
- * 
+ *
  * Chains together multiple AttributeResolver plugins.
  */
 
@@ -93,7 +93,7 @@ namespace shibsp {
         virtual ~ChainingAttributeResolver() {
             for_each(m_resolvers.begin(), m_resolvers.end(), xmltooling::cleanup<AttributeResolver>());
         }
-        
+
         Lockable* lock() {
             return this;
         }
@@ -125,7 +125,7 @@ namespace shibsp {
                 (*i)->getAttributeIds(attributes);
             }
         }
-        
+
     private:
         vector<AttributeResolver*> m_resolvers;
     };
@@ -159,7 +159,7 @@ ChainingAttributeResolver::ChainingAttributeResolver(const DOMElement* e)
                 m_resolvers.push_back(conf.AttributeResolverManager.newPlugin(type.get(),e));
             }
             catch (exception& ex) {
-                Category::getInstance(SHIBSP_LOGCAT".AttributeResolver").error(
+                Category::getInstance(SHIBSP_LOGCAT".AttributeResolver.Chaining").error(
                     "caught exception processing embedded AttributeResolver element: %s", ex.what()
                     );
             }

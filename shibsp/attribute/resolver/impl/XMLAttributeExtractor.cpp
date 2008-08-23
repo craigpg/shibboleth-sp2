@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * XMLAttributeExtractor.cpp
- * 
+ *
  * AttributeExtractor based on an XML mapping file.
  */
 
@@ -97,17 +97,17 @@ namespace shibsp {
         attrmap_t m_attrMap;
         vector<string> m_attributeIds;
     };
-    
+
     class XMLExtractor : public AttributeExtractor, public ReloadableXMLFile
     {
     public:
-        XMLExtractor(const DOMElement* e) : ReloadableXMLFile(e, Category::getInstance(SHIBSP_LOGCAT".AttributeExtractor")), m_impl(NULL) {
+        XMLExtractor(const DOMElement* e) : ReloadableXMLFile(e, Category::getInstance(SHIBSP_LOGCAT".AttributeExtractor.XML")), m_impl(NULL) {
             load();
         }
         ~XMLExtractor() {
             delete m_impl;
         }
-        
+
         void extractAttributes(
             const Application& application, const RoleDescriptor* issuer, const XMLObject& xmlObject, vector<Attribute*>& attributes
             ) const;
@@ -132,7 +132,7 @@ namespace shibsp {
     {
         return new XMLExtractor(e);
     }
-    
+
     static const XMLCh _AttributeDecoder[] =    UNICODE_LITERAL_16(A,t,t,r,i,b,u,t,e,D,e,c,o,d,e,r);
     static const XMLCh Attributes[] =           UNICODE_LITERAL_10(A,t,t,r,i,b,u,t,e,s);
     static const XMLCh _id[] =                  UNICODE_LITERAL_2(i,d);
@@ -146,7 +146,7 @@ XMLExtractorImpl::XMLExtractorImpl(const DOMElement* e, Category& log) : m_log(l
 #ifdef _DEBUG
     xmltooling::NDC ndc("XMLExtractorImpl");
 #endif
-    
+
     if (!XMLHelper::isNodeNamed(e, shibspconstants::SHIB2ATTRIBUTEMAP_NS, Attributes))
         throw ConfigurationException("XML AttributeExtractor requires am:Attributes at root of configuration.");
 
@@ -220,7 +220,7 @@ XMLExtractorImpl::XMLExtractorImpl(const DOMElement* e, Category& log) : m_log(l
 #endif
             m_log.info("creating mapping for Attribute %s%s%s", n.get(), *f.get() ? ", Format/Namespace:" : "", f.get());
         }
-        
+
         decl.first = decoder;
         decl.second.push_back(id.get());
         m_attributeIds.push_back(id.get());
@@ -248,7 +248,7 @@ XMLExtractorImpl::XMLExtractorImpl(const DOMElement* e, Category& log) : m_log(l
                 start = pos ? pos+1 : NULL;
             }
         }
-        
+
         child = XMLHelper::getNextSiblingElement(child, shibspconstants::SHIB2ATTRIBUTEMAP_NS, saml1::Attribute::LOCAL_NAME);
     }
 }
@@ -528,12 +528,12 @@ pair<bool,DOMElement*> XMLExtractor::load()
 {
     // Load from source using base class.
     pair<bool,DOMElement*> raw = ReloadableXMLFile::load();
-    
+
     // If we own it, wrap it.
     XercesJanitor<DOMDocument> docjanitor(raw.first ? raw.second->getOwnerDocument() : NULL);
 
     XMLExtractorImpl* impl = new XMLExtractorImpl(raw.second, m_log);
-    
+
     // If we held the document, transfer it to the impl. If we didn't, it's a no-op.
     impl->setDocument(docjanitor.release());
 

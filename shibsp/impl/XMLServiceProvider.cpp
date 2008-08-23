@@ -125,6 +125,7 @@ namespace {
             return (!m_credResolver && m_base) ? m_base->getCredentialResolver() : m_credResolver;
         }
         const PropertySet* getRelyingParty(const EntityDescriptor* provider) const;
+        const PropertySet* getRelyingParty(const XMLCh* entityID) const;
         const vector<const XMLCh*>* getAudiences() const {
             return (m_audiences.empty() && m_base) ? m_base->getAudiences() : &m_audiences;
         }
@@ -978,6 +979,25 @@ const PropertySet* XMLApplication::getRelyingParty(const EntityDescriptor* provi
     return this;
 }
 
+const PropertySet* XMLApplication::getRelyingParty(const XMLCh* entityID) const
+{
+    if (!entityID)
+        return this;
+        
+#ifdef HAVE_GOOD_STL
+    map<xstring,PropertySet*>::const_iterator i=m_partyMap.find(entityID);
+    if (i!=m_partyMap.end())
+        return i->second;
+#else
+    map<const XMLCh*,PropertySet*>::const_iterator i=m_partyMap.begin();
+    for (; i!=m_partyMap.end(); i++) {
+        if (XMLString::equals(i->first,entityID))
+            return i->second;
+    }
+#endif
+    return this;
+}
+
 #endif
 
 string XMLApplication::getNotificationURL(const char* resource, bool front, unsigned int index) const
@@ -1395,8 +1415,10 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
             auto_ptr<XMLApplication> iapp(new XMLApplication(m_outer,child,defapp));
             if (m_appmap.count(iapp->getId()))
                 log.crit("found conf:ApplicationOverride element with duplicate id attribute (%s), skipping it", iapp->getId());
-            else
-                m_appmap[iapp->getId()]=iapp.release();
+            else {
+                const char* iappid=iapp->getId();
+                m_appmap[iappid]=iapp.release();
+            }
 
             child = XMLHelper::getNextSiblingElement(child,ApplicationOverride);
         }

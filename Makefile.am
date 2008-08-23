@@ -10,7 +10,7 @@ WANT_SUBDIRS = @WANT_SUBDIRS@
 
 SUBDIRS = $(WANT_SUBDIRS)
 
-DIST_SUBDIRS = doc schemas configs shibsp shibd adfs util apache nsapi_shib fastcgi odbc-store selinux
+DIST_SUBDIRS = doc schemas configs shibsp shibd adfs util apache nsapi_shib fastcgi odbc-store memcache-store selinux
 
 if DX_COND_doc
 all-local: shibboleth.spec pkginfo doxygen-doc
@@ -29,13 +29,13 @@ dist-hook:
 
 shibboleth.spec: shibboleth.spec.in Makefile
 	rm -f $@.tmp
-	sed < $< > $@.tmp \
+	sed < $@.in > $@.tmp \
 	    -e 's:@-VERSION-@:${VERSION}:'
 	mv $@.tmp $@
 
 pkginfo: pkginfo.in Makefile
 	rm -f $@.tmp
-	sed < $< > $@.tmp \
+	sed < $@.in > $@.tmp \
 	    -e 's:@-VERSION-@:${VERSION}:'
 	mv $@.tmp $@
 

@@ -157,7 +157,7 @@ pair<bool,long> SessionHandler::run(SPRequest& request, bool isHandler) const
                     count = 0;
                 }
             }
-            s << "<strong>" << a->second->getId() << "</strong>: ";
+            s << "<strong>" << a->first << "</strong>: ";
         }
 
         if (m_values) {

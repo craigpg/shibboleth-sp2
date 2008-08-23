@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * @file shibsp/attribute/AttributeDecoder.h
- * 
+ *
  * Decodes SAML NameID/Attribute objects into resolved Attributes.
  */
 
@@ -47,10 +47,10 @@ namespace shibsp {
 
     public:
         virtual ~AttributeDecoder() {}
-        
+
         /**
          * Decodes an XMLObject into a resolved Attribute.
-         * 
+         *
          * @param ids               array containing primary identifier in first position, followed by any aliases
          * @param xmlObject         XMLObject to decode
          * @param assertingParty    name of the party asserting the attribute
@@ -68,12 +68,15 @@ namespace shibsp {
 
     /** Decodes into a SimpleAttribute. */
     extern SHIBSP_API xmltooling::QName StringAttributeDecoderType;
-    
-    /** Decodes into a ScopedAttribute. */
+
+    /** Decodes scoped and NameID attributes into a ScopedAttribute. */
     extern SHIBSP_API xmltooling::QName ScopedAttributeDecoderType;
 
-    /** Decodes into a NameIDAttribute. */
+    /** Decodes NameID information into a NameIDAttribute. */
     extern SHIBSP_API xmltooling::QName NameIDAttributeDecoderType;
+
+    /** Decodes scoped attributes into a NameIDAttribute. */
+    extern SHIBSP_API xmltooling::QName NameIDFromScopedAttributeDecoderType;
 
     /** Registers built-in AttributeDecoders into the runtime. */
     void registerAttributeDecoders();
