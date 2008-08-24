@@ -51,7 +51,7 @@ am__aclocal_m4_deps = $(top_srcdir)/libtool.m4 \
 	$(top_srcdir)/acx_pthread.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
@@ -135,10 +135,11 @@ am__objects_2 = AbstractSPRequest.lo Application.lo ServiceProvider.lo \
 	UnixListener.lo CGIParser.lo DOMPropertySet.lo SPConstants.lo \
 	TemplateParameters.lo
 am_libshibsp_la_OBJECTS = $(am__objects_2) NameIDAttributeDecoder.lo \
-	ScopedAttributeDecoder.lo StringAttributeDecoder.lo \
-	AttributeFilter.lo ChainingAttributeFilter.lo \
-	XMLAttributeFilter.lo MatchFunctor.lo AndMatchFunctor.lo \
-	AnyMatchFunctor.lo NotMatchFunctor.lo OrMatchFunctor.lo \
+	NameIDFromScopedAttributeDecoder.lo ScopedAttributeDecoder.lo \
+	StringAttributeDecoder.lo AttributeFilter.lo \
+	ChainingAttributeFilter.lo XMLAttributeFilter.lo \
+	MatchFunctor.lo AndMatchFunctor.lo AnyMatchFunctor.lo \
+	NotMatchFunctor.lo OrMatchFunctor.lo \
 	AttributeIssuerStringFunctor.lo \
 	AttributeRequesterStringFunctor.lo \
 	AttributeScopeStringFunctor.lo AttributeValueStringFunctor.lo \
@@ -153,9 +154,9 @@ am_libshibsp_la_OBJECTS = $(am__objects_2) NameIDAttributeDecoder.lo \
 	AttributeScopeMatchesShibMDScopeFunctor.lo \
 	ChainingAttributeResolver.lo QueryAttributeResolver.lo \
 	ChainingAttributeExtractor.lo XMLAttributeExtractor.lo \
-	ArtifactResolver.lo SOAPClient.lo MetadataExtImpl.lo \
-	MetadataExtSchemaValidators.lo PKIXTrustEngine.lo \
-	SecurityPolicy.lo
+	ArtifactResolver.lo SOAPClient.lo DynamicMetadataProvider.lo \
+	MetadataExtImpl.lo MetadataExtSchemaValidators.lo \
+	PKIXTrustEngine.lo SecurityPolicy.lo
 libshibsp_la_OBJECTS = $(am_libshibsp_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -218,6 +219,8 @@ BUILD_AP22_FALSE = @BUILD_AP22_FALSE@
 BUILD_AP22_TRUE = @BUILD_AP22_TRUE@
 BUILD_FASTCGI_FALSE = @BUILD_FASTCGI_FALSE@
 BUILD_FASTCGI_TRUE = @BUILD_FASTCGI_TRUE@
+BUILD_MEMCACHED_FALSE = @BUILD_MEMCACHED_FALSE@
+BUILD_MEMCACHED_TRUE = @BUILD_MEMCACHED_TRUE@
 BUILD_NSAPI_FALSE = @BUILD_NSAPI_FALSE@
 BUILD_NSAPI_TRUE = @BUILD_NSAPI_TRUE@
 CC = @CC@
@@ -303,6 +306,9 @@ LOG4CPP_CONFIG = @LOG4CPP_CONFIG@
 LOG4SHIB_CONFIG = @LOG4SHIB_CONFIG@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
+MEMCACHED_INCLUDE = @MEMCACHED_INCLUDE@
+MEMCACHED_LDFLAGS = @MEMCACHED_LDFLAGS@
+MEMCACHED_LIBS = @MEMCACHED_LIBS@
 NSAPI_INCLUDE = @NSAPI_INCLUDE@
 OBJEXT = @OBJEXT@
 ODBC_CFLAGS = @ODBC_CFLAGS@
@@ -449,7 +455,8 @@ liteinclude_HEADERS = \
 	lite/SAMLConstants.h
 
 mdinclude_HEADERS = \
-	metadata/MetadataExt.h
+	metadata/MetadataExt.h \
+	metadata/MetadataProviderCriteria.h
 
 reminclude_HEADERS = \
 	remoting/ddf.h \
@@ -523,6 +530,7 @@ libshibsp_lite_la_SOURCES = \
 libshibsp_la_SOURCES = \
 	${common_sources} \
 	attribute/NameIDAttributeDecoder.cpp \
+	attribute/NameIDFromScopedAttributeDecoder.cpp \
 	attribute/ScopedAttributeDecoder.cpp \
 	attribute/StringAttributeDecoder.cpp \
 	attribute/filtering/impl/AttributeFilter.cpp \
@@ -553,6 +561,7 @@ libshibsp_la_SOURCES = \
 	attribute/resolver/impl/XMLAttributeExtractor.cpp \
 	binding/impl/ArtifactResolver.cpp \
 	binding/impl/SOAPClient.cpp \
+	metadata/DynamicMetadataProvider.cpp \
 	metadata/MetadataExtImpl.cpp \
 	metadata/MetadataExtSchemaValidators.cpp \
 	security/PKIXTrustEngine.cpp \
@@ -561,8 +570,8 @@ libshibsp_la_SOURCES = \
 
 # this is different from the project version
 # http://sources.redhat.com/autobook/autobook/autobook_91.html
-libshibsp_la_LDFLAGS = $(XMLSEC_LIBS) -version-info 1:0:0
-libshibsp_lite_la_LDFLAGS = $(LITE_LIBS) -version-info 1:0:0
+libshibsp_la_LDFLAGS = $(XMLSEC_LIBS) -version-info 2:0:0
+libshibsp_lite_la_LDFLAGS = $(LITE_LIBS) -version-info 2:0:0
 libshibsp_lite_la_CPPFLAGS = -DSHIBSP_LITE
 EXTRA_DIST = shibsp.vcproj shibsp-lite.vcproj paths.h.in resource.h shibsp.rc
 BUILT_SOURCES = paths.h
@@ -669,6 +678,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChainingSessionInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CookieSessionInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DOMPropertySet.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DynamicMetadataProvider.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FormSessionInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ListenerService.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalLogoutInitiator.Plo@am__quote@
@@ -678,6 +688,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MetadataExtSchemaValidators.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MetadataGenerator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NameIDAttributeDecoder.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NameIDFromScopedAttributeDecoder.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NotMatchFunctor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NumberOfAttributeValuesFunctor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OrMatchFunctor.Plo@am__quote@
@@ -1378,6 +1389,13 @@ NameIDAttributeDecoder.lo: attribute/NameIDAttributeDecoder.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NameIDAttributeDecoder.lo `test -f 'attribute/NameIDAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/NameIDAttributeDecoder.cpp
 
+NameIDFromScopedAttributeDecoder.lo: attribute/NameIDFromScopedAttributeDecoder.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NameIDFromScopedAttributeDecoder.lo -MD -MP -MF "$(DEPDIR)/NameIDFromScopedAttributeDecoder.Tpo" -c -o NameIDFromScopedAttributeDecoder.lo `test -f 'attribute/NameIDFromScopedAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/NameIDFromScopedAttributeDecoder.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NameIDFromScopedAttributeDecoder.Tpo" "$(DEPDIR)/NameIDFromScopedAttributeDecoder.Plo"; else rm -f "$(DEPDIR)/NameIDFromScopedAttributeDecoder.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/NameIDFromScopedAttributeDecoder.cpp' object='NameIDFromScopedAttributeDecoder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NameIDFromScopedAttributeDecoder.lo `test -f 'attribute/NameIDFromScopedAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/NameIDFromScopedAttributeDecoder.cpp
+
 ScopedAttributeDecoder.lo: attribute/ScopedAttributeDecoder.cpp
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ScopedAttributeDecoder.lo -MD -MP -MF "$(DEPDIR)/ScopedAttributeDecoder.Tpo" -c -o ScopedAttributeDecoder.lo `test -f 'attribute/ScopedAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/ScopedAttributeDecoder.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ScopedAttributeDecoder.Tpo" "$(DEPDIR)/ScopedAttributeDecoder.Plo"; else rm -f "$(DEPDIR)/ScopedAttributeDecoder.Tpo"; exit 1; fi
@@ -1587,6 +1605,13 @@ SOAPClient.lo: binding/impl/SOAPClient.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='binding/impl/SOAPClient.cpp' object='SOAPClient.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SOAPClient.lo `test -f 'binding/impl/SOAPClient.cpp' || echo '$(srcdir)/'`binding/impl/SOAPClient.cpp
+
+DynamicMetadataProvider.lo: metadata/DynamicMetadataProvider.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DynamicMetadataProvider.lo -MD -MP -MF "$(DEPDIR)/DynamicMetadataProvider.Tpo" -c -o DynamicMetadataProvider.lo `test -f 'metadata/DynamicMetadataProvider.cpp' || echo '$(srcdir)/'`metadata/DynamicMetadataProvider.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DynamicMetadataProvider.Tpo" "$(DEPDIR)/DynamicMetadataProvider.Plo"; else rm -f "$(DEPDIR)/DynamicMetadataProvider.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='metadata/DynamicMetadataProvider.cpp' object='DynamicMetadataProvider.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DynamicMetadataProvider.lo `test -f 'metadata/DynamicMetadataProvider.cpp' || echo '$(srcdir)/'`metadata/DynamicMetadataProvider.cpp
 
 MetadataExtImpl.lo: metadata/MetadataExtImpl.cpp
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT MetadataExtImpl.lo -MD -MP -MF "$(DEPDIR)/MetadataExtImpl.Tpo" -c -o MetadataExtImpl.lo `test -f 'metadata/MetadataExtImpl.cpp' || echo '$(srcdir)/'`metadata/MetadataExtImpl.cpp; \

@@ -8,7 +8,7 @@
 	elementFormDefault="qualified"
 	attributeFormDefault="unqualified"
 	blockDefault="substitution"
-	version="2.0">
+	version="2.1">
 
 	<import namespace="urn:oasis:names:tc:SAML:2.0:assertion" schemaLocation="saml-schema-assertion-2.0.xsd"/>
 	<import namespace="urn:oasis:names:tc:SAML:2.0:protocol" schemaLocation="saml-schema-protocol-2.0.xsd"/>
@@ -71,7 +71,7 @@
                         <complexType>
                             <attribute name="address" type="conf:string" use="required"/>
                             <attribute name="port" type="unsignedInt" use="required"/>
-                            <attribute name="acl" type="conf:listOfStrings" default="127.0.0.1"/>
+                            <attribute name="acl" type="conf:listOfStrings"/>
                         </complexType>
                     </element>
                     <element name="Listener" type="conf:PluggableType"/>
@@ -103,7 +103,7 @@
 							<any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
 						</sequence>
 						<attribute name="path" type="anyURI" use="required"/>
-						<attribute name="fatal" type="boolean" default="true"/>
+						<attribute name="fatal" type="boolean"/>
 						<anyAttribute namespace="##any" processContents="lax"/>
 					</complexType>
 				</element>
@@ -123,7 +123,7 @@
 						<any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
 					</sequence>
 					<attribute name="id" type="ID" use="required"/>
-					<attribute name="cleanupInterval" type="unsignedInt" default="900"/>
+					<attribute name="cleanupInterval" type="unsignedInt"/>
 					<anyAttribute namespace="##any" processContents="lax"/>
 				</restriction>
 			</complexContent>
@@ -141,7 +141,7 @@
 						<any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
 					</sequence>
 					<attribute name="StorageService" type="IDREF"/>
-					<attribute name="cacheTimeout" type="unsignedInt" default="28800"/>
+					<attribute name="cacheTimeout" type="unsignedInt"/>
 					<anyAttribute namespace="##any" processContents="lax"/>
 				</restriction>
 			</complexContent>
@@ -166,7 +166,7 @@
 			<sequence/>
 			<attribute name="StorageService" type="IDREF"/>
 			<attribute name="context" type="conf:string"/>
-			<attribute name="artifactTTL" type="unsignedInt" default="180"/>
+			<attribute name="artifactTTL" type="unsignedInt"/>
 		</complexType>
 	</element>
 	
@@ -223,7 +223,7 @@
 				</element>
 				<any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
-			<attribute name="normalizeRequest" type="boolean" default="true"/>
+			<attribute name="normalizeRequest" type="boolean"/>
 			<anyAttribute namespace="##other" processContents="lax"/>
 		</complexType>
 	</element>
@@ -368,7 +368,7 @@
 				</choice>
 			</sequence>
 			<attribute name="regex" type="conf:string" use="required"/>
-			<attribute name="ignoreCase" type="boolean" default="true"/>
+			<attribute name="ignoreCase" type="boolean"/>
 			<attribute name="applicationId" type="conf:string"/>
 			<attributeGroup ref="conf:ContentSettings"/>
 		</complexType>
@@ -405,7 +405,7 @@
 				<element ref="conf:Query" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
 			<attribute name="regex" type="conf:string" use="required"/>
-			<attribute name="ignoreCase" type="boolean" default="true"/>
+			<attribute name="ignoreCase" type="boolean"/>
 			<attribute name="applicationId" type="conf:string"/>
 			<attributeGroup ref="conf:ContentSettings"/>
 		</complexType>
@@ -483,7 +483,7 @@
 	</element>
 
 	<attributeGroup name="ApplicationGroup">
-		<attribute name="homeURL" type="anyURI" default="/"/>
+		<attribute name="homeURL" type="anyURI"/>
 		<attribute name="REMOTE_USER" type="conf:listOfStrings"/>
 		<attribute name="unsetHeaders" type="conf:listOfStrings"/>
 		<attribute name="metadataAttributePrefix" type="conf:string"/>
@@ -537,18 +537,19 @@
 				</element>
 			</choice>
 			<attribute name="handlerURL" type="anyURI"/>
-			<attribute name="handlerSSL" type="boolean" default="true"/>
+			<attribute name="handlerSSL" type="boolean"/>
 			<attribute name="exportLocation" type="conf:string"/>
-			<attribute name="exportACL" type="conf:listOfStrings" default="127.0.0.1"/>
+			<attribute name="exportACL" type="conf:listOfStrings"/>
 			<attribute name="cookieName" type="conf:string"/>
 			<attribute name="cookieProps" type="conf:string"/>
-			<attribute name="idpHistory" type="boolean" default="false"/>
+            <attribute name="cookieLifetime" type="unsignedInt"/>
+			<attribute name="idpHistory" type="boolean"/>
 			<attribute name="idpHistoryDays" type="unsignedInt"/>
-			<attribute name="lifetime" type="unsignedInt" default="28800"/>
-			<attribute name="timeout" type="unsignedInt" default="3600"/>
+			<attribute name="lifetime" type="unsignedInt"/>
+			<attribute name="timeout" type="unsignedInt"/>
 		    <attribute name="maxTimeSinceAuthn" type="unsignedInt"/>
-			<attribute name="checkAddress" type="boolean" default="true"/>
-			<attribute name="consistentAddress" type="boolean" default="true"/>
+			<attribute name="checkAddress" type="boolean"/>
+			<attribute name="consistentAddress" type="boolean"/>
 			<anyAttribute namespace="##other" processContents="lax"/>
 		</complexType>
 	</element>
@@ -681,7 +682,7 @@
 							<element name="Rule" type="conf:PluggableType" minOccurs="1" maxOccurs="unbounded"/>
 						</sequence>
 						<attribute name="id" type="conf:string" use="required"/>
-						<attribute name="validate" type="boolean" default="false"/>
+						<attribute name="validate" type="boolean"/>
 						<anyAttribute namespace="##any" processContents="lax"/>
 					</complexType>
 				</element>

@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * ChainingAttributeExtractor.cpp
- * 
+ *
  * Chains together multiple AttributeExtractor plugins.
  */
 
@@ -43,7 +43,7 @@ namespace shibsp {
         virtual ~ChainingAttributeExtractor() {
             for_each(m_extractors.begin(), m_extractors.end(), xmltooling::cleanup<AttributeExtractor>());
         }
-        
+
         Lockable* lock() {
             return this;
         }
@@ -63,7 +63,7 @@ namespace shibsp {
                 (*i)->getAttributeIds(attributes);
             }
         }
-        
+
     private:
         vector<AttributeExtractor*> m_extractors;
     };
@@ -97,7 +97,7 @@ ChainingAttributeExtractor::ChainingAttributeExtractor(const DOMElement* e)
                 m_extractors.push_back(conf.AttributeExtractorManager.newPlugin(type.get(),e));
             }
             catch (exception& ex) {
-                Category::getInstance(SHIBSP_LOGCAT".AttributeExtractor").error(
+                Category::getInstance(SHIBSP_LOGCAT".AttributeExtractor.Chaining").error(
                     "caught exception processing embedded AttributeExtractor element: %s", ex.what()
                     );
             }

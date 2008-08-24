@@ -31,6 +31,7 @@
 #include "util/SPConstants.h"
 
 #ifndef SHIBSP_LITE
+# include "metadata/MetadataProviderCriteria.h"
 # include <saml/saml2/metadata/Metadata.h>
 #endif
 #include <xmltooling/XMLToolingConfig.h>
@@ -205,7 +206,7 @@ void TransformSessionInitiator::doRequest(const Application& application, string
     MetadataProvider* m=application.getMetadataProvider();
     Locker locker(m);
 
-    MetadataProvider::Criteria mc(entityID.c_str(), &IDPSSODescriptor::ELEMENT_QNAME);
+    MetadataProviderCriteria mc(application, entityID.c_str(), &IDPSSODescriptor::ELEMENT_QNAME);
     pair<const EntityDescriptor*,const RoleDescriptor*> entity;
     if (!m_alwaysRun) {
         // First check the original value, it might be valid already.

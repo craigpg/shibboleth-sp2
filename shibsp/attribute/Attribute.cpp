@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * shibsp/attribute/Attribute.cpp
- * 
+ *
  * A resolved attribute.
  */
 
@@ -41,23 +41,25 @@ namespace shibsp {
     SHIBSP_DLLLOCAL Attribute* SimpleAttributeFactory(DDF& in) {
         return new SimpleAttribute(in);
     }
-    
+
     SHIBSP_DLLLOCAL Attribute* ScopedAttributeFactory(DDF& in) {
         return new ScopedAttribute(in);
     }
-    
+
     SHIBSP_DLLLOCAL Attribute* NameIDAttributeFactory(DDF& in) {
         return new NameIDAttribute(in);
     }
-    
+
 #ifndef SHIBSP_LITE
     SHIBSP_DLLLOCAL PluginManager<AttributeDecoder,QName,const DOMElement*>::Factory StringAttributeDecoderFactory;
     SHIBSP_DLLLOCAL PluginManager<AttributeDecoder,QName,const DOMElement*>::Factory ScopedAttributeDecoderFactory;
     SHIBSP_DLLLOCAL PluginManager<AttributeDecoder,QName,const DOMElement*>::Factory NameIDAttributeDecoderFactory;
+    SHIBSP_DLLLOCAL PluginManager<AttributeDecoder,QName,const DOMElement*>::Factory NameIDFromScopedAttributeDecoderFactory;
 
     static const XMLCh _StringAttributeDecoder[] = UNICODE_LITERAL_22(S,t,r,i,n,g,A,t,t,r,i,b,u,t,e,D,e,c,o,d,e,r);
     static const XMLCh _ScopedAttributeDecoder[] = UNICODE_LITERAL_22(S,c,o,p,e,d,A,t,t,r,i,b,u,t,e,D,e,c,o,d,e,r);
     static const XMLCh _NameIDAttributeDecoder[] = UNICODE_LITERAL_22(N,a,m,e,I,D,A,t,t,r,i,b,u,t,e,D,e,c,o,d,e,r);
+    static const XMLCh _NameIDFromScopedAttributeDecoder[] = UNICODE_LITERAL_32(N,a,m,e,I,D,F,r,o,m,S,c,o,p,e,d,A,t,t,r,i,b,u,t,e,D,e,c,o,d,e,r);
 
     static const XMLCh caseSensitive[] =           UNICODE_LITERAL_13(c,a,s,e,S,e,n,s,i,t,i,v,e);
 #endif
@@ -67,6 +69,7 @@ namespace shibsp {
 QName shibsp::StringAttributeDecoderType(shibspconstants::SHIB2ATTRIBUTEMAP_NS, _StringAttributeDecoder);
 QName shibsp::ScopedAttributeDecoderType(shibspconstants::SHIB2ATTRIBUTEMAP_NS, _ScopedAttributeDecoder);
 QName shibsp::NameIDAttributeDecoderType(shibspconstants::SHIB2ATTRIBUTEMAP_NS, _NameIDAttributeDecoder);
+QName shibsp::NameIDFromScopedAttributeDecoderType(shibspconstants::SHIB2ATTRIBUTEMAP_NS, _NameIDFromScopedAttributeDecoder);
 
 void shibsp::registerAttributeDecoders()
 {
@@ -74,6 +77,7 @@ void shibsp::registerAttributeDecoders()
     conf.AttributeDecoderManager.registerFactory(StringAttributeDecoderType, StringAttributeDecoderFactory);
     conf.AttributeDecoderManager.registerFactory(ScopedAttributeDecoderType, ScopedAttributeDecoderFactory);
     conf.AttributeDecoderManager.registerFactory(NameIDAttributeDecoderType, NameIDAttributeDecoderFactory);
+    conf.AttributeDecoderManager.registerFactory(NameIDFromScopedAttributeDecoderType, NameIDFromScopedAttributeDecoderFactory);
 }
 
 AttributeDecoder::AttributeDecoder(const DOMElement *e) : m_caseSensitive(true)

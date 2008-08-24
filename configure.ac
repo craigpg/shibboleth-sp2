@@ -1,7 +1,7 @@
 AC_PREREQ([2.50])
-AC_INIT([shibboleth], [2.0], [shibboleth-users@internet2.edu], [shibboleth])
+AC_INIT([shibboleth], [2.1], [shibboleth-users@internet2.edu], [shibboleth])
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE([shibboleth],[2.0])
+AM_INIT_AUTOMAKE([shibboleth],[2.1])
 
 sinclude(doxygen.m4)
 sinclude(acx_pthread.m4)
@@ -52,7 +52,10 @@ else
 			if test "$CXX" = "CC" ; then
 				CXXFLAGS="$CXXFLAGS -Qoption ccfe -stabs=no%dfltlit+no%dflthlp"
 			fi
-	        ;;
+			;;
+	        *osf*)
+			CXXFLAGS="$CXXFLAGS -D_POSIX_PII_SOCKET"
+			;;
 	esac
 fi
 
@@ -434,6 +437,39 @@ AM_CONDITIONAL(BUILD_FASTCGI,test ! "$WANT_FASTCGI" = "no")
 
 if test ! "$WANT_FASTCGI" = "no" ; then
     WANT_SUBDIRS="$WANT_SUBDIRS fastcgi"
+fi
+
+#
+# Build Memcached support?
+#
+AC_MSG_CHECKING(for Memcached support)
+AC_ARG_WITH(memcached,
+    AC_HELP_STRING([--with-memcached=DIR], [Build Memcached support]),
+    [WANT_MEMCACHED=$withval],[WANT_MEMCACHED=no])
+AC_MSG_RESULT($WANT_MEMCACHED)
+
+if test "$WANT_MEMCACHED" != "no"; then
+    if test "$WANT_MEMCACHED" != "yes"; then
+        if test x_$WANT_MEMCACHED != x_/usr; then
+            MEMCACHED_INCLUDE="-I$WANT_MEMCACHED/include"
+            MEMCACHED_LDFLAGS="-L$WANT_MEMCACHED/lib"
+        fi
+    fi
+    AC_CHECK_HEADER([libmemcached/memcached.h],,
+        AC_MSG_ERROR([unable to find Memcached header files]))
+    MEMCACHED_LIBS="-lmemcached"
+fi
+
+AC_SUBST(MEMCACHED_INCLUDE)
+AC_SUBST(MEMCACHED_LDFLAGS)
+AC_SUBST(MEMCACHED_LIBS)
+
+# always output the Makefile, even if you don't use it
+AC_CONFIG_FILES([memcache-store/Makefile])
+AM_CONDITIONAL(BUILD_MEMCACHED,test ! "$WANT_MEMCACHED" = "no")
+
+if test ! "$WANT_MEMCACHED" = "no" ; then
+    WANT_SUBDIRS="$WANT_SUBDIRS memcache-store"
 fi
 
 

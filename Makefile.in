@@ -68,7 +68,7 @@ host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
 	$(srcdir)/doxygen.am $(top_srcdir)/configure config.guess \
-	config.sub depcomp install-sh ltmain.sh missing mkinstalldirs
+	config.sub depcomp install-sh ltmain.sh missing
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/libtool.m4 \
@@ -78,7 +78,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES =
 SOURCES =
@@ -130,6 +130,8 @@ BUILD_AP22_FALSE = @BUILD_AP22_FALSE@
 BUILD_AP22_TRUE = @BUILD_AP22_TRUE@
 BUILD_FASTCGI_FALSE = @BUILD_FASTCGI_FALSE@
 BUILD_FASTCGI_TRUE = @BUILD_FASTCGI_TRUE@
+BUILD_MEMCACHED_FALSE = @BUILD_MEMCACHED_FALSE@
+BUILD_MEMCACHED_TRUE = @BUILD_MEMCACHED_TRUE@
 BUILD_NSAPI_FALSE = @BUILD_NSAPI_FALSE@
 BUILD_NSAPI_TRUE = @BUILD_NSAPI_TRUE@
 CC = @CC@
@@ -215,6 +217,9 @@ LOG4CPP_CONFIG = @LOG4CPP_CONFIG@
 LOG4SHIB_CONFIG = @LOG4SHIB_CONFIG@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
+MEMCACHED_INCLUDE = @MEMCACHED_INCLUDE@
+MEMCACHED_LDFLAGS = @MEMCACHED_LDFLAGS@
+MEMCACHED_LIBS = @MEMCACHED_LIBS@
 NSAPI_INCLUDE = @NSAPI_INCLUDE@
 OBJEXT = @OBJEXT@
 ODBC_CFLAGS = @ODBC_CFLAGS@
@@ -322,7 +327,7 @@ ACLOCAL_AMFLAGS = -I .
 
 MOSTLYCLEANFILES = $(DX_CLEANFILES)
 SUBDIRS = $(WANT_SUBDIRS)
-DIST_SUBDIRS = doc schemas configs shibsp shibd adfs util apache nsapi_shib fastcgi odbc-store selinux
+DIST_SUBDIRS = doc schemas configs shibsp shibd adfs util apache nsapi_shib fastcgi odbc-store memcache-store selinux
 @DX_COND_doc_TRUE@APIDOCS = doc/api
 EXTRA_DIST = $(DX_CONFIG) \
     $(APIDOCS) \
@@ -844,13 +849,13 @@ dist-hook:
 
 shibboleth.spec: shibboleth.spec.in Makefile
 	rm -f $@.tmp
-	sed < $< > $@.tmp \
+	sed < $@.in > $@.tmp \
 	    -e 's:@-VERSION-@:${VERSION}:'
 	mv $@.tmp $@
 
 pkginfo: pkginfo.in Makefile
 	rm -f $@.tmp
-	sed < $< > $@.tmp \
+	sed < $@.in > $@.tmp \
 	    -e 's:@-VERSION-@:${VERSION}:'
 	mv $@.tmp $@
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
