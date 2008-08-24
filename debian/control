@@ -30,7 +30,7 @@ Description: Federated web single sign-on system (Apache module)
  (web servers providing resources protected by Shibboleth) and the
  supporting shibd daemon.
 
-Package: libshibsp1
+Package: libshibsp2
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, opensaml2-schemas, shibboleth-sp2-schemas,
@@ -48,7 +48,7 @@ Description: Federated web single sign-on system (runtime)
 Package: libshibsp-dev
 Section: libdevel
 Architecture: any
-Depends: libshibsp1 (= ${binary:Version}), libsaml2-dev, libxerces-c2-dev,
+Depends: libshibsp2 (= ${binary:Version}), libsaml2-dev, libxerces-c2-dev,
  libxmltooling-dev
 Suggests: libshib2-doc (= ${source:Version})
 Description: Federated web single sign-on system (development)

@@ -3,17 +3,17 @@ Upstream-Author: Internet2
 Packaged-By: Ferenc Wágner <wferi@niif.hu>
 Packaged-Date: Mon, 28 Apr 2008 14:55:31 +0200
 Original-Source-Location:
- http://shibboleth.internet2.edu/downloads/shibboleth/cpp/2.0/
+ http://shibboleth.internet2.edu/downloads/shibboleth/cpp/2.1/
 
 The original upstream source was repackaged to remove the WS-Trust.xsd
 schema, which was not distributed under a DFSG-free license.
 
 Files: *
-Copyright: 2001-2007 Internet2
+Copyright: 2001-2008 Internet2
 License: Apache-2.0
 
 Files: */Makefile.in
-Copyright: 2001-2007 Internet2
+Copyright: 2001-2008 Internet2
  2004 Oren Ben-Kiki
  1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005
    Free Software Foundation, Inc.
@@ -118,11 +118,6 @@ License: other
 Files: ./install-sh
 Copyright: (C) 1994 X Consortium
 License: Expat
-
-Files: ./mkinstalldirs
-Copyright: 1993 Noah Friedman <friedman@prep.ai.mit.edu>
-License: other
- Public domain.
 
 License: Expat
  Permission is hereby granted, free of charge, to any person obtaining

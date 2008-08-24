@@ -37,11 +37,11 @@ get-orig-source:
 	tar xfz shibboleth-sp-$(VERSION).tar.gz
 	rm shibboleth-sp-$(VERSION).tar.gz
 	rm shibboleth-$(VERSION)/schemas/WS-Trust.xsd
-	mv shibboleth-$(VERSION) shibboleth-sp_$(VERSION).$(DEBVERS).orig
+	mv shibboleth-$(VERSION) shibboleth-sp2_$(VERSION).$(DEBVERS).orig
 	tar cf shibboleth-sp2_$(VERSION).$(DEBVERS).orig.tar \
-	    shibboleth-sp_$(VERSION).$(DEBVERS).orig
-	rm -r shibboleth-sp_$(VERSION).$(DEBVERS).orig
-	gzip -9 shibboleth-sp_$(VERSION).$(DEBVERS).orig.tar
+	    shibboleth-sp2_$(VERSION).$(DEBVERS).orig
+	rm -r shibboleth-sp2_$(VERSION).$(DEBVERS).orig
+	gzip -9 shibboleth-sp2_$(VERSION).$(DEBVERS).orig.tar
 
 configure: configure-stamp
 configure-stamp:
