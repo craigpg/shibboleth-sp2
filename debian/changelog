@@ -5,6 +5,8 @@ shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
     - Schema validation is now optional.
     - Many bug fixes.
   * Bump SONAME of libshibsp following upstream's versioning.
+  * Build-depend on libsaml2-dev >= 2.1 following the upstream spec file
+    and libxmltooling-dev 1.1 just in case (required by OpenSAML 2.1).
   * Fix the name of the tarball created by get-orig-source.
 
  -- Russ Allbery <rra@debian.org>  Sat, 23 Aug 2008 17:00:22 -0700
