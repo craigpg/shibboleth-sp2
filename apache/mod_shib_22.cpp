@@ -61,5 +61,4 @@
 
 #define ap_http_method ap_http_scheme
 
-#include <string.h>
 #include "mod_apache.cpp"
