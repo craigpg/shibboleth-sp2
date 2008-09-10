@@ -1,5 +1,6 @@
 shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
 
+  [ Russ Allbery ]
   * New upstream version.
     - New memory cache storage backend.
     - Schema validation is now optional.
@@ -9,7 +10,11 @@ shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
     and libxmltooling-dev 1.1 just in case (required by OpenSAML 2.1).
   * Fix the name of the tarball created by get-orig-source.
 
- -- Russ Allbery <rra@debian.org>  Sat, 23 Aug 2008 17:00:22 -0700
+  [ Ferenc Wagner ]
+  * Follow the libshibsp1->2 package rename in the dh_makeshlibs invocation.
+  * Remove the Shibboleth minor version number from README.Debian.
+
+ -- Ferenc Wagner <wferi@niif.hu>  Wed, 10 Sep 2008 21:08:08 +0200
 
 shibboleth-sp2 (2.0.dfsg1-3) unstable; urgency=low
 
