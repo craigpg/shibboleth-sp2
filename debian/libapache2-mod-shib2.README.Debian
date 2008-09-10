@@ -1,4 +1,4 @@
-                       Shibboleth 2.0 SP for Debian
+                        Shibboleth 2 SP for Debian
 
 Introduction
 
@@ -10,7 +10,7 @@ Introduction
   either one that the Shibboleth SP points to directly or one that is part
   of a federation that is trusted by the Shibboleth SP.
 
-  This is the Shibboleth 2.0 version of the SP.  For the 1.x version of
+  This is the Shibboleth 2 version of the SP.  For the 1.x version of
   the Shibboleth SP (if it is still available), see libapache-mod-shib.
 
 Installation and Configuration
