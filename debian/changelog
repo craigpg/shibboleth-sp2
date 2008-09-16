@@ -13,11 +13,12 @@ shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
   [ Ferenc Wagner ]
   * Follow the libshibsp1->2 package rename in the dh_makeshlibs invocation.
   * Remove the Shibboleth minor version number from README.Debian.
-  * Add directory /var/log/shibboleth to libapache2-mod-shib2.
+  * Add directory /var/log/shibboleth to libapache2-mod-shib2 (thanks to Peter
+    Schober for noticing)
   * Comment out the reference to WS-Trust.xsd from the catalog.xml file in
     shibboleth-sp2-schemas.
 
- -- Ferenc Wagner <wferi@niif.hu>  Thu, 11 Sep 2008 18:00:17 +0200
+ -- Ferenc Wagner <wferi@niif.hu>  Thu, 11 Sep 2008 19:30:26 +0200
 
 shibboleth-sp2 (2.0.dfsg1-3) unstable; urgency=low
 
