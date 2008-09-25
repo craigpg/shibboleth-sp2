@@ -17,9 +17,9 @@ shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
   * Add directory /var/log/shibboleth to libapache2-mod-shib2 (thanks to Peter
     Schober for noticing)
   * Comment out the reference to WS-Trust.xsd from the catalog.xml file in
-    shibboleth-sp2-schemas.
+    shibboleth-sp2-schemas and document how to enable it again.
 
- -- Ferenc Wagner <wferi@niif.hu>  Thu, 25 Sep 2008 14:42:04 +0200
+ -- Ferenc Wagner <wferi@niif.hu>  Thu, 25 Sep 2008 15:20:24 +0200
 
 shibboleth-sp2 (2.0.dfsg1-3) unstable; urgency=low
 
