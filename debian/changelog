@@ -9,6 +9,7 @@ shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
   * Build-depend on libsaml2-dev >= 2.1 following the upstream spec file
     and libxmltooling-dev 1.1 just in case (required by OpenSAML 2.1).
   * Fix the name of the tarball created by get-orig-source.
+  * Logcheck rules.
 
   [ Ferenc Wagner ]
   * Follow the libshibsp1->2 package rename in the dh_makeshlibs invocation.
@@ -18,7 +19,7 @@ shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
   * Comment out the reference to WS-Trust.xsd from the catalog.xml file in
     shibboleth-sp2-schemas.
 
- -- Ferenc Wagner <wferi@niif.hu>  Thu, 11 Sep 2008 19:30:26 +0200
+ -- Ferenc Wagner <wferi@niif.hu>  Thu, 25 Sep 2008 14:42:04 +0200
 
 shibboleth-sp2 (2.0.dfsg1-3) unstable; urgency=low
 
