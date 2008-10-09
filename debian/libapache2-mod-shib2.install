@@ -4,7 +4,7 @@ debian/tmp/etc/shibboleth
 debian/tmp/usr/lib/shibboleth
 debian/tmp/var/run/shibboleth
 
-debian/shib.load	etc/apache2/mods-available
+debian/shib2.load	etc/apache2/mods-available
 
 doc/logo.jpg	usr/share/shibboleth
 doc/main.css	usr/share/shibboleth

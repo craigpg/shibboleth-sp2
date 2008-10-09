@@ -21,6 +21,14 @@ shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
 
  -- Ferenc Wagner <wferi@niif.hu>  Thu, 25 Sep 2008 15:20:24 +0200
 
+shibboleth-sp2 (2.0.dfsg1-4) UNRELEASED; urgency=low
+
+  * Rename debian/shib.load to debian/shib2.load to avoid clashing with the
+    libapache2-mod-shib package.  Otherwise its Apache config file breaks our
+    module.
+
+ -- Ferenc Wagner <wferi@niif.hu>  Thu, 09 Oct 2008 19:05:09 +0200
+
 shibboleth-sp2 (2.0.dfsg1-3) unstable; urgency=low
 
   [ Ferenc Wagner ]
