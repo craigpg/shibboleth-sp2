@@ -3,7 +3,7 @@
 set -e
 
 if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ] ; then
-    a2dismod shib || true
+    a2dismod shib2 || true
 fi
 
 #DEBHELPER#

@@ -70,6 +70,27 @@ Changes in Debian Package
   for more details.  If you want the other parts of Shibboleth to also log
   to syslog, change the other /etc/shibboleth/*.logger files similarly.
 
+  The WS-Trust.xsd schema, which is needed if you use the ADFS support
+  and turn on schema validation, was removed from the Debian package for
+  license reasons.  To enable it again, do the following:
+
+    1. Download the original source from
+       http://shibboleth.internet2.edu/downloads/shibboleth/cppsp/latest/
+
+    2. Extract schemas/WS-Trust.xsd to some convenient location, for
+       example to /etc/shibboleth/WS-Trust.xsd.
+
+    3. Copy /usr/share/xml/shibboleth/catalog.xml into /etc/shibboleth.
+
+    4. Uncomment the WS-Trust line and set its uri attribute:
+       <system systemId="http://schemas.xmlsoap.org/ws/2005/02/trust"
+               uri="/etc/shibboleth/WS-Trust.xsd"/>
+
+    5. Edit /etc/default/shibd to contain
+       DAEMON_OPTS="-x /etc/shibboleth/catalog.xml:/usr/share/xml/opensaml/saml20-catalog.xml:/usr/share/xml/xmltooling/catalog.xml"
+
+    6. Restart the Shibboleth daemon: /etc/init.d/shibd restart.
+
 Testing with TestShib
 
   If you don't have a local Shibboleth Federation you can easily join but

@@ -53,6 +53,8 @@ Prints out the version string.
 
 Prints out a brief summary of the shibboleth options.
 
+=back
+
 =head1 AUTHORS
 
 shibd is part of the Internet 2 Shibboleth project written by
