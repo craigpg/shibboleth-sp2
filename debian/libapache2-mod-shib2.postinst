@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+
+# Prior to 2.0.dfsg1-4, we named our Apache configuration files shib instead
+# of shib2.  We therefore need to unlink the old configuration files, and if
+# they were linked in, we should link in the new ones.
+if [ "$1" = "configure" ] ; then
+    if dpkg --compare-versions "$2" lt-nl 2.0.dfsg1-4 ; then
+        if [ -f /etc/apache2/mods-enabled/shib.load ] ; then
+            a2enmod shib2
+        fi
+        a2dismod shib || true
+    fi
+fi
+
+#DEBHELPER#
+
+exit 0
