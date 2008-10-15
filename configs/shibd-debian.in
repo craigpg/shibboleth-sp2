@@ -63,14 +63,13 @@ start)
 stop)
     echo -n "Stopping $DESC: "
     start-stop-daemon --stop --quiet --pidfile $PIDFILE \
-        --exec $DAEMON
+        --retry TERM/30/KILL/5 --exec $DAEMON
     echo "$NAME."
     ;;
 restart|force-reload)
     echo -n "Restarting $DESC: "
     start-stop-daemon --stop --quiet --pidfile $PIDFILE \
-        --exec $DAEMON
-    sleep 1
+        --retry TERM/30/KILL/5 --exec $DAEMON
     start-stop-daemon --background --start --quiet \
         --pidfile $PIDFILE --exec $DAEMON -- $DAEMON_OPTS
     echo "$NAME."
