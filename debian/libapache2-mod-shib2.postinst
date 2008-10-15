@@ -5,12 +5,24 @@ set -e
 # Prior to 2.0.dfsg1-4, we named our Apache configuration files shib instead
 # of shib2.  We therefore need to unlink the old configuration files, and if
 # they were linked in, we should link in the new ones.
+#
+# We also have to work around a bug in the etch Shibboleth SP 1.x packages
+# that caused them to remove the wrong module configuration and hence not
+# unlink their configuration.  If the 1.x configuration is still linked in, it
+# will break the 2.x module, so make sure it's disabled on initial install.
 if [ "$1" = "configure" ] ; then
     if dpkg --compare-versions "$2" lt-nl 2.0.dfsg1-4 ; then
         if [ -f /etc/apache2/mods-enabled/shib.load ] ; then
             a2enmod shib2
         fi
         a2dismod shib || true
+    fi
+
+    # Most of the time, this will produce an error message.  It only does
+    # anything if we're replacing a broken libapache2-mod-shib package.
+    # Suppress the normally useless error message to not confuse people.
+    if [ -z "$2" ] ; then
+        a2dismod shib 2>/dev/null || true
     fi
 fi
 
