@@ -19,7 +19,7 @@ shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
 
  -- Ferenc Wagner <wferi@niif.hu>  Thu, 25 Sep 2008 15:20:24 +0200
 
-shibboleth-sp2 (2.0.dfsg1-4) UNRELEASED; urgency=low
+shibboleth-sp2 (2.0.dfsg1-4) unstable; urgency=low
 
   [ Ferenc Wagner ]
   * Rename debian/shib.load to debian/shib2.load to avoid clashing with the
@@ -36,7 +36,7 @@ shibboleth-sp2 (2.0.dfsg1-4) UNRELEASED; urgency=low
     one had not yet exited.
   * Fix a syntax error in the shibd man page.
 
- -- Ferenc Wagner <wferi@niif.hu>  Tue, 14 Oct 2008 17:45:22 +0200
+ -- Russ Allbery <rra@debian.org>  Tue, 14 Oct 2008 21:47:36 -0700
 
 shibboleth-sp2 (2.0.dfsg1-3) unstable; urgency=low
 
