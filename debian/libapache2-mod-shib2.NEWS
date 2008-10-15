@@ -1,0 +1,10 @@
+shibboleth-sp2 (2.0.dfsg1-4) unstable; urgency=low
+
+  With this release, the Apache module configuration fragments in
+  /etc/apache2/mods-available have been renamed to shib2.* from shib.* to
+  avoid conflicts with libapache2-mod-shib.  If you had any customizations
+  in /etc/apache2/mods-available/shib.load, you will need to move them to
+  /etc/apache2/mods-available/shib2.load.
+
+ -- Russ Allbery <rra@debian.org>  Tue, 14 Oct 2008 20:52:20 -0700
+
