@@ -31,6 +31,9 @@ shibboleth-sp2 (2.0.dfsg1-4) UNRELEASED; urgency=low
   [ Russ Allbery ]
   * Add a postinst to disable the old configuration on upgrade and enable
     the module if it had been enabled under the old configuration name.
+  * Wait for shibd to exit on stop or restart.  This fixes a bug in
+    restart that could lead to no new shibd being started because the old
+    one had not yet exited.
 
  -- Ferenc Wagner <wferi@niif.hu>  Tue, 14 Oct 2008 17:45:22 +0200
 
