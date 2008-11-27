@@ -87,7 +87,7 @@ Changes in Debian Package
                uri="/etc/shibboleth/WS-Trust.xsd"/>
 
     5. Edit /etc/default/shibd to contain
-       DAEMON_OPTS="-x /etc/shibboleth/catalog.xml:/usr/share/xml/opensaml/saml20-catalog.xml:/usr/share/xml/xmltooling/catalog.xml"
+       DAEMON_OPTS="$DAEMON_OPTS -x /etc/shibboleth/catalog.xml:/usr/share/xml/opensaml/saml20-catalog.xml:/usr/share/xml/xmltooling/catalog.xml"
 
     6. Restart the Shibboleth daemon: /etc/init.d/shibd restart.
 
