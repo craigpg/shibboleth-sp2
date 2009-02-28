@@ -10,6 +10,9 @@ shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
     and libxmltooling-dev 1.1 just in case (required by OpenSAML 2.1).
   * Fix the name of the tarball created by get-orig-source.
   * Logcheck rules.
+  * Tighten the dependency versioning; the 2.1 SP library requires the
+    2.1 schemas from the Shibboleth SP and OpenSAML and the 1.1 schemas
+    from XMLTooling.
 
   [ Ferenc Wagner ]
   * Follow the libshibsp1->2 package rename in the dh_makeshlibs invocation.
