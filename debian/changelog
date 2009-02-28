@@ -13,6 +13,7 @@ shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
   * Tighten the dependency versioning; the 2.1 SP library requires the
     2.1 schemas from the Shibboleth SP and OpenSAML and the 1.1 schemas
     from XMLTooling.
+  * Remove duplicate Section field for libapache2-mod-shib2.
 
   [ Ferenc Wagner ]
   * Follow the libshibsp1->2 package rename in the dh_makeshlibs invocation.
