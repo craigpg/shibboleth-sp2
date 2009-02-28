@@ -14,7 +14,6 @@ Vcs-Git: git://git.debian.org/git/pkg-shibboleth/shibboleth-sp2.git
 Vcs-Browser: http://git.debian.org/?p=pkg-shibboleth/shibboleth-sp2.git
 
 Package: libapache2-mod-shib2
-Section: web
 Architecture: any
 Depends: ${shlibs:Depends}
 Recommends: apache2, openssl
