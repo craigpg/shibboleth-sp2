@@ -1,4 +1,4 @@
-shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
+shibboleth-sp2 (2.1.dfsg1-1) unstable; urgency=low
 
   [ Russ Allbery ]
   * New upstream version.
@@ -21,7 +21,7 @@ shibboleth-sp2 (2.1.dfsg1-1) UNRELEASED; urgency=low
   * Comment out the reference to WS-Trust.xsd from the catalog.xml file in
     shibboleth-sp2-schemas and document how to enable it again.
 
- -- Ferenc Wagner <wferi@niif.hu>  Thu, 25 Sep 2008 15:20:24 +0200
+ -- Russ Allbery <rra@debian.org>  Fri, 27 Feb 2009 20:54:51 -0800
 
 shibboleth-sp2 (2.0.dfsg1-4) unstable; urgency=low
 
