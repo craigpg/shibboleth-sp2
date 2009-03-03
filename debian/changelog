@@ -1,3 +1,10 @@
+shibboleth-sp2 (2.1.dfsg1-2) unstable; urgency=low
+
+  * Redo the variable quoting in doxygen.m4 so that configure can be
+    rebuilt with Autoconf 2.63.  (Closes: #518039)
+
+ -- Russ Allbery <rra@debian.org>  Tue, 03 Mar 2009 15:03:10 -0800
+
 shibboleth-sp2 (2.1.dfsg1-1) unstable; urgency=low
 
   [ Russ Allbery ]
