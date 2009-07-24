@@ -1,3 +1,10 @@
+shibboleth-sp2 (2.1.dfsg1-3) UNRELEASED; urgency=low
+
+  * Update libapache2-mod-shib2's README.Debian for changes to the
+    TestShib web pages.
+
+ -- Russ Allbery <rra@debian.org>  Fri, 24 Jul 2009 15:29:01 -0700
+
 shibboleth-sp2 (2.1.dfsg1-2) unstable; urgency=low
 
   * Redo the variable quoting in doxygen.m4 so that configure can be

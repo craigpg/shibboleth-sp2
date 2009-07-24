@@ -99,26 +99,21 @@ Testing with TestShib
   the following instructions (but test them against the details on the
   testshib.org web pages in case anything has changed):
 
-  1. If you do not have an OpenIDP identity, go to <http://openidp.org/>
-     and create one.
+  1. Go to <http://testshib.org/>, click on Register, and log in with
+     either OpenIDP or ProtectNetwork.  If you do not have an identity
+     with either, create one following the links on that page.
 
-  2. Go to <http://testshib.org/>, click on Join, and then Create and
-     manage metadata entries.  Log in with your OpenIDP identity.
+  2. Click on New Service Provider (unless you've already created an entry
+     for this host, in which case select Edit and reuse it).  Enter your
+     hostname, your public certificate, and your first and last name, and
+     then click on Continue.  Verify the information and click on Submit.
 
-  3. Click on New Service Provider (unless you've already created an entry
-     for this host, in which case reuse it).  Enter your hostname, your
-     public certificate, and your first and last name, and then click on
-     Continue.  Verify the information and click on Submit.
+  3. Now select Configure, scroll down to Service Provider Configuration,
+     choose Other for the platform, enter your hostname, and click on
+     Create Me.  Save the resulting configuration file as
+     /etc/shibboleth/shibboleth2.xml.
 
-  4. Note the URL in quotes at the top of the page for which the
-     credentials were "successfully stored."  This URL is your server's
-     providerID; save it for later.
-
-  5. Now select Configure, scroll down to Service Provider Configuration,
-     choose Other for the platform, and click on Create Me.  Save the
-     resulting configuration file as /etc/shibboleth/shibboleth2.xml.
-
-  6. Create some part of your web site that's protected with Shibboleth as
+  4. Create some part of your web site that's protected with Shibboleth as
      described above, restart Apache with apache2ctl restart, restart
      shibd with /etc/init.d/shibd restart, and then go to that URL.  You
      should be redirected to the testshib.org IdP, and then get a basic
@@ -151,4 +146,4 @@ Further Information
 
   and in particular the "Configuration" link.
 
- -- Russ Allbery <rra@debian.org>, Wed, 25 Jun 2008 19:46:06 -0700
+ -- Russ Allbery <rra@debian.org>, Fri, 24 Jul 2009 15:21:41 -0700
