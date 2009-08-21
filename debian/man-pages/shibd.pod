@@ -4,11 +4,13 @@ shibd - Shibboleth daemon
 
 =head1 SYNOPSIS
 
-shibd [B<-dcxtfpvh>]
+shibd [B<-tfFvh>] [B<-c> I<config>] [B<-d> I<prefix>] [B<-p> I<pidfile>]
+[B<-w> I<seconds>] [B<-x> I<catalog>]
 
 =head1 DESCRIPTION
 
-B<shibd> is the Shibboleth daemon.
+B<shibd> is the Shibboleth daemon.  It handles attribute requests from the
+Apache Shibboleth module and should run in conjunction with it.
 
 =head1 OPTIONS
 
@@ -16,20 +18,38 @@ B<shibd> takes the following command-line options.
 
 =over 4
 
+=item B<-c> I<pathname>
+
+Specifies the pathname of B<shibd>'s configuration file. Defaults to
+/etc/shibboleth/shibboleth2.xml or the value of the SHIBSP_CONFIG
+environment variable, if it is set.
+
 =item B<-d> I<pathname>
 
 Installation prefix. Defaults to /usr.
 
-=item B<-c> I<pathname>
+=item B<-F>
 
-Specifies the pathname of shibd's configuration file. Defaults to 
-/etc/shibboleth/shibboleth2.xml or the value of the SHIBSP_CONFIG
-environment variable, if it is set.
+Stay in the foreground.  Normally, B<shibd> backgrounds itself after
+starting up.
 
-=item B<-x> I<pathname>
+=item B<-f>
 
-Specifies the XML schema catalog to use. Defaults to
-/usr/share/xml/shibboleth/catalog.xml.
+Force removal of listener socket.
+
+=item B<-h>
+
+Prints out a brief summary of the shibboleth options.
+
+=item B<-p> I<pathname>
+
+Specifies the pathname to use to write out the shibboleth PID file.
+
+=item B<-w> I<seconds>
+
+Seconds to wait for the background B<shibd> to start up before the
+foreground process returns.  If not set, the default value is three
+seconds.
 
 =item B<-t>
 
@@ -37,21 +57,14 @@ Validates the general correctness of the configuration. Not all problems
 can be detected this way, but the chance of successful startup is high if
 the checking process does not log any errors.
 
-=item B<-f>
-
-Force removal of listener socket.
-
-=item B<-p> I<pathname>
-
-Specifies the pathname to use to write out the shibboleth PID file.
-
 =item B<-v>
 
 Prints out the version string.
 
-=item B<-h>
+=item B<-x> I<pathname>
 
-Prints out a brief summary of the shibboleth options.
+Specifies the XML schema catalog to use. Defaults to
+/usr/share/xml/shibboleth/catalog.xml.
 
 =back
 
