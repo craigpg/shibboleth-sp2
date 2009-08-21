@@ -1,6 +1,28 @@
 shibboleth-sp2 (2.2.1+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream release.
+    - SECURITY: Fix improper handling of certificate names containing nul
+      characters.
+    - SECURITY: Correctly validate the use attribute of KeyDescriptors,
+      preventing use of a key for signing or for encryption if its use
+      field says it may not be used for that purpose.
+    - Support preserving form data across user authentication.
+    - Support internal server redirection while maintaining protection.
+    - Fix incompatibility between lazy sessions and servlet containers.
+    - Fix some problems with dynamic metadata resolution.
+    - Fix incompatibility with mod_include.
+    - Fix single logout via SOAP.
+    - Fix shibd crash with invalid metadata.
+    - Fix crash in chaining attribute resolver.
+    - Avoid infinite loop on empty attribute mapped to REMOTE_USER.
+    - Fix handling of some Unicode data in relaystate data in URLs.
+    - Correctly return Success to LogoutRequest where appropriate.
+    - Avoid chunked encoding in back-channel calls.
+    - Correctly check Recipient values in assertions.
+    - Fix attributePrefix handling in some contexts.
+    - Fix generated metadata DiscoveryResponse.
+    - Fix handling of unsigned responses with encryption.
+    - Fix handling of InProcess property.
   * Dynamically determine the Debian and upstream package versions for
     get-orig-source from debian/changelog.
   * Update libapache2-mod-shib2's README.Debian for changes to the

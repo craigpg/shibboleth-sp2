@@ -9,11 +9,11 @@ The original upstream source was repackaged to remove the WS-Trust.xsd
 schema, which was not distributed under a DFSG-free license.
 
 Files: *
-Copyright: 2001-2008 Internet2
+Copyright: 2001-2009 Internet2
 License: Apache-2.0
 
 Files: */Makefile.in
-Copyright: 2001-2008 Internet2
+Copyright: 2001-2009 Internet2
  2004 Oren Ben-Kiki
  1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005
    Free Software Foundation, Inc.
@@ -100,7 +100,7 @@ License: other
 
 Files: ./debian/*
 Copyright: 2008 Ferenc Wágner <wferi@niif.hu>
-           2008 Russ Allbery <rra@debian.org>
+           2008, 2009 Russ Allbery <rra@debian.org>
 License: Expat
 
 Files: ./doxygen.{am,m4}
