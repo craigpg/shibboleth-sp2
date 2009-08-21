@@ -33,6 +33,8 @@ shibboleth-sp2 (2.2.1+dfsg-1) UNRELEASED; urgency=low
     TestShib web pages.
   * Update standards version to 3.8.3.
     - Create /var/run/shibboleth in the init script if it doesn't exist.
+    - Don't ship /var/run/shibboleth in the package.
+    - Remove /var/run/shibboleth in postrm if it exists.
 
  -- Russ Allbery <rra@debian.org>  Fri, 24 Jul 2009 15:29:01 -0700
 
