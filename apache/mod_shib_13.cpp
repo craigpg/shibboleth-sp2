@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@
 #define SH_AP_CONFIGFILE configfile_t
 #define SH_AP_R(r) r
 #define SH_AP_USER(r) r->connection->user
+#define SH_AP_AUTH_TYPE(r) r->connection->ap_auth_type
 
 #ifdef WIN32
 # define _USE_32BIT_TIME_T

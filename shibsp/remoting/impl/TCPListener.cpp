@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * TCPListener.cpp
- * 
+ *
  * TCP-based SocketListener implementation
  */
 
@@ -31,6 +31,7 @@
 # include <sys/un.h>
 # include <unistd.h>
 # include <arpa/inet.h>
+# include <netinet/in.h>
 #endif
 
 #include <sys/types.h>
@@ -60,21 +61,21 @@ namespace shibsp {
         bool connect(ShibSocket& s) const;
         bool close(ShibSocket& s) const;
         bool accept(ShibSocket& listener, ShibSocket& s) const;
-        
+
         int send(ShibSocket& s, const char* buf, int len) const {
             return ::send(s, buf, len, 0);
         }
-        
+
         int recv(ShibSocket& s, char* buf, int buflen) const {
             return ::recv(s, buf, buflen, 0);
         }
-        
+
     private:
         void setup_tcp_sockaddr(struct sockaddr_in* addr) const;
 
         string m_address;
         unsigned short m_port;
-        vector<string> m_acl;
+        set<string> m_acl;
     };
 
     ListenerService* SHIBSP_DLLLOCAL TCPListenerServiceFactory(const DOMElement* const & e)
@@ -91,14 +92,14 @@ TCPListener::TCPListener(const DOMElement* e) : SocketListener(e), m_address("12
         auto_ptr_char a(tag);
         m_address=a.get();
     }
-    
+
     tag=e->getAttributeNS(NULL,port);
     if (tag && *tag) {
         m_port=XMLString::parseInt(tag);
         if (m_port==0)
             m_port=12345;
     }
-    
+
     tag=e->getAttributeNS(NULL,acl);
     if (tag && *tag) {
         auto_ptr_char temp(tag);
@@ -107,15 +108,15 @@ TCPListener::TCPListener(const DOMElement* e) : SocketListener(e), m_address("12
             int j = 0;
             for (unsigned int i=0;  i < sockacl.length();  i++) {
                 if (sockacl.at(i)==' ') {
-                    m_acl.push_back(sockacl.substr(j, i-j));
+                    m_acl.insert(sockacl.substr(j, i-j));
                     j = i+1;
                 }
             }
-            m_acl.push_back(sockacl.substr(j, sockacl.length()-j));
+            m_acl.insert(sockacl.substr(j, sockacl.length()-j));
         }
     }
     else
-        m_acl.push_back("127.0.0.1");
+        m_acl.insert("127.0.0.1");
 }
 
 void TCPListener::setup_tcp_sockaddr(struct sockaddr_in* addr) const
@@ -204,12 +205,11 @@ bool TCPListener::accept(ShibSocket& listener, ShibSocket& s) const
 #endif
         return log_error();
     char* client=inet_ntoa(addr.sin_addr);
-    for (vector<string>::const_iterator i=m_acl.begin(); i!=m_acl.end(); i++) {
-        if (*i==client)
-            return true;
+    if (m_acl.count(client) == 0) {
+        close(s);
+        s=-1;
+        log->error("accept() rejected client at %s", client);
+        return false;
     }
-    close(s);
-    s=-1;
-    log->error("accept() rejected client at %s\n",client);
-    return false;
+    return true;
 }

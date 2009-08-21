@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 /**
  * SocketListener.h
- * 
+ *
  * Berkeley Socket-based ListenerService implementation
  */
 
@@ -41,7 +41,7 @@ namespace shibsp {
 
     class SocketPool;
     class ServerThread;
-    
+
     /**
      * Berkeley Socket-based ListenerService implementation
      */
@@ -53,7 +53,10 @@ namespace shibsp {
         ~SocketListener();
 
         DDF send(const DDF& in);
+
+        bool init(bool force);
         bool run(bool* shutdown);
+        void term();
 
         // Implemented by socket-specific subclasses.
 #ifdef WIN32
@@ -74,7 +77,7 @@ namespace shibsp {
         bool log_error() const; // for OS-level errors
         xmltooling::logging::Category* log;
         /// @endcond
-    
+
     private:
         mutable SocketPool* m_socketpool;
         bool* m_shutdown;

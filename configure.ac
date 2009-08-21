@@ -1,7 +1,7 @@
 AC_PREREQ([2.50])
-AC_INIT([shibboleth], [2.1], [shibboleth-users@internet2.edu], [shibboleth])
+AC_INIT([shibboleth], [2.2.1], [shibboleth-users@internet2.edu], [shibboleth])
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE([shibboleth],[2.1])
+AM_INIT_AUTOMAKE([shibboleth],[2.2.1])
 
 sinclude(doxygen.m4)
 sinclude(acx_pthread.m4)
@@ -85,36 +85,6 @@ else
     CXXFLAGS="$PTHREAD_CFLAGS $CXXFLAGS"
 fi
 
-# Thank you Solaris, really.
-AC_MSG_CHECKING(for ctime_r)
- if test -z "$ac_cv_ctime_args"; then
-     AC_TRY_COMPILE(
-     [#include <time.h>],
-     [
-         time_t clock;
-         char buf[26];
-         ctime_r(&clock, buf);
-     ], ac_cv_ctime_args=2)
-
-     AC_TRY_COMPILE(
-     [#include <time.h>],
-     [
-         time_t clock;
-         char buf[26];
-         ctime_r(&clock, buf, 26);
-     ], ac_cv_ctime_args=3)
- fi
- if test -z "$ac_cv_ctime_args"; then
-     AC_MSG_RESULT(no)
- else
-     if test "$ac_cv_ctime_args" = 2; then
-         AC_DEFINE(HAVE_CTIME_R_2,1,[Define if ctime_r is present with 2 parameters.])
-     elif test "$ac_cv_ctime_args" = 3; then
-         AC_DEFINE(HAVE_CTIME_R_3,1,[Define if ctime_r is present with 3 parameters.])
-     fi
-     AC_MSG_RESULT([yes, and it takes $ac_cv_ctime_args arguments])
- fi 
-
 # OpenSSL settings
 AC_ARG_WITH(openssl,
     AC_HELP_STRING([--with-openssl=PATH], [where openssl is installed]),
@@ -145,6 +115,36 @@ AC_LANG(C++)
 # C++ requirements
 AC_CXX_REQUIRE_STL
 AC_CXX_NAMESPACES
+
+# Thank you Solaris, really.
+AC_MSG_CHECKING(for ctime_r)
+ if test -z "$ac_cv_ctime_args"; then
+     AC_TRY_COMPILE(
+     [#include <time.h>],
+     [
+         time_t clock;
+         char buf[26];
+         ctime_r(&clock, buf);
+     ], ac_cv_ctime_args=2)
+
+     AC_TRY_COMPILE(
+     [#include <time.h>],
+     [
+         time_t clock;
+         char buf[26];
+         ctime_r(&clock, buf, 26);
+     ], ac_cv_ctime_args=3)
+ fi
+ if test -z "$ac_cv_ctime_args"; then
+     AC_MSG_RESULT(no)
+ else
+     if test "$ac_cv_ctime_args" = 2; then
+         AC_DEFINE(HAVE_CTIME_R_2,1,[Define if ctime_r is present with 2 parameters.])
+     elif test "$ac_cv_ctime_args" = 3; then
+         AC_DEFINE(HAVE_CTIME_R_3,1,[Define if ctime_r is present with 3 parameters.])
+     fi
+     AC_MSG_RESULT([yes, and it takes $ac_cv_ctime_args arguments])
+ fi 
 
 # log4shib settings (favor this version over the log4cpp code)
 AC_PATH_PROG(LOG4SHIB_CONFIG,log4shib-config)
@@ -222,6 +222,30 @@ AC_TRY_LINK(
         [AC_DEFINE(HAVE_LIBXERCESC,1,[Define if Xerces-C library was found])],
         [AC_MSG_ERROR([unable to link with Xerces])])
 
+AC_MSG_CHECKING([whether Xerces XMLString::release(XMLByte**) exists])
+AC_TRY_COMPILE([#include <xercesc/util/XMLString.hpp>],
+    [using namespace XERCES_CPP_NAMESPACE;
+      XMLByte* buf=NULL;
+      XMLString::release(&buf);
+    ],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([SHIBSP_XERCESC_HAS_XMLBYTE_RELEASE], [1], [Define to 1 if Xerces XMLString includes XMLByte release.])],
+    [AC_MSG_RESULT([no])])
+
+AC_MSG_CHECKING([whether Xerces DOMNodeFilter API returns a short])
+AC_TRY_COMPILE([#include <xercesc/dom/DOM.hpp>],
+    [using namespace XERCES_CPP_NAMESPACE;
+      class Blocker : public DOMNodeFilter {
+      public:
+        short acceptNode(const DOMNode* node) const {
+            return FILTER_REJECT;
+        }
+      };
+      static Blocker g_Blocker;
+    ],
+    [AC_MSG_RESULT([yes])]
+    [AC_DEFINE([SHIBSP_XERCESC_SHORT_ACCEPTNODE], [1], [Define to 1 if Xerces DOMNodeFilter API returns a short.])],
+    [AC_MSG_RESULT([no])])
 
 #XML-Tooling settings
 AC_ARG_WITH(xmltooling,
@@ -305,10 +329,10 @@ AC_CHECK_HEADER([saml/saml2/metadata/Metadata.h],,
 AC_TRY_LINK(
 	[#include <saml/SAMLConfig.h>
 #include <saml/version.h>],
-	[#if _OPENSAML_VERSION >= 20000
+	[#if _OPENSAML_VERSION >= 20200
 opensaml::SAMLConfig::getConfig();
 #else
-#error Need OpenSAML version 2.0 or higher
+#error Need OpenSAML version 2.2 or higher
 #endif],
         [AC_DEFINE(HAVE_SAML,1,[Define if saml library was found])],
         [AC_MSG_ERROR([unable to link with OpenSAML, or version was too old])])
@@ -338,6 +362,8 @@ AC_SUBST(OPENSAMLXMLDIR)
 
 AC_SUBST(LITE_LIBS)
 AC_SUBST(XMLSEC_LIBS)
+
+AC_CONFIG_FILES([shibboleth.spec pkginfo Portfile])
 
 # output the underlying makefiles
 WANT_SUBDIRS="doc schemas configs shibsp shibd util"
@@ -921,4 +947,3 @@ fi
 LIBTOOL="$LIBTOOL --silent"
 
 AC_OUTPUT
-

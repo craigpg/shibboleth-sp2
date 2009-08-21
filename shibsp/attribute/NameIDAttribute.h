@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 /**
  * @file shibsp/attribute/NameIDAttribute.h
  * 
- * An Attribute whose values are relations of a value and a scope.
+ * An Attribute whose values are derived from or mappable to a SAML NameID.
  */
 
 #ifndef __shibsp_nameidattr_h__
@@ -102,14 +102,21 @@ namespace shibsp {
         /**
          * Returns the set of values encoded as UTF-8 strings.
          * 
-         * <p>Each compound value is a pair containing the simple value and the scope. 
-         * 
          * @return  a mutable vector of the values
          */
         std::vector<Value>& getValues() {
             return m_values;
         }
-        
+
+        /**
+         * Returns the set of values encoded as UTF-8 strings.
+         * 
+         * @return  an immutable vector of the values
+         */
+        const std::vector<Value>& getValues() const {
+            return m_values;
+        }
+
         size_t valueCount() const {
             return m_values.size();
         }

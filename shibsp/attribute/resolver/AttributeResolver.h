@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * @file shibsp/attribute/resolver/AttributeResolver.h
- * 
+ *
  * A service that transforms or resolves additional attributes for a particular subject.
  */
 
@@ -54,10 +54,10 @@ namespace shibsp {
 
         /**
          * Creates a ResolutionContext based on session bootstrap material.
-         * 
+         *
          * <p>This enables resolution to occur ahead of session creation so that
          * Attributes can be supplied while creating the session.
-         * 
+         *
          * @param application       reference to Application that owns the eventual Session
          * @param issuer            issuing metadata of assertion issuer, if known
          * @param protocol          protocol used to establish Session
@@ -81,19 +81,19 @@ namespace shibsp {
 
         /**
          * Creates a ResolutionContext for an existing Session.
-         * 
+         *
          * @param application   reference to Application that owns the Session
          * @param session       reference to Session
          * @return  newly created ResolutionContext, owned by caller
          */
         virtual ResolutionContext* createResolutionContext(const Application& application, const Session& session) const=0;
-        
+
 
         /**
          * Resolves attributes for a given subject and returns them in the supplied context.
-         * 
+         *
          * @param ctx           resolution context to use to resolve attributes
-         * 
+         *
          * @throws AttributeResolutionException thrown if there is a problem resolving the attributes for the subject
          */
         virtual void resolveAttributes(ResolutionContext& ctx) const=0;
@@ -117,6 +117,9 @@ namespace shibsp {
 
     /** AttributeResolver based on SAML queries to an IdP during SSO. */
     #define QUERY_ATTRIBUTE_RESOLVER "Query"
+
+    /** AttributeResolver based on free-standing SAML queries to additional AAs. */
+    #define SIMPLEAGGREGATION_ATTRIBUTE_RESOLVER "SimpleAggregation"
 
     /** AttributeResolver based on chaining together other resolvers. */
     #define CHAINING_ATTRIBUTE_RESOLVER "Chaining"

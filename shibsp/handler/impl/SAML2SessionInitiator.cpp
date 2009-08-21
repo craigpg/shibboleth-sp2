@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * SAML2SessionInitiator.cpp
- * 
+ *
  * SAML 2.0 AuthnRequest support.
  */
 
@@ -66,20 +66,24 @@ namespace shibsp {
                 XMLString::release(&m_outgoing);
                 for_each(m_encoders.begin(), m_encoders.end(), cleanup_pair<const XMLCh*,MessageEncoder>());
                 delete m_requestTemplate;
+                delete m_ecp;
             }
 #endif
         }
-        
+
         void setParent(const PropertySet* parent);
         void receive(DDF& in, ostream& out);
+        pair<bool,long> unwrap(SPRequest& request, DDF& out) const;
         pair<bool,long> run(SPRequest& request, string& entityID, bool isHandler=true) const;
 
     private:
         pair<bool,long> doRequest(
             const Application& application,
+            const HTTPRequest* httpRequest,
             HTTPResponse& httpResponse,
             const char* entityID,
             const XMLCh* acsIndex,
+            bool artifactInbound,
             const char* acsLocation,
             const XMLCh* acsBinding,
             bool isPassive,
@@ -170,8 +174,14 @@ SAML2SessionInitiator::SAML2SessionInitiator(const DOMElement* e, const char* ap
                 MessageEncoder * encoder = SAMLConfig::getConfig().MessageEncoderManager.newPlugin(
                     b.get(),pair<const DOMElement*,const XMLCh*>(e,NULL)
                     );
-                m_encoders[start] = encoder;
-                m_log.debug("supporting outgoing binding (%s)", b.get());
+                if (encoder->isUserAgentPresent()) {
+                    m_encoders[start] = encoder;
+                    m_log.debug("supporting outgoing binding (%s)", b.get());
+                }
+                else {
+                    delete encoder;
+                    m_log.warn("skipping outgoing binding (%s), not a front-channel mechanism", b.get());
+                }
             }
             catch (exception& ex) {
                 m_log.error("error building MessageEncoder: %s", ex.what());
@@ -220,6 +230,7 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         return make_pair(false,0L);
 
     string target;
+    string postData;
     const Handler* ACS=NULL;
     const char* option;
     pair<bool,const char*> acClass;
@@ -245,7 +256,7 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         option = request.getParameter("target");
         if (option)
             target = option;
-            
+
         // Always need to recover target URL to compute handler below.
         recoverRelayState(request.getApplication(), request, request, target, false);
 
@@ -328,15 +339,33 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         }
     }
 
+    // Validate the ACS for use with this protocol.
+    if (!ECP) {
+        pair<bool,const char*> ACSbinding = ACS ? ACS->getString("Binding") : pair<bool,const char*>(false,NULL);
+        if (ACSbinding.first) {
+            pair<bool,const char*> compatibleBindings = getString("compatibleBindings");
+            if (compatibleBindings.first && strstr(compatibleBindings.second, ACSbinding.second) == NULL) {
+                m_log.info("configured or requested ACS has non-SAML 2.0 binding");
+                return make_pair(false,0L);
+            }
+            else if (strcmp(ACSbinding.second, samlconstants::SAML20_BINDING_HTTP_POST) &&
+                     strcmp(ACSbinding.second, samlconstants::SAML20_BINDING_HTTP_ARTIFACT) &&
+                     strcmp(ACSbinding.second, samlconstants::SAML20_BINDING_HTTP_POST_SIMPLESIGN)) {
+                m_log.info("configured or requested ACS has non-SAML 2.0 binding");
+                return make_pair(false,0L);
+            }
+        }
+    }
+
     // To invoke the request builder, the key requirement is to figure out how
     // to express the ACS, by index or value, and if by value, where.
     // We have to compute the handlerURL no matter what, because we may need to
     // flip the index to an SSL-version.
     string ACSloc=request.getHandlerURL(target.c_str());
-    
+
     SPConfig& conf = SPConfig::getConfig();
     if (conf.isEnabled(SPConfig::OutOfProcess)) {
-    	if (!acsByIndex.first || acsByIndex.second) {
+    	if (acsByIndex.first && acsByIndex.second) {
             // Pass by Index.
             if (isHandler) {
                 // We may already have RelayState set if we looped back here,
@@ -346,7 +375,7 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
                 if (option)
                     target = option;
             }
-            
+
             // Determine index to use.
             pair<bool,const XMLCh*> ix = pair<bool,const XMLCh*>(false,NULL);
             if (ACS) {
@@ -359,10 +388,12 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
             		ix = ACS->getXMLString("index");
             	}
             }
-            
+
             return doRequest(
-                app, request, entityID.c_str(),
-                ix.second, NULL, NULL,
+                app, &request, request, entityID.c_str(),
+                ix.second,
+                ACS ? XMLString::equals(ACS->getString("Binding").second, samlconstants::SAML20_BINDING_HTTP_ARTIFACT) : false,
+                NULL, NULL,
                 isPassive, forceAuthn,
                 acClass.first ? acClass.second : NULL,
                 acComp.first ? acComp.second : NULL,
@@ -385,8 +416,10 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         }
 
         return doRequest(
-            app, request, entityID.c_str(),
-            NULL, ACSloc.c_str(), ACS ? ACS->getXMLString("Binding").second : NULL,
+            app, &request, request, entityID.c_str(),
+            NULL,
+            ACS ? XMLString::equals(ACS->getString("Binding").second, samlconstants::SAML20_BINDING_HTTP_ARTIFACT) : false,
+            ACSloc.c_str(), ACS ? ACS->getXMLString("Binding").second : NULL,
             isPassive, forceAuthn,
             acClass.first ? acClass.second : NULL,
             acComp.first ? acComp.second : NULL,
@@ -408,7 +441,7 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         in.addmember("authnContextClassRef").string(acClass.second);
     if (acComp.first)
         in.addmember("authnContextComparison").string(acComp.second);
-    if (!acsByIndex.first || acsByIndex.second) {
+    if (acsByIndex.first && acsByIndex.second) {
         if (ACS) {
             // Determine index to use.
             pair<bool,const char*> ix = pair<bool,const char*>(false,NULL);
@@ -421,6 +454,8 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         		ix = ACS->getString("index");
         	}
             in.addmember("acsIndex").string(ix.second);
+            if (XMLString::equals(ACS->getString("Binding").second, samlconstants::SAML20_BINDING_HTTP_ARTIFACT))
+                in.addmember("artifact").integer(1);
         }
     }
     else {
@@ -429,8 +464,12 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         pair<bool,const char*> loc=ACS ? ACS->getString("Location") : pair<bool,const char*>(false,NULL);
         if (loc.first) ACSloc+=loc.second;
         in.addmember("acsLocation").string(ACSloc.c_str());
-        if (ACS)
-            in.addmember("acsBinding").string(ACS->getString("Binding").second);
+        if (ACS) {
+            loc = ACS->getString("Binding");
+            in.addmember("acsBinding").string(loc.second);
+            if (XMLString::equals(loc.second, samlconstants::SAML20_BINDING_HTTP_ARTIFACT))
+                in.addmember("artifact").integer(1);
+        }
     }
 
     if (isHandler) {
@@ -442,11 +481,21 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
             target = option;
     }
     if (!target.empty())
-        in.addmember("RelayState").string(target.c_str());
+        in.addmember("RelayState").unsafe_string(target.c_str());
 
     // Remote the processing.
     out = request.getServiceProvider().getListenerService()->send(in);
     return unwrap(request, out);
+}
+
+pair<bool,long> SAML2SessionInitiator::unwrap(SPRequest& request, DDF& out) const
+{
+    // See if there's any response to send back.
+    if (!out["redirect"].isnull() || !out["response"].isnull()) {
+        // If so, we're responsible for handling the POST data, probably by dropping a cookie.
+        preservePostData(request.getApplication(), request, request, out["RelayState"].string());
+    }
+    return RemotedHandler::unwrap(request, out);
 }
 
 void SAML2SessionInitiator::receive(DDF& in, ostream& out)
@@ -470,17 +519,23 @@ void SAML2SessionInitiator::receive(DDF& in, ostream& out)
     auto_ptr_XMLCh bind(in["acsBinding"].string());
 
     string relayState(in["RelayState"].string() ? in["RelayState"].string() : "");
+    string postData(in["PostData"].string() ? in["PostData"].string() : "");
 
     // Since we're remoted, the result should either be a throw, which we pass on,
     // a false/0 return, which we just return as an empty structure, or a response/redirect,
     // which we capture in the facade and send back.
     doRequest(
-        *app, *http.get(), in["entity_id"].string(),
-        index.get(), in["acsLocation"].string(), bind.get(),
+        *app, NULL, *http.get(), in["entity_id"].string(),
+        index.get(),
+        (in["artifact"].integer() != 0),
+        in["acsLocation"].string(), bind.get(),
         in["isPassive"].integer()==1, in["forceAuthn"].integer()==1,
         in["authnContextClassRef"].string(), in["authnContextComparison"].string(),
         relayState
         );
+    if (!ret.isstruct())
+        ret.structure();
+    ret.addmember("RelayState").unsafe_string(relayState.c_str());
     out << ret;
 }
 
@@ -498,9 +553,11 @@ namespace {
 
 pair<bool,long> SAML2SessionInitiator::doRequest(
     const Application& app,
+    const HTTPRequest* httpRequest,
     HTTPResponse& httpResponse,
     const char* entityID,
     const XMLCh* acsIndex,
+    bool artifactInbound,
     const char* acsLocation,
     const XMLCh* acsBinding,
     bool isPassive,
@@ -521,7 +578,7 @@ pair<bool,long> SAML2SessionInitiator::doRequest(
     // We won't need this for ECP, but safety dictates we get the lock here.
     MetadataProvider* m=app.getMetadataProvider();
     Locker locker(m);
-    
+
     if (ECP) {
         encoder = m_ecp;
         if (!encoder) {
@@ -538,10 +595,16 @@ pair<bool,long> SAML2SessionInitiator::doRequest(
             throw MetadataException("Unable to locate metadata for identity provider ($entityID)", namedparams(1, "entityID", entityID));
         }
         else if (!entity.second) {
-            m_log.warn("unable to locate SAML 2.0 identity provider role for provider (%s)", entityID);
+            m_log.log(getParent() ? Priority::INFO : Priority::WARN, "unable to locate SAML 2.0 identity provider role for provider (%s)", entityID);
             if (getParent())
                 return make_pair(false,0L);
             throw MetadataException("Unable to locate SAML 2.0 identity provider role for provider ($entityID)", namedparams(1, "entityID", entityID));
+        }
+        else if (artifactInbound && !SPConfig::getConfig().getArtifactResolver()->isSupported(dynamic_cast<const SSODescriptorType&>(*entity.second))) {
+            m_log.warn("artifact binding selected for response, but identity provider lacks support");
+            if (getParent())
+                return make_pair(false,0L);
+            throw MetadataException("Identity provider ($entityID) lacks SAML 2.0 artifact support.", namedparams(1, "entityID", entityID));
         }
 
         // Loop over the supportable outgoing bindings.
@@ -609,7 +672,7 @@ pair<bool,long> SAML2SessionInitiator::doRequest(
             cref->setReference(wideclass.get());
             reqContext->getAuthnContextClassRefs().push_back(cref);
         }
-        
+
         if (reqContext->getAuthnContextClassRefs().empty() && reqContext->getAuthnContextDeclRefs().empty()) {
         	req->setRequestedAuthnContext(NULL);
         }
@@ -617,6 +680,24 @@ pair<bool,long> SAML2SessionInitiator::doRequest(
             auto_ptr_XMLCh widecomp(authnContextComparison);
             reqContext->setComparison(widecomp.get());
         }
+    }
+
+    pair<bool,bool> requestDelegation = getBool("requestDelegation");
+    if (requestDelegation.first && requestDelegation.second && entity.first) {
+        // Request delegation by including the IdP as an Audience.
+        // Also specify the expected session lifetime as the bound on the assertion lifetime.
+        const PropertySet* sessionProps = app.getPropertySet("Sessions");
+        pair<bool,unsigned int> lifetime = sessionProps ? sessionProps->getUnsignedInt("lifetime") : pair<bool,unsigned int>(true,28800);
+        if (!lifetime.first || lifetime.second == 0)
+            lifetime.second = 28800;
+        if (!req->getConditions())
+            req->setConditions(ConditionsBuilder::buildConditions());
+        req->getConditions()->setNotOnOrAfter(time(NULL) + lifetime.second + 300);
+        AudienceRestriction* audrest = AudienceRestrictionBuilder::buildAudienceRestriction();
+        req->getConditions()->getConditions().push_back(audrest);
+        Audience* aud = AudienceBuilder::buildAudience();
+        audrest->getAudiences().push_back(aud);
+        aud->setAudienceURI(entity.first->getEntityID());
     }
 
     if (ECP && entityID) {
@@ -640,6 +721,11 @@ pair<bool,long> SAML2SessionInitiator::doRequest(
     }
 
     auto_ptr_char dest(ep ? ep->getLocation() : NULL);
+
+    if (httpRequest) {
+        // If the request object is available, we're responsible for the POST data.
+        preservePostData(app, *httpRequest, httpResponse, relayState.c_str());
+    }
 
     long ret = sendMessage(
         *encoder, req.get(), relayState.c_str(), dest.get(), role, app, httpResponse, role ? role->WantAuthnRequestsSigned() : false

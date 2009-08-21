@@ -66,9 +66,11 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(srcdir)/doxygen.am $(top_srcdir)/configure config.guess \
-	config.sub depcomp install-sh ltmain.sh missing
+	$(srcdir)/Makefile.in $(srcdir)/Portfile.in \
+	$(srcdir)/config.h.in $(srcdir)/doxygen.am \
+	$(srcdir)/pkginfo.in $(srcdir)/shibboleth.spec.in \
+	$(top_srcdir)/configure config.guess config.sub depcomp \
+	install-sh ltmain.sh missing
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/libtool.m4 \
@@ -80,7 +82,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = shibboleth.spec pkginfo Portfile
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -328,9 +330,8 @@ ACLOCAL_AMFLAGS = -I .
 MOSTLYCLEANFILES = $(DX_CLEANFILES)
 SUBDIRS = $(WANT_SUBDIRS)
 DIST_SUBDIRS = doc schemas configs shibsp shibd adfs util apache nsapi_shib fastcgi odbc-store memcache-store selinux
-@DX_COND_doc_TRUE@APIDOCS = doc/api
+GENFILES = shibboleth.spec pkginfo Portfile
 EXTRA_DIST = $(DX_CONFIG) \
-    $(APIDOCS) \
     isapi_shib \
     Shibboleth.sln \
     libtool.m4 \
@@ -338,14 +339,11 @@ EXTRA_DIST = $(DX_CONFIG) \
     acx_pthread.m4 \
     depcomp \
     config_win32.h \
-    shibboleth.spec.in \
-    shibboleth.spec \
-    pkginfo.in \
-    pkginfo \
+    $(GENFILES) \
+    $(GENFILES:%=%.in) \
     depend \
     postinstall
 
-DISTCLEANFILES = shibboleth.spec pkginfo
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -400,6 +398,12 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
+shibboleth.spec: $(top_builddir)/config.status $(srcdir)/shibboleth.spec.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+pkginfo: $(top_builddir)/config.status $(srcdir)/pkginfo.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+Portfile: $(top_builddir)/config.status $(srcdir)/Portfile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -546,7 +550,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/doc
+	$(mkdir_p) $(distdir)/.
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -714,7 +718,6 @@ clean-generic:
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
-	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -740,8 +743,6 @@ info: info-recursive
 info-am:
 
 install-data-am:
-	@$(NORMAL_INSTALL)
-	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 
 install-exec-am:
 
@@ -780,14 +781,13 @@ uninstall-info: uninstall-info-recursive
 	distclean distclean-generic distclean-hdr distclean-libtool \
 	distclean-recursive distclean-tags distcleancheck distdir \
 	distuninstallcheck dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am \
-	install-data-hook install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic maintainer-clean-recursive \
-	mostlyclean mostlyclean-generic mostlyclean-libtool \
-	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-info-am
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-info install-info-am install-man \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	maintainer-clean-recursive mostlyclean mostlyclean-generic \
+	mostlyclean-libtool mostlyclean-recursive pdf pdf-am ps ps-am \
+	tags tags-recursive uninstall uninstall-am uninstall-info-am
 
 
 @DX_COND_doc_TRUE@@DX_COND_ps_TRUE@doxygen-ps: @DX_DOCDIR@/@PACKAGE@.ps
@@ -836,28 +836,12 @@ uninstall-info: uninstall-info-recursive
 @DX_COND_doc_TRUE@	rm -rf @DX_DOCDIR@
 @DX_COND_doc_TRUE@	$(DX_ENV) DX_INCLUDE=$(DX_INCLUDE) $(DX_DOXYGEN) $(srcdir)/$(DX_CONFIG)
 
-@DX_COND_doc_TRUE@all-local: shibboleth.spec pkginfo doxygen-doc
-@DX_COND_doc_FALSE@all-local: shibboleth.spec pkginfo
-
-install-data-hook:
-	rm -rf $(DESTDIR)$(datadir)/doc/@PACKAGE@/api
-	cp -r doc/api $(DESTDIR)$(datadir)/doc/@PACKAGE@
+@DX_COND_doc_TRUE@all-local: doxygen-doc
+@DX_COND_doc_FALSE@all-local:
 
 dist-hook:
 	rm -rf `find $(distdir)/isapi_shib -name .svn`
 	rm -rf `find $(distdir)/doc/api -name .svn`
-
-shibboleth.spec: shibboleth.spec.in Makefile
-	rm -f $@.tmp
-	sed < $@.in > $@.tmp \
-	    -e 's:@-VERSION-@:${VERSION}:'
-	mv $@.tmp $@
-
-pkginfo: pkginfo.in Makefile
-	rm -f $@.tmp
-	sed < $@.in > $@.tmp \
-	    -e 's:@-VERSION-@:${VERSION}:'
-	mv $@.tmp $@
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

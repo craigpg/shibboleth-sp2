@@ -5,8 +5,8 @@ P SHIBxerces xerces-c
 P SHIBxmlsec xml-security-c
 	1.4.0
 P SHIBxmltool xmltooling-c
-    1.1
+    1.2
 P SHIBosaml opensaml-c
-	2.1
+	2.2
 P SHIBlog4shib log4shib
     1.0

@@ -51,6 +51,9 @@ AC_DEFUN([DX_FEATURE_xml],  OFF)
 AC_DEFUN([DX_FEATURE_pdf],  ON)
 AC_DEFUN([DX_FEATURE_ps],   ON)
 
+# Compatibility with older autoconf versions.
+m4_ifdef([AS_HELP_STRING], , [m4_define([AS_HELP_STRING], m4_defn([AC_HELP_STRING]))])
+
 ## --------------- ##
 ## Private macros. ##
 ## --------------- ##
@@ -78,7 +81,7 @@ AC_DEFUN([DX_REQUIRE_PROG], [
 AC_PATH_TOOL([$1], [$2])
 if test "$DX_FLAG_[]DX_CURRENT_FEATURE$$1" = 1; then
     AC_MSG_WARN([$2 not found - will not DX_CURRENT_DESCRIPTION])
-    AC_SUBST([DX_FLAG_[]DX_CURRENT_FEATURE], 0)
+    AC_SUBST([DX_FLAG_]DX_CURRENT_FEATURE, 0)
 fi
 ])
 
@@ -101,7 +104,7 @@ test "$DX_FLAG_$1" = "$2" \
 # ----------------------------------------------------------
 # Turn off the DX_CURRENT_FEATURE if the required feature is off.
 AC_DEFUN([DX_CLEAR_DEPEND], [
-test "$DX_FLAG_$1" = "$2" || AC_SUBST([DX_FLAG_[]DX_CURRENT_FEATURE], 0)
+test "$DX_FLAG_$1" = "$2" || AC_SUBST([DX_FLAG_]DX_CURRENT_FEATURE, 0)
 ])
 
 # DX_FEATURE_ARG(FEATURE, DESCRIPTION,

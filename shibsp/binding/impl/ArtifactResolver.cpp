@@ -87,7 +87,7 @@ saml1p::Response* ArtifactResolver::resolve(
         throw MetadataException("No compatible endpoint found in issuer's metadata.");
     else if (!response)
         throw BindingException("Unable to resolve artifact(s) into a SAML response.");
-    const QName* code = (response->getStatus() && response->getStatus()->getStatusCode()) ? response->getStatus()->getStatusCode()->getValue() : NULL;
+    const xmltooling::QName* code = (response->getStatus() && response->getStatus()->getStatusCode()) ? response->getStatus()->getStatusCode()->getValue() : NULL;
     if (!code || *code != saml1p::StatusCode::SUCCESS) {
         delete response;
         throw BindingException("Identity provider returned a SAML error in response to artifact(s).");

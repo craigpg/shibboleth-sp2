@@ -8,7 +8,7 @@
 	elementFormDefault="qualified"
 	attributeFormDefault="unqualified"
 	blockDefault="substitution"
-	version="2.1">
+	version="2.2">
 
 	<import namespace="urn:oasis:names:tc:SAML:2.0:assertion" schemaLocation="saml-schema-assertion-2.0.xsd"/>
 	<import namespace="urn:oasis:names:tc:SAML:2.0:protocol" schemaLocation="saml-schema-protocol-2.0.xsd"/>
@@ -87,6 +87,7 @@
 			</sequence>
 			<attribute name="logger" type="anyURI"/>
 			<attribute name="clockSkew" type="unsignedInt"/>
+            <attribute name="unsafeChars" type="conf:string"/>
 			<anyAttribute namespace="##other" processContents="lax"/>
 		</complexType>
 	</element>
@@ -199,9 +200,10 @@
 				<any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
 			<attribute name="logger" type="anyURI"/>
-			<attribute name="unsetHeaderValue" type="string"/>
+			<attribute name="unsetHeaderValue" type="conf:string"/>
 			<attribute name="checkSpoofing" type="boolean"/>
-		    <attribute name="catchAll" type="boolean"/>
+			<attribute name="spoofKey" type="conf:string"/>
+			<attribute name="catchAll" type="boolean"/>
 			<anyAttribute namespace="##other" processContents="lax"/>
 		</complexType>
 	</element>
@@ -224,6 +226,7 @@
 				<any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
 			<attribute name="normalizeRequest" type="boolean"/>
+			<attribute name="safeHeaderNames" type="boolean"/>
 			<anyAttribute namespace="##other" processContents="lax"/>
 		</complexType>
 	</element>
@@ -293,6 +296,7 @@
 		<attribute name="metadataError" type="anyURI"/>
 		<attribute name="accessError" type="anyURI"/>
 		<attribute name="sslError" type="anyURI"/>
+        <attribute name="REMOTE_ADDR" type="conf:string"/>
 		<anyAttribute namespace="##other" processContents="lax"/>
 	</attributeGroup>
 	<element name="AccessControlProvider" type="conf:PluggableType"/>
@@ -536,7 +540,7 @@
 					</complexType>
 				</element>
 			</choice>
-			<attribute name="handlerURL" type="anyURI"/>
+			<attribute name="handlerURL" type="anyURI" use="required"/>
 			<attribute name="handlerSSL" type="boolean"/>
 			<attribute name="exportLocation" type="conf:string"/>
 			<attribute name="exportACL" type="conf:listOfStrings"/>
@@ -550,6 +554,10 @@
 		    <attribute name="maxTimeSinceAuthn" type="unsignedInt"/>
 			<attribute name="checkAddress" type="boolean"/>
 			<attribute name="consistentAddress" type="boolean"/>
+			<attribute name="postData" type="conf:string"/>
+            <attribute name="postLimit" type="positiveInteger"/>
+			<attribute name="postTemplate" type="conf:string"/>
+            <attribute name="postExpire" type="boolean"/>
 			<anyAttribute namespace="##other" processContents="lax"/>
 		</complexType>
 	</element>
@@ -586,6 +594,7 @@
                     <attribute name="forceAuthn" type="boolean"/>
                     <attribute name="authnContextClassRef" type="anyURI"/>
                     <attribute name="authnContextComparison" type="samlp:AuthnContextComparisonType"/>
+                    <attribute name="requestDelegation" type="boolean"/>
 					<anyAttribute namespace="##any" processContents="lax"/>
 				</restriction>
 			</complexContent>
@@ -678,9 +687,10 @@
 						<documentation>Specifies a set of SecurityPolicyRule plugins</documentation>
 					</annotation>
 					<complexType>
-						<sequence>
+						<choice>
 							<element name="Rule" type="conf:PluggableType" minOccurs="1" maxOccurs="unbounded"/>
-						</sequence>
+                            <element name="PolicyRule" type="conf:PluggableType" minOccurs="1" maxOccurs="unbounded"/>
+						</choice>
 						<attribute name="id" type="conf:string" use="required"/>
 						<attribute name="validate" type="boolean"/>
 						<anyAttribute namespace="##any" processContents="lax"/>

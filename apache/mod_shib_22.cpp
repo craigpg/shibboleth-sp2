@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@
 
 #define SH_AP_R(r) 0,r
 #define SH_AP_USER(r) r->user
+#define SH_AP_AUTH_TYPE(r) r->ap_auth_type
 
 #define SERVER_ERROR HTTP_INTERNAL_SERVER_ERROR
 #define REDIRECT HTTP_MOVED_TEMPORARILY

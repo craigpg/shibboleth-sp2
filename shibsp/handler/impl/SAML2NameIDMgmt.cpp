@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * SAML2NameIDMgmt.cpp
- * 
+ *
  * Handles SAML 2.0 NameID management protocol messages.
  */
 
@@ -54,7 +54,7 @@ namespace shibsp {
     #pragma warning( push )
     #pragma warning( disable : 4250 )
 #endif
-    
+
     class SHIBSP_DLLLOCAL SAML2NameIDMgmt : public AbstractHandler, public RemotedHandler
     {
     public:
@@ -68,7 +68,7 @@ namespace shibsp {
             }
 #endif
         }
-        
+
         void receive(DDF& in, ostream& out);
         pair<bool,long> run(SPRequest& request, bool isHandler=true) const;
 
@@ -110,7 +110,7 @@ namespace shibsp {
             bool front
             ) const;
 
-        QName m_role;
+        xmltooling::QName m_role;
         MessageDecoder* m_decoder;
         XMLCh* m_outgoing;
         vector<const XMLCh*> m_bindings;
@@ -170,8 +170,14 @@ SAML2NameIDMgmt::SAML2NameIDMgmt(const DOMElement* e, const char* appId)
                     MessageEncoder * encoder = conf.MessageEncoderManager.newPlugin(
                         b.get(), pair<const DOMElement*,const XMLCh*>(e,shibspconstants::SHIB2SPCONFIG_NS)
                         );
-                    m_encoders[start] = encoder;
-                    m_log.debug("supporting outgoing front-channel binding (%s)", b.get());
+                    if (encoder->isUserAgentPresent()) {
+                        m_encoders[start] = encoder;
+                        m_log.debug("supporting outgoing binding (%s)", b.get());
+                    }
+                    else {
+                        delete encoder;
+                        m_log.warn("skipping outgoing binding (%s), not a front-channel mechanism", b.get());
+                    }
                 }
                 catch (exception& ex) {
                     m_log.error("error building MessageEncoder: %s", ex.what());
@@ -223,7 +229,7 @@ void SAML2NameIDMgmt::receive(DDF& in, ostream& out)
         m_log.error("couldn't find application (%s) for NameID mgmt", aid ? aid : "(missing)");
         throw ConfigurationException("Unable to locate application for NameID mgmt, deleted?");
     }
-    
+
     // Unpack the request.
     auto_ptr<HTTPRequest> req(getRequest(in));
 
@@ -231,7 +237,7 @@ void SAML2NameIDMgmt::receive(DDF& in, ostream& out)
     DDF ret(NULL);
     DDFJanitor jout(ret);
     auto_ptr<HTTPResponse> resp(getResponse(ret));
-    
+
     // Since we're remoted, the result should either be a throw, which we pass on,
     // a false/0 return, which we just return as an empty structure, or a response/redirect,
     // which we capture in the facade and send back.
@@ -250,7 +256,7 @@ pair<bool,long> SAML2NameIDMgmt::doRequest(
     pair<bool,const char*> policyId = getString("policyId", m_configNS.get());  // namespace-qualified if inside handler element
     if (!policyId.first)
         policyId = application.getString("policyId");   // unqualified in Application(s) element
-        
+
     // Access policy properties.
     const PropertySet* settings = application.getServiceProvider().getPolicySettings(policyId.second);
     pair<bool,bool> validate = settings->getBool("validate");
@@ -260,7 +266,7 @@ pair<bool,long> SAML2NameIDMgmt::doRequest(
 
     // Create the policy.
     shibsp::SecurityPolicy policy(application, &m_role, validate.first && validate.second);
-    
+
     // Decode the message.
     string relayState;
     auto_ptr<XMLObject> msg(m_decoder->decode(relayState, request, policy));
@@ -533,6 +539,7 @@ pair<bool,long> SAML2NameIDMgmt::sendResponse(
 #include <xmltooling/impl/AnyElement.h>
 #include <xmltooling/soap/SOAP.h>
 #include <xmltooling/soap/SOAPClient.h>
+#include <xmltooling/soap/HTTPSOAPTransport.h>
 using namespace soap11;
 namespace {
     static const XMLCh NameIDNotification[] =   UNICODE_LITERAL_18(N,a,m,e,I,D,N,o,t,i,f,i,c,a,t,i,o,n);
@@ -545,6 +552,12 @@ namespace {
     private:
         void prepareTransport(SOAPTransport& transport) {
             transport.setVerifyHost(false);
+            HTTPSOAPTransport* http = dynamic_cast<HTTPSOAPTransport*>(&transport);
+            if (http) {
+                http->useChunkedEncoding(false);
+                http->setRequestHeader("User-Agent", PACKAGE_NAME);
+                http->setRequestHeader(PACKAGE_NAME, PACKAGE_VERSION);
+            }
         }
     };
 };

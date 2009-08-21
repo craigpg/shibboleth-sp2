@@ -68,6 +68,21 @@ pair<string,const char*> Application::getCookieNameProps(const char* prefix, tim
     return pair<string,const char*>(prefix,defProps);
 }
 
+void Application::clearHeader(SPRequest& request, const char* rawname, const char* cginame) const
+{
+    request.clearHeader(rawname, cginame);
+}
+
+void Application::setHeader(SPRequest& request, const char* name, const char* value) const
+{
+    request.setHeader(name, value);
+}
+
+string Application::getSecureHeader(const SPRequest& request, const char* name) const
+{
+    return request.getSecureHeader(name);
+}
+
 void Application::clearAttributeHeaders(SPRequest& request) const
 {
     if (SPConfig::getConfig().isEnabled(SPConfig::OutOfProcess)) {

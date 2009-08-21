@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,7 +15,7 @@
  */
 
 /** XMLRequestMapper.cpp
- * 
+ *
  * XML-based RequestMapper implementation
  */
 
@@ -39,16 +39,16 @@ using namespace std;
 
 namespace shibsp {
 
-    // Blocks access when an ACL plugin fails to load. 
+    // Blocks access when an ACL plugin fails to load.
     class AccessControlDummy : public AccessControl
     {
     public:
         Lockable* lock() {
             return this;
         }
-        
+
         void unlock() {}
-    
+
         aclresult_t authorized(const SPRequest& request, const Session* session) const {
             return shib_acl_false;
         }
@@ -62,20 +62,25 @@ namespace shibsp {
         ~Override();
 
         // Provides filter to exclude special config elements.
-        short acceptNode(const DOMNode* node) const {
+#ifdef SHIBSP_XERCESC_SHORT_ACCEPTNODE
+        short
+#else
+        FilterAction
+#endif
+        acceptNode(const DOMNode* node) const {
             return FILTER_REJECT;
         }
 
         const Override* locate(const HTTPRequest& request) const;
         AccessControl* getAC() const { return (m_acl ? m_acl : (getParent() ? dynamic_cast<const Override*>(getParent())->getAC() : NULL)); }
-        
+
     protected:
         void loadACL(const DOMElement* e, Category& log);
-        
+
         map<string,Override*> m_map;
         vector< pair<RegularExpression*,Override*> > m_regexps;
         vector< pair< pair<string,RegularExpression*>,Override*> > m_queries;
-    
+
     private:
         AccessControl* m_acl;
     };
@@ -93,10 +98,10 @@ namespace shibsp {
         void setDocument(DOMDocument* doc) {
             m_document = doc;
         }
-    
+
         const Override* findOverride(const char* vhost, const HTTPRequest& request) const;
 
-    private:    
+    private:
         map<string,Override*> m_extras;
         DOMDocument* m_document;
     };
@@ -193,19 +198,19 @@ Override::Override(const DOMElement* e, Category& log, const Override* base) : m
         // Load the property set.
         load(e,NULL,this);
         setParent(base);
-        
+
         // Load any AccessControl provider.
         loadACL(e,log);
-    
+
         // Handle nested Paths.
         DOMElement* path = XMLHelper::getFirstChildElement(e,Path);
         for (int i=1; path; ++i, path=XMLHelper::getNextSiblingElement(path,Path)) {
             const XMLCh* n=path->getAttributeNS(NULL,name);
-            
+
             // Skip any leading slashes.
             while (n && *n==chForwardSlash)
                 n++;
-            
+
             // Check for empty name.
             if (!n || !*n) {
                 log.warn("skipping Path element (%d) with empty name attribute", i);
@@ -220,14 +225,14 @@ Override::Override(const DOMElement* e, Category& log, const Override* base) : m
                 for (int pos=0; pos < slash; pos++)
                     namebuf[pos]=n[pos];
                 namebuf[slash]=chNull;
-                
+
                 // Move past the slash in the original pathname.
                 n=n+slash+1;
-                
+
                 // Skip any leading slashes again.
                 while (*n==chForwardSlash)
                     n++;
-                
+
                 if (*n) {
                     // Create a placeholder Path element for the first path segment and replant under it.
                     DOMElement* newpath=path->getOwnerDocument()->createElementNS(shibspconstants::SHIB2SPCONFIG_NS,Path);
@@ -235,7 +240,7 @@ Override::Override(const DOMElement* e, Category& log, const Override* base) : m
                     path->setAttributeNS(NULL,name,n);
                     path->getParentNode()->replaceChild(newpath,path);
                     newpath->appendChild(path);
-                    
+
                     // Repoint our locals at the new parent.
                     path=newpath;
                     n=path->getAttributeNS(NULL,name);
@@ -247,7 +252,7 @@ Override::Override(const DOMElement* e, Category& log, const Override* base) : m
                 }
                 delete[] namebuf;
             }
-            
+
             Override* o=new Override(path,log,this);
             pair<bool,const char*> name=o->getString("name");
             char* dup=strdup(name.second);
@@ -317,7 +322,7 @@ Override::Override(const DOMElement* e, Category& log, const Override* base) : m
                 log.error("caught exception while parsing Query regular expression (%d): %s", i, tmp.get());
                 throw ConfigurationException("Invalid regular expression in Query element.");
             }
-            
+
             log.debug("added <Query> mapping (%s)", ntemp.get());
         }
     }
@@ -384,7 +389,7 @@ const Override* Override::locate(const HTTPRequest& request) const
             break;  // Once there's no match, we've consumed as much of the path as possible here.
         // We found a match, so reset the settings pointer.
         o=i->second;
-        
+
         // We descended a step down the path, so we need to advance the original
         // parameter for the regex step later.
         path += strlen(token);
@@ -451,7 +456,7 @@ XMLRequestMapperImpl::XMLRequestMapperImpl(const DOMElement* e, Category& log) :
 
     // Load the property set.
     load(e,NULL,this);
-    
+
     // Load any AccessControl provider.
     loadACL(e,log);
 
@@ -489,12 +494,12 @@ XMLRequestMapperImpl::XMLRequestMapperImpl(const DOMElement* e, Category& log) :
             log.warn("Skipping Host element (%d) with empty name attribute",i);
             continue;
         }
-        
+
         Override* o=new Override(host,log,this);
         pair<bool,const char*> name=o->getString("name");
         pair<bool,const char*> scheme=o->getString("scheme");
         pair<bool,const char*> port=o->getString("port");
-        
+
         char* dup=strdup(name.second);
         for (char* pch=dup; *pch; pch++)
             *pch=tolower(*pch);
@@ -523,7 +528,7 @@ XMLRequestMapperImpl::XMLRequestMapperImpl(const DOMElement* e, Category& log) :
         if (scheme.first) {
             string url(scheme.second);
             url=url + "://" + dup;
-            
+
             // Is this the default port?
             if ((!strcmp(scheme.second,"http") && !strcmp(port.second,"80")) ||
                 (!strcmp(scheme.second,"https") && !strcmp(port.second,"443")) ||
@@ -538,7 +543,7 @@ XMLRequestMapperImpl::XMLRequestMapperImpl(const DOMElement* e, Category& log) :
                 }
                 m_map[url]=o;
                 log.debug("Added <Host> mapping for %s",url.c_str());
-                
+
                 // Now append the port. We use the extras vector, to avoid double freeing the object later.
                 url=url + ':' + port.second;
                 m_extras[url]=o;
@@ -566,7 +571,7 @@ XMLRequestMapperImpl::XMLRequestMapperImpl(const DOMElement* e, Category& log) :
             }
             m_map[url]=o;
             log.debug("Added <Host> mapping for %s",url.c_str());
-            
+
             url = url + ":80";
             if (m_map.count(url) || m_extras.count(url)) {
                 log.warn("Skipping duplicate Host element (%s)",url.c_str());
@@ -574,7 +579,7 @@ XMLRequestMapperImpl::XMLRequestMapperImpl(const DOMElement* e, Category& log) :
             }
             m_extras[url]=o;
             log.debug("Added <Host> mapping for %s",url.c_str());
-            
+
             url = "https://";
             url = url + dup;
             if (m_map.count(url) || m_extras.count(url)) {
@@ -583,7 +588,7 @@ XMLRequestMapperImpl::XMLRequestMapperImpl(const DOMElement* e, Category& log) :
             }
             m_extras[url]=o;
             log.debug("Added <Host> mapping for %s",url.c_str());
-            
+
             url = url + ":443";
             if (m_map.count(url) || m_extras.count(url)) {
                 log.warn("Skipping duplicate Host element (%s)",url.c_str());
@@ -612,7 +617,7 @@ const Override* XMLRequestMapperImpl::findOverride(const char* vhost, const HTTP
             }
         }
     }
-    
+
     return o ? o->locate(request) : this;
 }
 
@@ -620,12 +625,12 @@ pair<bool,DOMElement*> XMLRequestMapper::load()
 {
     // Load from source using base class.
     pair<bool,DOMElement*> raw = ReloadableXMLFile::load();
-    
+
     // If we own it, wrap it.
     XercesJanitor<DOMDocument> docjanitor(raw.first ? raw.second->getOwnerDocument() : NULL);
 
     XMLRequestMapperImpl* impl = new XMLRequestMapperImpl(raw.second,m_log);
-    
+
     // If we held the document, transfer it to the impl. If we didn't, it's a no-op.
     impl->setDocument(docjanitor.release());
 
@@ -639,16 +644,6 @@ RequestMapper::Settings XMLRequestMapper::getSettings(const HTTPRequest& request
 {
     ostringstream vhost;
     vhost << request.getScheme() << "://" << request.getHostname() << ':' << request.getPort();
-
     const Override* o=m_impl->findOverride(vhost.str().c_str(), request);
-
-    if (m_log.isDebugEnabled()) {
-#ifdef _DEBUG
-        xmltooling::NDC ndc("getSettings");
-#endif
-        pair<bool,const char*> ret=o->getString("applicationId");
-        m_log.debug("mapped %s%s to %s", vhost.str().c_str(), request.getRequestURI() ? request.getRequestURI() : "", ret.second);
-    }
-
     return Settings(o,o->getAC());
 }

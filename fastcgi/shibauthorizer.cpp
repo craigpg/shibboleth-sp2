@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,6 +115,9 @@ public:
         return s ? atol(s) : 0;
     }
     string getRemoteAddr() const {
+        string ret = AbstractSPRequest::getRemoteAddr();
+        if (!ret.empty())
+            return ret;
         const char* s = FCGX_GetParam("REMOTE_ADDR", m_req->envp);
         return s ? s : "";
     }
@@ -169,6 +172,23 @@ public:
             char* remote_user = FCGX_GetParam("REMOTE_USER", m_req->envp);
             if (remote_user)
                 return remote_user;
+        }
+        return "";
+    }
+    void setAuthType(const char* authtype) {
+        if (authtype)
+            m_request_headers["AUTH_TYPE"] = authtype;
+        else
+            m_request_headers.erase("AUTH_TYPE");
+    }
+    string getAuthType() const {
+        map<string,string>::const_iterator i = m_request_headers.find("AUTH_TYPE");
+        if (i != m_request_headers.end())
+            return i->second;
+        else {
+            char* auth_type = FCGX_GetParam("AUTH_TYPE", m_req->envp);
+            if (auth_type)
+                return auth_type;
         }
         return "";
     }
