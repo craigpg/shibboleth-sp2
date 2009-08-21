@@ -1,5 +1,8 @@
-shibboleth-sp2 (2.1.dfsg1-3) UNRELEASED; urgency=low
+shibboleth-sp2 (2.2.1+dfsg-1) UNRELEASED; urgency=low
 
+  * New upstream release.
+  * Dynamically determine the Debian and upstream package versions for
+    get-orig-source from debian/changelog.
   * Update libapache2-mod-shib2's README.Debian for changes to the
     TestShib web pages.
 
