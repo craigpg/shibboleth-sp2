@@ -1,8 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
 
-pkgsysconfdir = $(sysconfdir)/@PACKAGE@
-pkgxmldir = $(datadir)/xml/@PACKAGE@
-
 lib_LTLIBRARIES = libshibsp.la libshibsp-lite.la
 
 libshibspincludedir = $(includedir)/shibsp
@@ -46,9 +43,11 @@ libshibspinclude_HEADERS = \
 attrinclude_HEADERS = \
 	attribute/Attribute.h \
 	attribute/AttributeDecoder.h \
+	attribute/ExtensibleAttribute.h \
 	attribute/NameIDAttribute.h \
 	attribute/ScopedAttribute.h \
-	attribute/SimpleAttribute.h
+	attribute/SimpleAttribute.h \
+	attribute/XMLAttribute.h
 
 attrfiltinclude_HEADERS = \
 	attribute/filtering/AttributeFilter.h \
@@ -107,6 +106,7 @@ common_sources = \
 	ServiceProvider.cpp \
 	SPConfig.cpp \
 	attribute/Attribute.cpp \
+	attribute/ExtensibleAttribute.cpp \
 	handler/impl/AbstractHandler.cpp \
 	handler/impl/AssertionConsumerService.cpp \
 	handler/impl/AssertionLookup.cpp \
@@ -132,6 +132,7 @@ common_sources = \
 	handler/impl/Shib1SessionInitiator.cpp \
 	handler/impl/TransformSessionInitiator.cpp \
 	handler/impl/WAYFSessionInitiator.cpp \
+	impl/ChainingAccessControl.cpp \
     impl/StorageServiceSessionCache.cpp \
 	impl/XMLAccessControl.cpp \
 	impl/XMLRequestMapper.cpp \
@@ -153,10 +154,13 @@ libshibsp_lite_la_SOURCES = \
 
 libshibsp_la_SOURCES = \
 	${common_sources} \
+	attribute/DOMAttributeDecoder.cpp \
+	attribute/KeyInfoAttributeDecoder.cpp \
 	attribute/NameIDAttributeDecoder.cpp \
 	attribute/NameIDFromScopedAttributeDecoder.cpp \
 	attribute/ScopedAttributeDecoder.cpp \
 	attribute/StringAttributeDecoder.cpp \
+	attribute/XMLAttributeDecoder.cpp \
 	attribute/filtering/impl/AttributeFilter.cpp \
 	attribute/filtering/impl/ChainingAttributeFilter.cpp \
 	attribute/filtering/impl/XMLAttributeFilter.cpp \
@@ -181,7 +185,10 @@ libshibsp_la_SOURCES = \
 	attribute/filtering/impl/AttributeScopeMatchesShibMDScopeFunctor.cpp \
 	attribute/resolver/impl/ChainingAttributeResolver.cpp \
 	attribute/resolver/impl/QueryAttributeResolver.cpp \
+	attribute/resolver/impl/SimpleAggregationAttributeResolver.cpp \
 	attribute/resolver/impl/ChainingAttributeExtractor.cpp \
+	attribute/resolver/impl/DelegationAttributeExtractor.cpp \
+	attribute/resolver/impl/KeyDescriptorAttributeExtractor.cpp \
 	attribute/resolver/impl/XMLAttributeExtractor.cpp \
 	binding/impl/ArtifactResolver.cpp \
 	binding/impl/SOAPClient.cpp \
@@ -193,14 +200,25 @@ libshibsp_la_SOURCES = \
 
 # this is different from the project version
 # http://sources.redhat.com/autobook/autobook/autobook_91.html
-libshibsp_la_LDFLAGS = $(XMLSEC_LIBS) -version-info 2:0:0
-libshibsp_lite_la_LDFLAGS = $(LITE_LIBS) -version-info 2:0:0
+libshibsp_la_LDFLAGS = $(XMLSEC_LIBS) -version-info 3:1:0
+libshibsp_lite_la_LDFLAGS = $(LITE_LIBS) -version-info 3:1:0
 libshibsp_lite_la_CPPFLAGS = -DSHIBSP_LITE
+
+pkgsysconfdir = $(sysconfdir)/@PACKAGE@
+pkgxmldir = $(datadir)/xml/@PACKAGE@
+logdir = ${localstatedir}/log
+rundir = $(localstatedir)/run
+xmldir = $(datadir)/xml
 
 paths.h: ${srcdir}/paths.h.in Makefile ${top_builddir}/config.status
 	rm -f $@.tmp
 	sed < ${srcdir}/$@.in > $@.tmp \
 	    -e 's:@-PREFIX-@:${prefix}:g' \
+        -e 's:@-LIBDIR-@:${libdir}:g' \
+        -e 's:@-SYSCONFDIR-@:${sysconfdir}:g' \
+        -e 's:@-LOGDIR-@:${logdir}:g' \
+        -e 's:@-RUNDIR-@:${rundir}:g' \
+        -e 's:@-XMLDIR-@:${xmldir}:g' \
 	    -e 's:@-PKGSYSCONFDIR-@:${pkgsysconfdir}:g' \
 	    -e 's:@-PKGXMLDIR-@:${pkgxmldir}:g' \
 	    -e 's:@-XMLTOOLINGXMLDIR-@:${XMLTOOLINGXMLDIR}:g' \

@@ -36,8 +36,7 @@ start() {
 	if [ -x /usr/sbin/selinuxenabled ] && /usr/sbin/selinuxenabled; then
 		/sbin/restorecon $pidfile
 	fi
-	# daemon function just hangs, so I'm using su directly
-	su - $SHIBD_USER -c "$shibd -p $pidfile -f &"
+	daemon --user $SHIBD_USER --pidfile $pidfile $shibd -p $pidfile -f -w 3
 
 	RETVAL=$?
 	echo
@@ -48,10 +47,9 @@ start() {
 stop() {
 	echo -n $"Stopping $prog: "
 	if [ -f $pidfile ]; then
-		read kpid < $pidfile
-		kill $kpid
+		killproc -p $pidfile shibd
 	else
-	    killproc shibd
+        killproc shibd
 	fi
 
 	RETVAL=$?
@@ -77,7 +75,7 @@ case "$1" in
 	start
 	;;
   *)
-	echo $"Usage: $prog {start|stop|restart}"
+	echo $"Usage: $prog {start|stop|status|restart}"
 	exit 1
 esac
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -206,7 +206,7 @@ long RemotedResponse::sendRedirect(const char* url)
 {
     if (!m_output.isstruct())
         m_output.structure();
-    m_output.addmember("redirect").string(url);
+    m_output.addmember("redirect").unsafe_string(url);
     return HTTPResponse::XMLTOOLING_HTTP_STATUS_MOVED;
 }
 
@@ -240,7 +240,7 @@ DDF RemotedHandler::wrap(const SPRequest& request, const vector<string>* headers
     DDF in = DDF(m_address.c_str()).structure();
     in.addmember("application_id").string(request.getApplication().getId());
     in.addmember("scheme").string(request.getScheme());
-    in.addmember("hostname").string(request.getHostname());
+    in.addmember("hostname").unsafe_string(request.getHostname());
     in.addmember("port").integer(request.getPort());
     in.addmember("content_type").string(request.getContentType().c_str());
     in.addmember("content_length").integer(request.getContentLength());
@@ -248,8 +248,8 @@ DDF RemotedHandler::wrap(const SPRequest& request, const vector<string>* headers
     in.addmember("remote_user").string(request.getRemoteUser().c_str());
     in.addmember("client_addr").string(request.getRemoteAddr().c_str());
     in.addmember("method").string(request.getMethod());
-    in.addmember("uri").string(request.getRequestURI());
-    in.addmember("url").string(request.getRequestURL());
+    in.addmember("uri").unsafe_string(request.getRequestURI());
+    in.addmember("url").unsafe_string(request.getRequestURL());
     in.addmember("query").string(request.getQueryString());
 
     if (headers) {

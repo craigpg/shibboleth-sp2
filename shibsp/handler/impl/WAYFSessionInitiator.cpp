@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,7 @@ pair<bool,long> WAYFSessionInitiator::run(SPRequest& request, string& entityID, 
         return make_pair(false,0L);
 
     string target;
+    string postData;
     const char* option;
     const Handler* ACS=NULL;
     const Application& app=request.getApplication();
@@ -115,6 +116,21 @@ pair<bool,long> WAYFSessionInitiator::run(SPRequest& request, string& entityID, 
             ACS = app.getDefaultAssertionConsumerService();
     }
 
+    // Validate the ACS for use with this protocol.
+    pair<bool,const char*> ACSbinding = ACS ? ACS->getString("Binding") : pair<bool,const char*>(false,NULL);
+    if (ACSbinding.first) {
+        pair<bool,const char*> compatibleBindings = getString("compatibleBindings");
+        if (compatibleBindings.first && strstr(compatibleBindings.second, ACSbinding.second) == NULL) {
+            m_log.info("configured or requested ACS has non-SAML 1.x binding");
+            return make_pair(false,0L);
+        }
+        else if (strcmp(ACSbinding.second, samlconstants::SAML1_PROFILE_BROWSER_POST) &&
+                 strcmp(ACSbinding.second, samlconstants::SAML1_PROFILE_BROWSER_ARTIFACT)) {
+            m_log.info("configured or requested ACS has non-SAML 1.x binding");
+            return make_pair(false,0L);
+        }
+    }
+
     m_log.debug("sending request to WAYF (%s)", m_url);
 
     // Compute the ACS URL. We add the ACS location to the base handlerURL.
@@ -130,6 +146,8 @@ pair<bool,long> WAYFSessionInitiator::run(SPRequest& request, string& entityID, 
             target = option;
     }
     preserveRelayState(request.getApplication(), request, target);
+    if (!isHandler)
+        preservePostData(request.getApplication(), request, request, target.c_str());
 
     // WAYF requires a target value.
     if (target.empty())

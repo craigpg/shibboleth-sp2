@@ -1,5 +1,5 @@
 PKG=SHIBsp
-VERSION=2.1
+VERSION=2.2.1
 BASEDIR=/
 NAME=shibboleth-sp
 CATEGORY=application,security

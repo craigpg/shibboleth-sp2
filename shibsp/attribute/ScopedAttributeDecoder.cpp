@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,9 +69,8 @@ shibsp::Attribute* ScopedAttributeDecoder::decode(
     char* val;
     char* scope;
     const XMLCh* xmlscope;
-    QName scopeqname(NULL,Scope);
+    xmltooling::QName scopeqname(NULL,Scope);
     auto_ptr<ScopedAttribute> scoped(new ScopedAttribute(ids, m_delimeter));
-    scoped->setCaseSensitive(m_caseSensitive);
     vector< pair<string,string> >& dest = scoped->getValues();
     vector<XMLObject*>::const_iterator v,stop;
 
@@ -146,7 +145,7 @@ shibsp::Attribute* ScopedAttributeDecoder::decode(
             }
         }
 
-        return dest.empty() ? NULL : scoped.release();
+        return dest.empty() ? NULL : _decode(scoped.release());
     }
 
     const NameID* saml2name = dynamic_cast<const NameID*>(xmlObject);
@@ -192,5 +191,5 @@ shibsp::Attribute* ScopedAttributeDecoder::decode(
         log.warn("ignoring empty NameID");
     }
     delete[] val;
-    return dest.empty() ? NULL : scoped.release();
+    return dest.empty() ? NULL : _decode(scoped.release());
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ namespace shibsp {
         /**
          * Returns a pair of bounded iterators around the values of a parameter.
          * 
-         * @param name  name of parameter
+         * @param name  name of parameter, or NULL to return all parameters
          * @return  a pair of multimap iterators surrounding the matching value(s)
          */
         std::pair<walker,walker> getParameters(const char* name) const;

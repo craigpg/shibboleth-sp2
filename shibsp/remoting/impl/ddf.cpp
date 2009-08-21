@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 /**
  * ddf.cpp
- * 
+ *
  * C++ DDF abstraction for interpretive RPC
  */
 
@@ -32,6 +32,7 @@
 #include <xercesc/util/XMLUniDefs.hpp>
 #include <xmltooling/XMLToolingConfig.h>
 #include <xmltooling/util/ParserPool.h>
+#include <xmltooling/util/URLEncoder.h>
 #include <xmltooling/util/XMLHelper.h>
 
 using namespace shibsp;
@@ -61,22 +62,19 @@ char* ddf_strdup(const char* s)
    The name buffer is returned from the function. */
 char* ddf_token(const char** path, char* name)
 {
-    const char* temp=NULL;
-    
-    *name='\0';
-    if (*path==NULL || **path=='\0')
+    *name=0;
+    if (*path==NULL || **path==0)
         return name;
 
-    temp=strchr(*path,'.');
-    if (temp==NULL)
-    {
-        strcpy(name,*path);
+    const char* temp=strchr(*path,'.');
+    if (temp==NULL) {
+        strncpy(name,*path,MAX_NAME_LEN);
+        name[MAX_NAME_LEN]=0;
         *path=NULL;
     }
-    else if (temp>*path)
-    {
+    else if (temp>*path) {
         strncpy(name,*path,temp-*path);
-        name[temp-*path]='\0';
+        name[temp-*path]=0;
         *path=temp+1;
     }
     else
@@ -101,7 +99,8 @@ struct shibsp::ddf_body_t {
         DDF_FLOAT,
 	    DDF_STRUCT,
         DDF_LIST,
-	    DDF_POINTER
+	    DDF_POINTER,
+        DDF_STRING_UNSAFE
     } type;                         // data type of node
 
     union {
@@ -126,11 +125,11 @@ DDF::DDF(const char* n)
     name(n);
 }
 
-DDF::DDF(const char* n, const char* val)
+DDF::DDF(const char* n, const char* val, bool safe)
 {
     m_handle=new(nothrow) ddf_body_t;
     name(n);
-    string(val);
+    string(const_cast<char*>(val), true, safe);
 }
 
 DDF::DDF(const char* n, long val)
@@ -171,7 +170,8 @@ DDF DDF::copy() const
         case ddf_body_t::DDF_EMPTY:
             return DDF(m_handle->name);
         case ddf_body_t::DDF_STRING:
-            return DDF(m_handle->name,m_handle->value.string);
+        case ddf_body_t::DDF_STRING_UNSAFE:
+            return DDF(m_handle->name,m_handle->value.string,(m_handle->type==ddf_body_t::DDF_STRING));
         case ddf_body_t::DDF_INT:
             return DDF(m_handle->name,m_handle->value.integer);
         case ddf_body_t::DDF_FLOAT:
@@ -240,7 +240,7 @@ bool DDF::isempty() const
 
 bool DDF::isstring() const
 {
-    return m_handle ? (m_handle->type==ddf_body_t::DDF_STRING) : false;
+    return m_handle ? (m_handle->type==ddf_body_t::DDF_STRING || m_handle->type==ddf_body_t::DDF_STRING_UNSAFE) : false;
 }
 
 bool DDF::isint() const
@@ -282,6 +282,7 @@ long DDF::integer() const
             case ddf_body_t::DDF_FLOAT:
                 return static_cast<long>(m_handle->value.floating);
             case ddf_body_t::DDF_STRING:
+            case ddf_body_t::DDF_STRING_UNSAFE:
                 return m_handle->value.string ? atol(m_handle->value.string) : 0;
             case ddf_body_t::DDF_STRUCT:
             case ddf_body_t::DDF_LIST:
@@ -300,6 +301,7 @@ double DDF::floating() const
             case ddf_body_t::DDF_FLOAT:
                 return m_handle->value.floating;
             case ddf_body_t::DDF_STRING:
+            case ddf_body_t::DDF_STRING_UNSAFE:
                 return m_handle->value.string ? atof(m_handle->value.string) : 0;
             case ddf_body_t::DDF_STRUCT:
             case ddf_body_t::DDF_LIST:
@@ -332,6 +334,7 @@ DDF& DDF::empty()
     if (m_handle) {
         switch (m_handle->type) {
             case ddf_body_t::DDF_STRING:
+            case ddf_body_t::DDF_STRING_UNSAFE:
                 if (m_handle->value.string)
                     free(m_handle->value.string);
                 break;
@@ -351,13 +354,13 @@ DDF& DDF::empty()
     return *this;
 }
 
-DDF& DDF::string(char* val, bool copyit)
+DDF& DDF::string(char* val, bool copyit, bool safe)
 {
     if (empty().m_handle) {
         m_handle->value.string = copyit ? ddf_strdup(val) : val;
         if (!m_handle->value.string && val && *val)
             return destroy();
-        m_handle->type=ddf_body_t::DDF_STRING;
+        m_handle->type=(safe ? ddf_body_t::DDF_STRING : ddf_body_t::DDF_STRING_UNSAFE);
     }
     return *this;
 }
@@ -614,7 +617,7 @@ DDF DDF::addmember(const char* path)
 {
     char name[MAX_NAME_LEN+1];
     const char* path_ptr=path;
-    
+
     if (m_handle && ddf_strlen(ddf_token(&path_ptr,name))>0) {
         if (!isstruct())
             structure();
@@ -642,18 +645,32 @@ DDF DDF::addmember(const char* path)
 
 DDF DDF::getmember(const char* path) const
 {
+    DDF current;
     char name[MAX_NAME_LEN+1];
     const char* path_ptr=path;
-    DDF current;
 
-    if (isstruct() && ddf_strlen(ddf_token(&path_ptr,name))>0) {
-        current.m_handle=m_handle->value.children.first;
-        while (current.m_handle && strcmp(current.m_handle->name,name)!=0)
-            current.m_handle=current.m_handle->next;
-
-        if (current.m_handle && ddf_strlen(path_ptr)>0)
-            current=current.getmember(path_ptr);
+    ddf_token(&path_ptr, name);
+    if (*name == 0)
+        return current;
+    else if (*name == '[') {
+        unsigned long i = strtoul(name+1, NULL, 10);
+        if (islist() && i < m_handle->value.children.count)
+            current=operator[](i);
+        else if (i == 0)
+            current = *this;
     }
+    else if (isstruct()) {
+        current.m_handle = m_handle->value.children.first;
+        while (current.m_handle && strcmp(current.m_handle->name,name) != 0)
+            current.m_handle = current.m_handle->next;
+    }
+    else if (islist()) {
+        current.m_handle = m_handle->value.children.first;
+        return current.getmember(path);
+    }
+
+    if (current.m_handle && path_ptr && *path_ptr)
+        current = current.getmember(path_ptr);
     return current;
 }
 
@@ -672,7 +689,7 @@ void DDF::dump(FILE* f, int indent) const
     ddf_print_indent(f,indent);
     if (m_handle) {
         switch (m_handle->type) {
-            
+
             case ddf_body_t::DDF_EMPTY:
                 fprintf(f,"empty");
                 if (m_handle->name)
@@ -680,6 +697,7 @@ void DDF::dump(FILE* f, int indent) const
                 break;
 
             case ddf_body_t::DDF_STRING:
+            case ddf_body_t::DDF_STRING_UNSAFE:
                 if (m_handle->name)
                     fprintf(f,"char* %s = ",m_handle->name);
                 else
@@ -796,8 +814,9 @@ void serialize(ddf_body_t* p, ostream& os, bool name_attr=true)
 {
     if (p) {
         switch (p->type) {
-            
+
             case ddf_body_t::DDF_STRING:
+            case ddf_body_t::DDF_STRING_UNSAFE:
                 os << "<string";
                 if (name_attr && p->name) {
                     os << " name=\"";
@@ -805,8 +824,14 @@ void serialize(ddf_body_t* p, ostream& os, bool name_attr=true)
                     os << '"';
                 }
                 if (p->value.string) {
-                    os << '>';
-                    xml_encode(os,p->value.string);
+                    if (p->type == ddf_body_t::DDF_STRING) {
+                        os << '>';
+                        xml_encode(os,p->value.string);
+                    }
+                    else {
+                        os << " unsafe=\"1\">";
+                        xml_encode(os,XMLToolingConfig::getConfig().getURLEncoder()->encode(p->value.string).c_str());
+                    }
                     os << "</string>";
                 }
                 else
@@ -941,11 +966,12 @@ static const XMLCh _number[] =  UNICODE_LITERAL_6(n,u,m,b,e,r);
 static const XMLCh _array[] =   UNICODE_LITERAL_5(a,r,r,a,y);
 static const XMLCh _struct[] =  UNICODE_LITERAL_6(s,t,r,u,c,t);
 static const XMLCh _lowercase[] = UNICODE_LITERAL_9(l,o,w,e,r,c,a,s,e);
+static const XMLCh _unsafe[] =  UNICODE_LITERAL_6(u,n,s,a,f,e);
 
 DDF deserialize(DOMElement* root, bool lowercase)
 {
     DDF obj(NULL);
-    auto_ptr_char name_val(root->getAttribute(_name));
+    auto_ptr_char name_val(root->getAttributeNS(NULL, _name));
     if (name_val.get() && *name_val.get()) {
         if (lowercase)
             for (char* pch=const_cast<char*>(name_val.get()); *pch=tolower(*pch); pch++);
@@ -961,9 +987,19 @@ DDF deserialize(DOMElement* root, bool lowercase)
     if (XMLString::equals(tag,_string)) {
         DOMNode* child=root->getFirstChild();
         if (child && child->getNodeType()==DOMNode::TEXT_NODE) {
-            char* val = toUTF8(child->getNodeValue(), true);    // use malloc
-            if (val)
-                obj.string(val, false); // don't re-copy the string
+            const XMLCh* unsafe = root->getAttributeNS(NULL, _unsafe);
+            if (unsafe && *unsafe==chDigit_1) {
+                // If it's unsafe, it's not UTF-8 data, so we have to convert to ASCII and decode it.
+                char* encoded = XMLString::transcode(child->getNodeValue());
+                XMLToolingConfig::getConfig().getURLEncoder()->decode(encoded);
+                obj.string(encoded, true, false); // re-copy into free-able buffer, plus mark unsafe
+                XMLString::release(&encoded);
+            }
+            else {
+                char* val = toUTF8(child->getNodeValue(), true);    // use malloc
+                if (val)
+                    obj.string(val, false); // don't re-copy the string
+            }
         }
     }
     else if (XMLString::equals(tag,_number)) {

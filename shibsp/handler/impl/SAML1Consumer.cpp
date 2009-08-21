@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,8 +16,8 @@
 
 /**
  * SAML1Consumer.cpp
- * 
- * SAML 1.x assertion consumer service 
+ *
+ * SAML 1.x assertion consumer service
  */
 
 #include "internal.h"
@@ -29,9 +29,9 @@
 # include "ServiceProvider.h"
 # include "SessionCache.h"
 # include "attribute/resolver/ResolutionContext.h"
+# include <saml/SAMLConfig.h>
 # include <saml/saml1/core/Assertions.h>
 # include <saml/saml1/core/Protocols.h>
-# include <saml/saml1/profile/BrowserSSOProfileValidator.h>
 # include <saml/saml2/metadata/Metadata.h>
 using namespace opensaml::saml1;
 using namespace opensaml::saml1p;
@@ -55,18 +55,25 @@ namespace shibsp {
     #pragma warning( push )
     #pragma warning( disable : 4250 )
 #endif
-    
+
     class SHIBSP_DLLLOCAL SAML1Consumer : public AssertionConsumerService
     {
     public:
         SAML1Consumer(const DOMElement* e, const char* appId)
-                : AssertionConsumerService(e, appId, Category::getInstance(SHIBSP_LOGCAT".SSO.SAML1")) {
+            : AssertionConsumerService(e, appId, Category::getInstance(SHIBSP_LOGCAT".SSO.SAML1")) {
 #ifndef SHIBSP_LITE
+            m_ssoRule = NULL;
             m_post = XMLString::equals(getString("Binding").second, samlconstants::SAML1_PROFILE_BROWSER_POST);
+            if (SPConfig::getConfig().isEnabled(SPConfig::OutOfProcess))
+                m_ssoRule = SAMLConfig::getConfig().SecurityPolicyRuleManager.newPlugin(SAML1BROWSERSSO_POLICY_RULE, e);
 #endif
         }
-        virtual ~SAML1Consumer() {}
-        
+        virtual ~SAML1Consumer() {
+#ifndef SHIBSP_LITE
+            delete m_ssoRule;
+#endif
+        }
+
 #ifndef SHIBSP_LITE
         void generateMetadata(SPSSODescriptor& role, const char* handlerURL) const {
             AssertionConsumerService::generateMetadata(role, handlerURL);
@@ -83,7 +90,9 @@ namespace shibsp {
             const PropertySet* settings,
             const XMLObject& xmlObject
             ) const;
+
         bool m_post;
+        SecurityPolicyRule* m_ssoRule;
 #endif
     };
 
@@ -95,7 +104,19 @@ namespace shibsp {
     {
         return new SAML1Consumer(p.first, p.second);
     }
-    
+
+#ifndef SHIBSP_LITE
+    class SHIBSP_DLLLOCAL _rulenamed : std::unary_function<const SecurityPolicyRule*,bool>
+    {
+    public:
+        _rulenamed(const char* name) : m_name(name) {}
+        bool operator()(const SecurityPolicyRule* rule) const {
+            return rule ? !strcmp(m_name, rule->getType()) : false;
+        }
+    private:
+        const char* m_name;
+    };
+#endif
 };
 
 #ifndef SHIBSP_LITE
@@ -125,7 +146,7 @@ void SAML1Consumer::implementProtocol(
             throw MetadataException("Security of SAML 1.x SSO POST response not established.");
         throw SecurityPolicyException("Security of SAML 1.x SSO POST response not established.");
     }
-        
+
     // Remember whether we already established trust.
     bool alreadySecured = policy.isAuthenticated();
 
@@ -158,10 +179,14 @@ void SAML1Consumer::implementProtocol(
     // Saves off error messages potentially helpful for users.
     string contextualError;
 
-    // Profile validator.
-    time_t now = time(NULL);
-    BrowserSSOProfileValidator ssoValidator(application.getRelyingParty(entity)->getXMLString("entityID").second, application.getAudiences(), now);
+    // Ensure the BrowserSSO rule is in the policy set.
+    if (find_if(policy.getRules(), _rulenamed(SAML1BROWSERSSO_POLICY_RULE)) == NULL)
+        policy.getRules().push_back(m_ssoRule);
 
+    // Populate recipient as audience.
+    policy.getAudiences().push_back(application.getRelyingParty(entity)->getXMLString("entityID").second);
+
+    time_t now = time(NULL);
     for (vector<saml1::Assertion*>::const_iterator a = assertions.begin(); a!=assertions.end(); ++a) {
         try {
             // Skip unsigned assertion?
@@ -178,15 +203,13 @@ void SAML1Consumer::implementProtocol(
                 );
 
             // Run the policy over the assertion. Handles replay, freshness, and
-            // signature verification, assuming the relevant rules are configured.
-            policy.evaluate(*(*a));
-            
+            // signature verification, assuming the relevant rules are configured,
+            // along with condition and profile enforcement.
+            policy.evaluate(*(*a), &httpRequest);
+
             // If no security is in place now, we kick it.
             if (!alreadySecured && !policy.isAuthenticated())
                 throw SecurityPolicyException("Unable to establish security of incoming assertion.");
-
-            // Now do profile and core semantic validation to ensure we can use it for SSO.
-            ssoValidator.validateAssertion(*(*a));
 
             // Track it as a valid token.
             tokens.push_back(*a);

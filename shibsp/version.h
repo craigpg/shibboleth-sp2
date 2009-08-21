@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,8 +16,8 @@
 
 /**
  * version.h
- * 
- * Library version macros and constants 
+ *
+ * Library version macros and constants
  */
 
 #ifndef __shibsp_version_h__
@@ -33,12 +33,12 @@
 // V E R S I O N   S P E C I F I C A T I O N
 
 /**
- * MODIFY THESE NUMERIC VALUES TO COINCIDE WITH OPENSAML VERSION
+ * MODIFY THESE NUMERIC VALUES TO COINCIDE WITH SHIBSP LIBRARY VERSION
  * AND DO NOT MODIFY ANYTHING ELSE IN THIS VERSION HEADER FILE
  */
 
 #define SHIBSP_VERSION_MAJOR 1
-#define SHIBSP_VERSION_MINOR 0
+#define SHIBSP_VERSION_MINOR 2
 #define SHIBSP_VERSION_REVISION 1
 
 /** DO NOT MODIFY BELOW THIS LINE */

@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * SAMLDSSessionInitiator.cpp
- * 
+ *
  * SAML Discovery Service support.
  */
 
@@ -65,7 +65,7 @@ namespace shibsp {
                 m_returnParam = url.second;
         }
         virtual ~SAMLDSSessionInitiator() {}
-        
+
         pair<bool,long> run(SPRequest& request, string& entityID, bool isHandler=true) const;
 
 #ifndef SHIBSP_LITE
@@ -78,11 +78,11 @@ namespace shibsp {
             hurl += loc;
             auto_ptr_XMLCh widen(hurl.c_str());
             ElementProxy* ep = new AnyElementImpl(m_discoNS.get(), LOCAL_NAME);
-            ep->setAttribute(QName(NULL,EndpointType::LOCATION_ATTRIB_NAME), widen.get());
-            ep->setAttribute(QName(NULL,EndpointType::BINDING_ATTRIB_NAME), getXMLString("Binding").second);
+            ep->setAttribute(xmltooling::QName(NULL,EndpointType::LOCATION_ATTRIB_NAME), widen.get());
+            ep->setAttribute(xmltooling::QName(NULL,EndpointType::BINDING_ATTRIB_NAME), m_discoNS.get());
             pair<bool,const XMLCh*> ix = getXMLString("index");
-            ep->setAttribute(QName(NULL,IndexedEndpointType::INDEX_ATTRIB_NAME), ix.first ? ix.second : xmlconstants::XML_ONE);
-            
+            ep->setAttribute(xmltooling::QName(NULL,IndexedEndpointType::INDEX_ATTRIB_NAME), ix.first ? ix.second : xmlconstants::XML_ONE);
+
             Extensions* ext = role.getExtensions();
             if (!ext) {
                 ext = ExtensionsBuilder::buildExtensions();
@@ -131,7 +131,7 @@ pair<bool,long> SAMLDSSessionInitiator::run(SPRequest& request, string& entityID
             ex.addProperty("statusCode2", "urn:oasis:names:tc:SAML:2.0:status:NoAvailableIDP");
             ex.raise();
         }
-        
+
         option = request.getParameter("target");
         if (option)
             target = option;
@@ -166,6 +166,8 @@ pair<bool,long> SAMLDSSessionInitiator::run(SPRequest& request, string& entityID
             target = option;
     }
     preserveRelayState(request.getApplication(), request, target);
+    if (!isHandler)
+        preservePostData(request.getApplication(), request, request, target.c_str());
 
     const URLEncoder* urlenc = XMLToolingConfig::getConfig().getURLEncoder();
     if (isHandler) {

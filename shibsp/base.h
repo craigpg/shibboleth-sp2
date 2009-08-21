@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * @file shibsp/base.h
- * 
+ *
  * Base header file definitions
  * Must be included prior to including any other header
  */
@@ -68,14 +68,10 @@
 
 #ifdef WIN32
 
-/**
- * Default catalog path on Windows.
- */
+/** Default catalog path on Windows. */
 # define SHIBSP_SCHEMAS "c:/opt/shibboleth-sp/share/xml/xmltooling/catalog.xml;c:/opt/shibboleth-sp/share/xml/opensaml/saml20-catalog.xml;c:/opt/shibboleth-sp/share/xml/opensaml/saml11-catalog.xml;c:/opt/shibboleth-sp/share/xml/shibboleth/catalog.xml"
 
-/**
- * Default name of configuration file on Windows.
- */
+/** Default name of configuration file on Windows. */
 # define SHIBSP_CONFIG "shibboleth2.xml"
 
 /**
@@ -84,23 +80,32 @@
  */
 #define SHIBSP_LOGGING "console.logger"
 
-/**
- * Default prefix for installation (used to resolve relative paths).
- */
+/** Default prefix for installation (used to resolve relative paths). */
 #define SHIBSP_PREFIX  "c:/opt/shibboleth-sp"
+
+/** Library directory for installation (used to resolve relative paths). */
+#define SHIBSP_LIBDIR  "lib"
+
+/** Log directory for installation (used to resolve relative paths). */
+#define SHIBSP_LOGDIR  "var/log"
+
+/** Configuration directory for installation (used to resolve relative paths). */
+#define SHIBSP_CFGDIR  "etc"
+
+/** Runtime state directory for installation (used to resolve relative paths). */
+#define SHIBSP_RUNDIR  "var/run"
+
+/** XML directory for installation (used to resolve relative paths). */
+#define SHIBSP_XMLDIR  "share/xml"
 
 #else
 # include <shibsp/paths.h>
 #endif
 
-/**
- * Logging category for Service Provider functions.
- */
+/** Logging category for Service Provider functions. */
 #define SHIBSP_LOGCAT "Shibboleth"
 
-/**
- * Logging category for Service Provider auditing.
- */
+/** Logging category for Service Provider auditing. */
 #define SHIBSP_TX_LOGCAT "Shibboleth-TRANSACTION"
 
 #endif /* __shibsp_base_h__ */

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #define __shibsp_abshandler_h__
 
 #include <shibsp/handler/Handler.h>
+#include <shibsp/remoting/ddf.h>
 #include <shibsp/util/DOMPropertySet.h>
 
 #ifndef SHIBSP_LITE
@@ -155,6 +156,56 @@ namespace shibsp {
             bool clear=true
             ) const;
         
+        /**
+         * Implements a mechanism to preserve form post data.
+         *
+         * @param application   the associated Application
+         * @param request       incoming HTTP request
+         * @param response      outgoing HTTP response
+         * @param relayState    relay state information attached to current sequence, if any
+         */
+        virtual void preservePostData(
+            const Application& application,
+            const xmltooling::HTTPRequest& request,
+            xmltooling::HTTPResponse& response,
+            const char* relayState
+            ) const;
+
+        /**
+         * Implements storage service and cookie mechanism to recover PostData.
+         *
+         * <p>If a supported mechanism can be identified, the return value will be
+         * the recovered state information.
+         *
+         * @param application   the associated Application
+         * @param request       incoming HTTP request
+         * @param response      outgoing HTTP response
+         * @param relayState    relay state information attached to current sequence, if any
+         * @return  recovered form post data associated with request as a DDF list of string members
+         */
+        virtual DDF recoverPostData(
+            const Application& application,
+            const xmltooling::HTTPRequest& request,
+            xmltooling::HTTPResponse& response,
+            const char* relayState
+            ) const;
+
+        /**
+         * Post a redirect response with post data.
+         * 
+         * @param application   the associated Application
+         * @param response      outgoing HTTP response
+         * @param request       incoming HTTP request
+         * @param url           action url for the form
+         * @param postData      list of parameters to load into the form, as DDF string members
+         */
+        virtual long sendPostResponse(
+            const Application& application,
+            xmltooling::HTTPResponse& httpResponse,
+            const char* url,
+            DDF& postData
+            ) const;
+
         /** Logging object. */
         xmltooling::logging::Category& m_log;
         
@@ -163,6 +214,10 @@ namespace shibsp {
 
     public:
         virtual ~AbstractHandler() {}
+
+    private:
+        std::pair<std::string,const char*> getPostCookieNameProps(const Application& app, const char* relayState) const;
+        DDF getPostData(const Application& application, const xmltooling::HTTPRequest& request) const;
     };
 
 #if defined (_MSC_VER)

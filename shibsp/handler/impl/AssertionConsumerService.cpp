@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,28 +147,48 @@ pair<bool,long> AssertionConsumerService::processMessage(
     Locker metadataLocker(application.getMetadataProvider());
 
     // Create the policy.
-    shibsp::SecurityPolicy policy(application, &m_role, validate.first && validate.second);
+    auto_ptr<opensaml::SecurityPolicy> policy(
+        createSecurityPolicy(application, &m_role, validate.first && validate.second, policyId.second)
+        );
 
     string relayState;
-
     try {
         // Decode the message and process it in a protocol-specific way.
-        auto_ptr<XMLObject> msg(m_decoder->decode(relayState, httpRequest, policy));
+        auto_ptr<XMLObject> msg(m_decoder->decode(relayState, httpRequest, *(policy.get())));
         if (!msg.get())
             throw BindingException("Failed to decode an SSO protocol response.");
+        DDF postData = recoverPostData(application, httpRequest, httpResponse, relayState.c_str());
+        DDFJanitor postjan(postData);
         recoverRelayState(application, httpRequest, httpResponse, relayState);
-        implementProtocol(application, httpRequest, httpResponse, policy, settings, *msg.get());
+        implementProtocol(application, httpRequest, httpResponse, *(policy.get()), settings, *msg.get());
 
-        auto_ptr_char issuer(policy.getIssuer() ? policy.getIssuer()->getName() : NULL);
+        auto_ptr_char issuer(policy->getIssuer() ? policy->getIssuer()->getName() : NULL);
 
         // History cookie.
         if (issuer.get() && *issuer.get())
             maintainHistory(application, httpRequest, httpResponse, issuer.get());
 
         // Now redirect to the state value. By now, it should be set to *something* usable.
-        return make_pair(true, httpResponse.sendRedirect(relayState.c_str()));
+        // First check for POST data.
+        if (!postData.islist()) {
+            m_log.debug("ACS returning via redirect to: %s", relayState.c_str());
+            return make_pair(true, httpResponse.sendRedirect(relayState.c_str()));
+        }
+        else {
+            m_log.debug("ACS returning via POST to: %s", relayState.c_str());
+            return make_pair(true, sendPostResponse(application, httpResponse, relayState.c_str(), postData));
+        }
     }
     catch (XMLToolingException& ex) {
+        // Check for isPassive error condition.
+        const char* sc2 = ex.getProperty("statusCode2");
+        if (sc2 && !strcmp(sc2, "urn:oasis:names:tc:SAML:2.0:status:NoPassive")) {
+            validate = getBool("ignoreNoPassive", m_configNS.get());  // namespace-qualified if inside handler element
+            if (validate.first && validate.second && !relayState.empty()) {
+                m_log.debug("ignoring SAML status of NoPassive and redirecting to resource...");
+                return make_pair(true, httpResponse.sendRedirect(relayState.c_str()));
+            }
+        }
         if (!relayState.empty())
             ex.addProperty("RelayState", relayState.c_str());
         throw;
@@ -203,7 +223,8 @@ void AssertionConsumerService::checkAddress(const Application& application, cons
 
 #ifndef SHIBSP_LITE
 
-void AssertionConsumerService::generateMetadata(SPSSODescriptor& role, const char* handlerURL) const {
+void AssertionConsumerService::generateMetadata(SPSSODescriptor& role, const char* handlerURL) const
+{
     const char* loc = getString("Location").second;
     string hurl(handlerURL);
     if (*loc != '/')
@@ -224,6 +245,13 @@ void AssertionConsumerService::generateMetadata(SPSSODescriptor& role, const cha
     	ep->setIndex(getXMLString("index").second);
     }
     role.getAssertionConsumerServices().push_back(ep);
+}
+
+opensaml::SecurityPolicy* AssertionConsumerService::createSecurityPolicy(
+    const Application& application, const xmltooling::QName* role, bool validate, const char* policyId
+    ) const
+{
+    return new SecurityPolicy(application, role, validate, policyId);
 }
 
 class SHIBSP_DLLLOCAL DummyContext : public ResolutionContext
@@ -261,19 +289,18 @@ ResolutionContext* AssertionConsumerService::resolveAttributes(
     const vector<const Assertion*>* tokens
     ) const
 {
-    const saml2md::EntityDescriptor* entity = issuer ? dynamic_cast<const saml2md::EntityDescriptor*>(issuer->getParent()) : NULL;
-
     // First we do the extraction of any pushed information, including from metadata.
     vector<Attribute*> resolvedAttributes;
     AttributeExtractor* extractor = application.getAttributeExtractor();
     if (extractor) {
         Locker extlocker(extractor);
-        if (entity) {
+        if (issuer) {
             pair<bool,const char*> mprefix = application.getString("metadataAttributePrefix");
             if (mprefix.first) {
                 m_log.debug("extracting metadata-derived attributes...");
                 try {
-                    extractor->extractAttributes(application, issuer, *entity, resolvedAttributes);
+                    // We pass NULL for "issuer" because the IdP isn't the one asserting metadata-based attributes.
+                    extractor->extractAttributes(application, NULL, *issuer, resolvedAttributes);
                     for (vector<Attribute*>::iterator a = resolvedAttributes.begin(); a != resolvedAttributes.end(); ++a) {
                         vector<string>& ids = (*a)->getAliases();
                         for (vector<string>::iterator id = ids.begin(); id != ids.end(); ++id)
@@ -338,7 +365,7 @@ ResolutionContext* AssertionConsumerService::resolveAttributes(
             auto_ptr<ResolutionContext> ctx(
                 resolver->createResolutionContext(
                     application,
-                    entity,
+                    issuer ? dynamic_cast<const saml2md::EntityDescriptor*>(issuer->getParent()) : NULL,
                     protocol,
                     nameid,
                     authncontext_class,
@@ -351,17 +378,6 @@ ResolutionContext* AssertionConsumerService::resolveAttributes(
             // Copy over any pushed attributes.
             if (!resolvedAttributes.empty())
                 ctx->getResolvedAttributes().insert(ctx->getResolvedAttributes().end(), resolvedAttributes.begin(), resolvedAttributes.end());
-
-            // Attach global prefix if needed.
-            pair<bool,const char*> prefix = application.getString("attributePrefix");
-            if (prefix.first) {
-                for (vector<Attribute*>::iterator a = ctx->getResolvedAttributes().begin(); a != ctx->getResolvedAttributes().end(); ++a) {
-                    vector<string>& ids = (*a)->getAliases();
-                    for (vector<string>::iterator id = ids.begin(); id != ids.end(); ++id)
-                        *id = prefix.second + *id;
-                }
-            }
-
             return ctx.release();
         }
     }
@@ -369,19 +385,8 @@ ResolutionContext* AssertionConsumerService::resolveAttributes(
         m_log.error("attribute resolution failed: %s", ex.what());
     }
 
-    if (!resolvedAttributes.empty()) {
-        // Attach global prefix if needed.
-        pair<bool,const char*> prefix = application.getString("attributePrefix");
-        if (prefix.first) {
-            for (vector<Attribute*>::iterator a = resolvedAttributes.begin(); a != resolvedAttributes.end(); ++a) {
-                vector<string>& ids = (*a)->getAliases();
-                for (vector<string>::iterator id = ids.begin(); id != ids.end(); ++id)
-                    *id = prefix.second + *id;
-            }
-        }
-
+    if (!resolvedAttributes.empty())
         return new DummyContext(resolvedAttributes);
-    }
     return NULL;
 }
 
@@ -412,15 +417,11 @@ void AssertionConsumerService::extractMessageDetails(const Assertion& assertion,
         }
         m_log.debug("searching metadata for assertion issuer...");
         pair<const EntityDescriptor*,const RoleDescriptor*> entity;
-        shibsp::SecurityPolicy* sppol = dynamic_cast<shibsp::SecurityPolicy*>(&policy);
-        if (sppol) {
-            MetadataProviderCriteria mc(sppol->getApplication(), policy.getIssuer()->getName(), &IDPSSODescriptor::ELEMENT_QNAME, protocol);
-            entity = policy.getMetadataProvider()->getEntityDescriptor(mc);
-        }
-        else {
-            MetadataProvider::Criteria mc(policy.getIssuer()->getName(), &IDPSSODescriptor::ELEMENT_QNAME, protocol);
-            entity = policy.getMetadataProvider()->getEntityDescriptor(mc);
-        }
+        MetadataProvider::Criteria& mc = policy.getMetadataProviderCriteria();
+        mc.entityID_unicode = policy.getIssuer()->getName();
+        mc.role = &IDPSSODescriptor::ELEMENT_QNAME;
+        mc.protocol = protocol;
+        entity = policy.getMetadataProvider()->getEntityDescriptor(mc);
         if (!entity.first) {
             auto_ptr_char iname(policy.getIssuer()->getName());
             m_log.warn("no metadata found, can't establish identity of issuer (%s)", iname.get());

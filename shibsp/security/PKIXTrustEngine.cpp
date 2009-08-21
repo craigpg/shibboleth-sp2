@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -272,7 +272,6 @@ void MetadataPKIXIterator::populate()
     if (m_caching) {
         m_engine.m_credLock->unlock();
         m_engine.m_credLock->wrlock();
-        PKIXTrustEngine::credmap_t::iterator cached = m_credCache->second.find(m_current);
         if (m_credCache->second.count(m_current)==0) {
             // Transfer objects into cache.
             m_credCache->second[m_current] = m_ownedCreds;
