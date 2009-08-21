@@ -25,6 +25,7 @@ shibboleth-sp2 (2.2.1+dfsg-1) UNRELEASED; urgency=low
     - Fix handling of InProcess property.
   * Tighten build dependencies and schema package dependencies on
     opensaml2 and xmltooling.
+  * Build against Xerces-C 3.0.
   * Dynamically determine the Debian and upstream package versions for
     get-orig-source from debian/changelog.
   * Update libapache2-mod-shib2's README.Debian for changes to the

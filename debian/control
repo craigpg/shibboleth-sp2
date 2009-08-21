@@ -5,7 +5,7 @@ Maintainer: Debian Shib Team <pkg-shibboleth-devel@lists.alioth.debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Ferenc Wagner <wferi@niif.hu>
 Build-Depends: debhelper (>= 5), autotools-dev, autoconf, automake,
  libtool, apache2-threaded-dev, doxygen, liblog4cpp5-dev,
- libsaml2-dev (>= 2.2), libssl-dev, libxerces-c2-dev,
+ libsaml2-dev (>= 2.2), libssl-dev, libxerces-c-dev,
  libxml-security-c-dev (>= 1.4), libxmltooling-dev (>= 1.2),
  opensaml2-schemas, unixodbc-dev, xmltooling-schemas
 Standards-Version: 3.8.0
@@ -48,7 +48,7 @@ Description: Federated web single sign-on system (runtime)
 Package: libshibsp-dev
 Section: libdevel
 Architecture: any
-Depends: libshibsp2 (= ${binary:Version}), libsaml2-dev, libxerces-c2-dev,
+Depends: libshibsp2 (= ${binary:Version}), libsaml2-dev, libxerces-c-dev,
  libxmltooling-dev
 Suggests: libshib2-doc (= ${source:Version})
 Description: Federated web single sign-on system (development)
