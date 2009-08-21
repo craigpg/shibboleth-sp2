@@ -23,6 +23,8 @@ shibboleth-sp2 (2.2.1+dfsg-1) UNRELEASED; urgency=low
     - Fix generated metadata DiscoveryResponse.
     - Fix handling of unsigned responses with encryption.
     - Fix handling of InProcess property.
+  * Tighten build dependencies and schema package dependencies on
+    opensaml2 and xmltooling.
   * Dynamically determine the Debian and upstream package versions for
     get-orig-source from debian/changelog.
   * Update libapache2-mod-shib2's README.Debian for changes to the
