@@ -23,10 +23,16 @@ shibboleth-sp2 (2.2.1+dfsg-1) UNRELEASED; urgency=low
     - Fix generated metadata DiscoveryResponse.
     - Fix handling of unsigned responses with encryption.
     - Fix handling of InProcess property.
+  * Rename library package for upstream SONAME bump.
+  * Tighten build dependencies and schema package dependencies on
+    opensaml2 and xmltooling.
+  * Build against Xerces-C 3.0.
   * Dynamically determine the Debian and upstream package versions for
     get-orig-source from debian/changelog.
   * Update libapache2-mod-shib2's README.Debian for changes to the
     TestShib web pages.
+  * Update standards version to 3.8.3.
+    - Create /var/run/shibboleth in the init script if it doesn't exist.
 
  -- Russ Allbery <rra@debian.org>  Fri, 24 Jul 2009 15:29:01 -0700
 

@@ -5,10 +5,10 @@ Maintainer: Debian Shib Team <pkg-shibboleth-devel@lists.alioth.debian.org>
 Uploaders: Russ Allbery <rra@debian.org>, Ferenc Wagner <wferi@niif.hu>
 Build-Depends: debhelper (>= 5), autotools-dev, autoconf, automake,
  libtool, apache2-threaded-dev, doxygen, liblog4cpp5-dev,
- libsaml2-dev (>= 2.1), libssl-dev, libxerces-c2-dev,
- libxml-security-c-dev (>= 1.4), libxmltooling-dev (>= 1.1),
+ libsaml2-dev (>= 2.2), libssl-dev, libxerces-c-dev,
+ libxml-security-c-dev (>= 1.4), libxmltooling-dev (>= 1.2),
  opensaml2-schemas, unixodbc-dev, xmltooling-schemas
-Standards-Version: 3.8.0
+Standards-Version: 3.8.3
 Homepage: http://shibboleth.internet2.edu/
 Vcs-Git: git://git.debian.org/git/pkg-shibboleth/shibboleth-sp2.git
 Vcs-Browser: http://git.debian.org/?p=pkg-shibboleth/shibboleth-sp2.git
@@ -30,11 +30,11 @@ Description: Federated web single sign-on system (Apache module)
  (web servers providing resources protected by Shibboleth) and the
  supporting shibd daemon.
 
-Package: libshibsp2
+Package: libshibsp3
 Section: libs
 Architecture: any
-Depends: ${shlibs:Depends}, opensaml2-schemas (>= 2.1),
- shibboleth-sp2-schemas (>= 2.1), xmltooling-schemas (>= 1.1)
+Depends: ${shlibs:Depends}, opensaml2-schemas (>= 2.2),
+ shibboleth-sp2-schemas (>= 2.2), xmltooling-schemas (>= 1.2)
 Description: Federated web single sign-on system (runtime)
  The Shibboleth System is a standards based software package for web
  single sign-on across or within organizational boundaries.  It supports
@@ -48,7 +48,7 @@ Description: Federated web single sign-on system (runtime)
 Package: libshibsp-dev
 Section: libdevel
 Architecture: any
-Depends: libshibsp2 (= ${binary:Version}), libsaml2-dev, libxerces-c2-dev,
+Depends: libshibsp3 (= ${binary:Version}), libsaml2-dev, libxerces-c-dev,
  libxmltooling-dev
 Suggests: libshib2-doc (= ${source:Version})
 Description: Federated web single sign-on system (development)
