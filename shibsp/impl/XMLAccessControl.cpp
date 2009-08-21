@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -40,8 +40,8 @@ using namespace shibsp;
 using namespace xmltooling;
 using namespace std;
 
-namespace {
-    
+namespace shibsp {
+
     class Rule : public AccessControl
     {
     public:
@@ -52,12 +52,12 @@ namespace {
         void unlock() {}
 
         aclresult_t authorized(const SPRequest& request, const Session* session) const;
-    
+
     private:
         string m_alias;
         vector <string> m_vals;
     };
-    
+
     class RuleRegex : public AccessControl
     {
     public:
@@ -65,18 +65,18 @@ namespace {
         ~RuleRegex() {
             delete m_re;
         }
-        
+
         Lockable* lock() {return this;}
         void unlock() {}
 
         aclresult_t authorized(const SPRequest& request, const Session* session) const;
-        
+
     private:
         string m_alias;
         auto_arrayptr<char> m_exp;
         RegularExpression* m_re;
     };
-    
+
     class Operator : public AccessControl
     {
     public:
@@ -87,7 +87,7 @@ namespace {
         void unlock() {}
 
         aclresult_t authorized(const SPRequest& request, const Session* session) const;
-        
+
     private:
         enum operator_t { OP_NOT, OP_AND, OP_OR } m_op;
         vector<AccessControl*> m_operands;
@@ -102,10 +102,10 @@ namespace {
     {
     public:
         XMLAccessControl(const DOMElement* e)
-                : ReloadableXMLFile(e, Category::getInstance(SHIBSP_LOGCAT".AccessControl")), m_rootAuthz(NULL) {
+                : ReloadableXMLFile(e, Category::getInstance(SHIBSP_LOGCAT".AccessControl.XML")), m_rootAuthz(NULL) {
             load(); // guarantees an exception or the policy is loaded
         }
-        
+
         ~XMLAccessControl() {
             delete m_rootAuthz;
         }
@@ -140,13 +140,6 @@ namespace {
     static const XMLCh _RuleRegex[] =       UNICODE_LITERAL_9(R,u,l,e,R,e,g,e,x);
 }
 
-void SHIBSP_API shibsp::registerAccessControls()
-{
-    SPConfig& conf=SPConfig::getConfig();
-    conf.AccessControlManager.registerFactory(XML_ACCESS_CONTROL, XMLAccessControlFactory);
-    conf.AccessControlManager.registerFactory("edu.internet2.middleware.shibboleth.sp.provider.XMLAccessControl", XMLAccessControlFactory);
-}
-
 Rule::Rule(const DOMElement* e)
 {
     auto_ptr_char req(e->getAttributeNS(NULL,require));
@@ -157,14 +150,14 @@ Rule::Rule(const DOMElement* e)
     auto_arrayptr<char> vals(toUTF8(e->hasChildNodes() ? e->getFirstChild()->getNodeValue() : NULL));
     if (!vals.get())
         return;
-    
+
     const XMLCh* flag = e->getAttributeNS(NULL,_list);
     if (flag && (*flag == chLatin_f || *flag == chDigit_0)) {
         if (*vals.get())
             m_vals.push_back(vals.get());
         return;
     }
-    
+
 #ifdef HAVE_STRTOK_R
     char* pos=NULL;
     const char* token=strtok_r(const_cast<char*>(vals.get())," ",&pos);
@@ -191,7 +184,7 @@ AccessControl::aclresult_t Rule::authorized(const SPRequest& request, const Sess
         request.log(SPRequest::SPWarn, "AccessControl plugin not given a valid session to evaluate, are you using lazy sessions?");
         return shib_acl_false;
     }
-    
+
     if (m_alias == "valid-user") {
         if (session) {
             request.log(SPRequest::SPDebug,"AccessControl plugin accepting valid-user based on active session");
@@ -261,11 +254,11 @@ RuleRegex::RuleRegex(const DOMElement* e) : m_exp(toUTF8(e->hasChildNodes() ? e-
     if (!req.get() || !*req.get() || !m_exp.get() || !*m_exp.get())
         throw ConfigurationException("Access control rule missing require attribute or element content.");
     m_alias=req.get();
-    
+
     const XMLCh* flag = e->getAttributeNS(NULL,ignoreCase);
     bool ignore = (flag && (*flag == chLatin_t || *flag == chDigit_1));
     try {
-        m_re = new RegularExpression(e->getFirstChild()->getNodeValue(), (ignore ? ignoreOption : &chNull)); 
+        m_re = new RegularExpression(e->getFirstChild()->getNodeValue(), (ignore ? ignoreOption : &chNull));
     }
     catch (XMLException& ex) {
         auto_ptr_char tmp(ex.getMessage());
@@ -280,7 +273,7 @@ AccessControl::aclresult_t RuleRegex::authorized(const SPRequest& request, const
         request.log(SPRequest::SPWarn, "AccessControl plugin not given a valid session to evaluate, are you using lazy sessions?");
         return shib_acl_false;
     }
-    
+
     if (m_alias == "valid-user") {
         if (session) {
             request.log(SPRequest::SPDebug,"AccessControl plugin accepting valid-user based on active session");
@@ -335,7 +328,7 @@ AccessControl::aclresult_t RuleRegex::authorized(const SPRequest& request, const
         auto_ptr_char tmp(ex.getMessage());
         request.log(SPRequest::SPError, string("caught exception while parsing RuleRegex regular expression: ") + tmp.get());
     }
-    
+
     return shib_acl_false;
 }
 
@@ -349,7 +342,7 @@ Operator::Operator(const DOMElement* e)
         m_op=OP_OR;
     else
         throw ConfigurationException("Unrecognized operator in access control rule");
-    
+
     try {
         e=XMLHelper::getFirstChildElement(e);
         if (XMLString::equals(e->getLocalName(),_Rule))
@@ -358,10 +351,10 @@ Operator::Operator(const DOMElement* e)
             m_operands.push_back(new RuleRegex(e));
         else
             m_operands.push_back(new Operator(e));
-        
+
         if (m_op==OP_NOT)
             return;
-        
+
         e=XMLHelper::getNextSiblingElement(e);
         while (e) {
             if (XMLString::equals(e->getLocalName(),_Rule))
@@ -396,7 +389,7 @@ AccessControl::aclresult_t Operator::authorized(const SPRequest& request, const 
                 default:
                     return shib_acl_indeterminate;
             }
-        
+
         case OP_AND:
         {
             for (vector<AccessControl*>::const_iterator i=m_operands.begin(); i!=m_operands.end(); i++) {
@@ -405,7 +398,7 @@ AccessControl::aclresult_t Operator::authorized(const SPRequest& request, const 
             }
             return shib_acl_true;
         }
-        
+
         case OP_OR:
         {
             for (vector<AccessControl*>::const_iterator i=m_operands.begin(); i!=m_operands.end(); i++) {
@@ -423,14 +416,14 @@ pair<bool,DOMElement*> XMLAccessControl::load()
 {
     // Load from source using base class.
     pair<bool,DOMElement*> raw = ReloadableXMLFile::load();
-    
+
     // If we own it, wrap it.
     XercesJanitor<DOMDocument> docjanitor(raw.first ? raw.second->getOwnerDocument() : NULL);
 
     // Check for AccessControl wrapper and drop a level.
     if (XMLString::equals(raw.second->getLocalName(),_AccessControl))
         raw.second = XMLHelper::getFirstChildElement(raw.second);
-    
+
     AccessControl* authz;
     if (XMLString::equals(raw.second->getLocalName(),_Rule))
         authz=new Rule(raw.second);

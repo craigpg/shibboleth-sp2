@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * AssertionLookup.cpp
- * 
+ *
  * Handler for looking assertions in SessionCache
  */
 
@@ -45,7 +45,12 @@ namespace shibsp {
     class SHIBSP_DLLLOCAL Blocker : public DOMNodeFilter
     {
     public:
-        short acceptNode(const DOMNode* node) const {
+#ifdef SHIBSP_XERCESC_SHORT_ACCEPTNODE
+        short
+#else
+        FilterAction
+#endif
+        acceptNode(const DOMNode* node) const {
             return FILTER_REJECT;
         }
     };
@@ -112,10 +117,10 @@ pair<bool,long> AssertionLookup::run(SPRequest& request, bool isHandler) const
         if (m_acl.count(request.getRemoteAddr()) == 0) {
             m_log.error("request for assertion lookup blocked from invalid address (%s)", request.getRemoteAddr().c_str());
             istringstream msg("Assertion Lookup Blocked");
-            return make_pair(true,request.sendResponse(msg, HTTPResponse::XMLTOOLING_HTTP_STATUS_UNAUTHORIZED));
+            return make_pair(true,request.sendResponse(msg, HTTPResponse::XMLTOOLING_HTTP_STATUS_FORBIDDEN));
         }
     }
-    
+
     try {
         if (conf.isEnabled(SPConfig::OutOfProcess)) {
             // When out of process, we run natively and directly process the message.
@@ -125,7 +130,7 @@ pair<bool,long> AssertionLookup::run(SPRequest& request, bool isHandler) const
             // When not out of process, we remote all the message processing.
             DDF out,in = wrap(request);
             DDFJanitor jin(in), jout(out);
-            
+
             out=request.getServiceProvider().getListenerService()->send(in);
             return unwrap(request, out);
         }
@@ -147,7 +152,7 @@ void AssertionLookup::receive(DDF& in, ostream& out)
         m_log.error("couldn't find application (%s) for assertion lookup", aid ? aid : "(missing)");
         throw ConfigurationException("Unable to locate application for assertion lookup, deleted?");
     }
-    
+
     // Unpack the request.
     auto_ptr<HTTPRequest> req(getRequest(in));
     //m_log.debug("found %d client certificates", req->getClientCertificates().size());
@@ -156,7 +161,7 @@ void AssertionLookup::receive(DDF& in, ostream& out)
     DDF ret(NULL);
     DDFJanitor jout(ret);
     auto_ptr<HTTPResponse> resp(getResponse(ret));
-        
+
     // Since we're remoted, the result should either be a throw, a false/0 return,
     // which we just return as an empty structure, or a response/redirect,
     // which we capture in the facade and send back.

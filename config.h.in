@@ -107,6 +107,12 @@
 /* Define if log4shib library is used. */
 #undef SHIBSP_LOG4SHIB
 
+/* Define to 1 if Xerces XMLString includes XMLByte release. */
+#undef SHIBSP_XERCESC_HAS_XMLBYTE_RELEASE
+
+/* Define to 1 if Xerces DOMNodeFilter API returns a short. */
+#undef SHIBSP_XERCESC_SHORT_ACCEPTNODE
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 

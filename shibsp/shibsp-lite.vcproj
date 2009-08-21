@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="shibsp-lite"
 	ProjectGUID="{81F0F7A6-DC36-46EF-957F-F9E81D4403F7}"
 	RootNamespace="shibsp-lite"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -65,12 +66,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="log4shib1D.lib xerces-c_2D.lib xmltooling-lite1D.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_1D.dll"
+				AdditionalDependencies="log4shib1D.lib xerces-c_3D.lib xmltooling-lite1D.lib wsock32.lib"
+				OutputFile="$(OutDir)\$(ProjectName)1_2D.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\cpp-xmltooling\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary="$(TargetDir)$(ProjectName)1D.lib"
 				TargetMachine="1"
 			/>
@@ -91,9 +94,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -147,12 +147,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="log4shib1D.lib xerces-c_2D.lib xmltooling-lite1D.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_1D.dll"
+				AdditionalDependencies="log4shib1D.lib xerces-c_3D.lib xmltooling-lite1D.lib wsock32.lib"
+				OutputFile="$(OutDir)\$(ProjectName)1_2D.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\cpp-xmltooling\$(PlatformName)\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary="$(TargetDir)$(ProjectName)1D.lib"
 				TargetMachine="17"
 			/>
@@ -173,9 +175,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -225,13 +224,15 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="log4shib1.lib xerces-c_2.lib xmltooling-lite1.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_1.dll"
+				AdditionalDependencies="log4shib1.lib xerces-c_3.lib xmltooling-lite1.lib wsock32.lib"
+				OutputFile="$(OutDir)\$(ProjectName)1_2.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\cpp-xmltooling\$(ConfigurationName)"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary="$(TargetDir)$(ProjectName)1.lib"
 				TargetMachine="1"
 			/>
@@ -252,9 +253,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -305,14 +303,16 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="log4shib1.lib xerces-c_2.lib xmltooling-lite1.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_1.dll"
+				AdditionalDependencies="log4shib1.lib xerces-c_3.lib xmltooling-lite1.lib wsock32.lib"
+				OutputFile="$(OutDir)\$(ProjectName)1_2.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\cpp-xmltooling\$(PlatformName)\$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary="$(TargetDir)$(ProjectName)1.lib"
 				TargetMachine="17"
 			/>
@@ -333,9 +333,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -418,6 +415,10 @@
 				Name="impl"
 				>
 				<File
+					RelativePath=".\impl\ChainingAccessControl.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\impl\StorageServiceSessionCache.cpp"
 					>
 				</File>
@@ -439,6 +440,10 @@
 				>
 				<File
 					RelativePath=".\attribute\Attribute.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\attribute\ExtensibleAttribute.cpp"
 					>
 				</File>
 			</Filter>
@@ -672,6 +677,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\attribute\ExtensibleAttribute.h"
+					>
+				</File>
+				<File
 					RelativePath=".\attribute\NameIDAttribute.h"
 					>
 				</File>
@@ -681,6 +690,10 @@
 				</File>
 				<File
 					RelativePath=".\attribute\SimpleAttribute.h"
+					>
+				</File>
+				<File
+					RelativePath=".\attribute\XMLAttribute.h"
 					>
 				</File>
 			</Filter>

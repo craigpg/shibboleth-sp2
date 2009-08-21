@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * @file shibsp/attribute/resolver/AttributeExtractor.h
- * 
+ *
  * A service that extracts and decodes attributes from XML objects.
  */
 
@@ -45,12 +45,12 @@ namespace shibsp {
 
         /**
          * Extracts the attributes found in an XMLObject.
-         * 
+         *
          * @param application   Application performing the extraction
          * @param issuer        source of object, if known
          * @param xmlObject     object to extract
          * @param attributes    an array to populate with the extracted attributes
-         * 
+         *
          * @throws AttributeExtractionException thrown if there is a problem extracting attributes
          */
         virtual void extractAttributes(
@@ -75,6 +75,12 @@ namespace shibsp {
 
     /** AttributeExtractor based on an XML mapping schema. */
     #define XML_ATTRIBUTE_EXTRACTOR "XML"
+
+    /** AttributeExtractor for DelegationRestriction information. */
+    #define DELEGATION_ATTRIBUTE_EXTRACTOR "Delegation"
+
+    /** AttributeExtractor for KeyInfo information. */
+    #define KEYDESCRIPTOR_ATTRIBUTE_EXTRACTOR "KeyDescriptor"
 
     /** AttributeExtractor based on chaining together other extractors. */
     #define CHAINING_ATTRIBUTE_EXTRACTOR "Chaining"

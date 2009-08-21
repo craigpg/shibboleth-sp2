@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ const char* shar_schemadir = NULL;
 const char* shar_prefix = NULL;
 bool shar_checkonly = false;
 bool shar_version = false;
-static int unlink_socket = 0;
+static bool unlink_socket = false;
 const char* pidfile = NULL;
 
 #ifdef WIN32
@@ -141,14 +141,21 @@ int real_main(int preinit)
 
         //_CrtSetAllocHook(MyAllocHook);
 
-        // Run the listener
         if (!shar_checkonly) {
-
             // Run the listener.
-            if (!conf.getServiceProvider()->getListenerService()->run(&shibd_shutdown)) {
-                fprintf(stderr, "listener failed to enter listen loop\n");
+            ListenerService* listener = conf.getServiceProvider()->getListenerService();
+            if (!listener->init(unlink_socket)) {
+                fprintf(stderr, "listener failed to initialize\n");
+                conf.term();
                 return -3;
             }
+            else if (!listener->run(&shibd_shutdown)) {
+                fprintf(stderr, "listener failed during service\n");
+                listener->term();
+                conf.term();
+                return -3;
+            }
+            listener->term();
         }
 
         conf.term();
@@ -158,9 +165,23 @@ int real_main(int preinit)
 
 #else
 
+int daemon_wait = 3;
+bool shibd_running = false;
+bool daemonize = true;
+
 static void term_handler(int arg)
 {
     shibd_shutdown = true;
+}
+
+static void run_handler(int arg)
+{
+    shibd_running = true;
+}
+
+static void child_handler(int arg)
+{
+    // Terminate the parent's wait/sleep if the newly born daemon dies early.
 }
 
 static int setup_signals(void)
@@ -190,6 +211,23 @@ static int setup_signals(void)
     if (sigaction(SIGTERM, &sa, NULL) < 0) {
         return -1;
     }
+
+    if (daemonize) {
+        memset(&sa, 0, sizeof (sa));
+        sa.sa_handler = run_handler;
+
+        if (sigaction(SIGUSR1, &sa, NULL) < 0) {
+            return -1;
+        }
+
+        memset(&sa, 0, sizeof (sa));
+        sa.sa_handler = child_handler;
+
+        if (sigaction(SIGCHLD, &sa, NULL) < 0) {
+            return -1;
+        }
+    }
+
     return 0;
 }
 
@@ -199,9 +237,11 @@ static void usage(char* whoami)
     fprintf(stderr, "  -d\tinstallation prefix to use.\n");
     fprintf(stderr, "  -c\tconfig file to use.\n");
     fprintf(stderr, "  -x\tXML schema catalogs to use.\n");
-    fprintf(stderr, "  -t\tcheck configuration file for problems.\n");
+    fprintf(stderr, "  -t\ttest configuration file for problems.\n");
     fprintf(stderr, "  -f\tforce removal of listener socket.\n");
+    fprintf(stderr, "  -F\tstay in the foreground.\n");
     fprintf(stderr, "  -p\tpid file to use.\n");
+    fprintf(stderr, "  -w\tseconds to wait for successful daemonization.\n");
     fprintf(stderr, "  -v\tprint software version.\n");
     fprintf(stderr, "  -h\tprint this help message.\n");
     exit(1);
@@ -211,7 +251,7 @@ static int parse_args(int argc, char* argv[])
 {
     int opt;
 
-    while ((opt = getopt(argc, argv, "d:c:x:p:ftvh")) > 0) {
+    while ((opt = getopt(argc, argv, "d:c:x:p:w:fFtvh")) > 0) {
         switch (opt) {
             case 'd':
                 shar_prefix=optarg;
@@ -223,16 +263,26 @@ static int parse_args(int argc, char* argv[])
                 shar_schemadir=optarg;
                 break;
             case 'f':
-                unlink_socket = 1;
+                unlink_socket = true;
+                break;
+            case 'F':
+                daemonize = false;
                 break;
             case 't':
                 shar_checkonly=true;
+                daemonize=false;
                 break;
             case 'v':
                 shar_version=true;
                 break;
             case 'p':
                 pidfile=optarg;
+                break;
+            case 'w':
+                if (optarg)
+                    daemon_wait = atoi(optarg);
+                if (daemon_wait <= 0)
+                    daemon_wait = 3;
                 break;
             default:
                 return -1;
@@ -271,6 +321,21 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    if (daemonize) {
+        // We must fork() early, while we're single threaded.
+        // StorageService cleanup thread is about to start.
+        switch (fork()) {
+            case 0:
+                break;
+            case -1:
+                perror("forking");
+                exit(EXIT_FAILURE);
+            default:
+                sleep(daemon_wait);
+                exit(shibd_running ? EXIT_SUCCESS : EXIT_FAILURE);
+        }
+    }
+
     if (!conf.instantiate(shar_config)) {
         fprintf(stderr, "configuration is invalid, check console for specific problems\n");
         conf.term();
@@ -280,23 +345,53 @@ int main(int argc, char *argv[])
     if (shar_checkonly)
         fprintf(stderr, "overall configuration is loadable, check console for non-fatal problems\n");
     else {
-
-        // Write the pid file
-        if (pidfile) {
-            FILE* pidf = fopen(pidfile, "w");
-            if (pidf) {
-                fprintf(pidf, "%d\n", getpid());
-                fclose(pidf);
-            } else {
-                perror(pidfile);  // keep running though
-            }
-        }
-
-        // Run the listener
-        if (!conf.getServiceProvider()->getListenerService()->run(&shibd_shutdown)) {
-            fprintf(stderr, "listener failed to enter listen loop\n");
+        // Init the listener.
+        ListenerService* listener = conf.getServiceProvider()->getListenerService();
+        if (!listener->init(unlink_socket)) {
+            fprintf(stderr, "listener failed to initialize\n");
+            conf.term();
             return -3;
         }
+
+        if (daemonize) {
+            if (setsid() == -1) {
+                perror("setsid");
+                exit(EXIT_FAILURE);
+            }
+            if (chdir("/") == -1) {
+                perror("chdir to root");
+                exit(EXIT_FAILURE);
+            }
+
+            if (pidfile) {
+                FILE* pidf = fopen(pidfile, "w");
+                if (pidf) {
+                    fprintf(pidf, "%d\n", getpid());
+                    fclose(pidf);
+                }
+                else {
+                    perror(pidfile);
+                }
+            }
+
+            freopen("/dev/null", "r", stdin);
+            freopen("/dev/null", "w", stdout);
+            freopen("/dev/null", "w", stderr);
+
+            // Signal our parent that we are A-OK.
+            kill(getppid(), SIGUSR1);
+        }
+
+        // Run the listener.
+        if (!listener->run(&shibd_shutdown)) {
+            fprintf(stderr, "listener failure during service\n");
+            listener->term();
+            conf.term();
+            if (pidfile)
+                unlink(pidfile);
+            return -3;
+        }
+        listener->term();
     }
 
     conf.term();

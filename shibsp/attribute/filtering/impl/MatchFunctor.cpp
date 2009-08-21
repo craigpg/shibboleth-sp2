@@ -31,13 +31,13 @@ using namespace xmltooling;
 using namespace std;
 
 #define DECL_FACTORY(name) \
-    SHIBSP_DLLLOCAL PluginManager< MatchFunctor,QName,pair<const FilterPolicyContext*,const DOMElement*> >::Factory name##Factory
+    SHIBSP_DLLLOCAL PluginManager< MatchFunctor,xmltooling::QName,pair<const FilterPolicyContext*,const DOMElement*> >::Factory name##Factory
 
 #define DECL_BASIC_QNAME(name,lit) \
-    QName shibsp::name##Type(shibspconstants::SHIB2ATTRIBUTEFILTER_MF_BASIC_NS, lit)
+    xmltooling::QName shibsp::name##Type(shibspconstants::SHIB2ATTRIBUTEFILTER_MF_BASIC_NS, lit)
 
 #define DECL_SAML_QNAME(name,lit) \
-    QName shibsp::name##Type(shibspconstants::SHIB2ATTRIBUTEFILTER_MF_SAML_NS, lit)
+    xmltooling::QName shibsp::name##Type(shibspconstants::SHIB2ATTRIBUTEFILTER_MF_SAML_NS, lit)
 
 #define REGISTER_FACTORY(name) \
     mgr.registerFactory(name##Type, name##Factory)
@@ -104,7 +104,7 @@ DECL_SAML_QNAME(AttributeScopeMatchesShibMDScope, AttributeScopeMatchesShibMDSco
 
 void SHIBSP_API shibsp::registerMatchFunctors()
 {
-    PluginManager< MatchFunctor,QName,pair<const FilterPolicyContext*,const DOMElement*> >& mgr =
+    PluginManager< MatchFunctor,xmltooling::QName,pair<const FilterPolicyContext*,const DOMElement*> >& mgr =
         SPConfig::getConfig().MatchFunctorManager;
     REGISTER_FACTORY(AnyMatchFunctor);
     REGISTER_FACTORY(AndMatchFunctor);

@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * ListenerService.cpp
- * 
+ *
  * Interprocess remoting engine.
  */
 
@@ -93,6 +93,6 @@ void ListenerService::receive(DDF &in, ostream& out)
     Remoted* dest=lookup(in.name());
     if (!dest)
         throw ListenerException("No destination registered for incoming message addressed to ($1).",params(1,in.name()));
-    
+
     dest->receive(in, out);
 }

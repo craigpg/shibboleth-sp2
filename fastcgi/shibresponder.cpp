@@ -120,6 +120,9 @@ public:
         return s ? s : "";
     }
     string getRemoteAddr() const {
+        string ret = AbstractSPRequest::getRemoteAddr();
+        if (!ret.empty())
+            return ret;
         const char* s = FCGX_GetParam("REMOTE_ADDR", m_req->envp);
         return s ? s : "";
     }

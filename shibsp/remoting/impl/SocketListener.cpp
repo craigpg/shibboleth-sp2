@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * SocketListener.cpp
- * 
+ *
  * Berkeley Socket-based ListenerService implementation
  */
 
@@ -45,7 +45,7 @@ using namespace std;
 using xercesc::DOMElement;
 
 namespace shibsp {
-  
+
     // Manages the pool of connections
     class SocketPool
     {
@@ -55,16 +55,16 @@ namespace shibsp {
         ~SocketPool();
         SocketListener::ShibSocket get();
         void put(SocketListener::ShibSocket s);
-  
+
     private:
         SocketListener::ShibSocket connect();
-       
-        Category& m_log; 
+
+        Category& m_log;
         const SocketListener* m_listener;
         auto_ptr<Mutex> m_lock;
         stack<SocketListener::ShibSocket> m_pool;
     };
-  
+
     // Worker threads in server
     class ServerThread {
     public:
@@ -104,7 +104,7 @@ SocketListener::ShibSocket SocketPool::connect()
             connected = true;
             break;
         }
-    
+
         m_log.warn("cannot connect socket (%u)...%s", sock, (i > 0 ? "retrying" : ""));
 
         if (i) {
@@ -158,8 +158,9 @@ void SocketPool::put(SocketListener::ShibSocket s)
     m_lock->unlock();
 }
 
-SocketListener::SocketListener(const DOMElement* e) : m_catchAll(false), log(&Category::getInstance(SHIBSP_LOGCAT".Listener")),
-    m_socketpool(NULL), m_shutdown(NULL), m_child_lock(NULL), m_child_wait(NULL), m_socket((ShibSocket)0)
+SocketListener::SocketListener(const DOMElement* e)
+    : m_catchAll(false), log(&Category::getInstance(SHIBSP_LOGCAT".Listener")), m_socketpool(NULL),
+        m_shutdown(NULL), m_child_lock(NULL), m_child_wait(NULL), m_socket((ShibSocket)0)
 {
     // Are we a client?
     if (SPConfig::getConfig().isEnabled(SPConfig::InProcess)) {
@@ -179,10 +180,10 @@ SocketListener::~SocketListener()
     delete m_child_lock;
 }
 
-bool SocketListener::run(bool* shutdown)
+bool SocketListener::init(bool force)
 {
 #ifdef _DEBUG
-    NDC ndc("run");
+    NDC ndc("init");
 #endif
     log->info("listener service starting");
 
@@ -194,20 +195,28 @@ bool SocketListener::run(bool* shutdown)
         m_catchAll = flag.first && flag.second;
     }
     sp->unlock();
-    
-    // Save flag to monitor for shutdown request.
-    m_shutdown=shutdown;
-    unsigned long count = 0;
 
     if (!create(m_socket)) {
         log->crit("failed to create socket");
         return false;
     }
-    if (!bind(m_socket,true)) {
+    if (!bind(m_socket, force)) {
         this->close(m_socket);
         log->crit("failed to bind to socket.");
         return false;
     }
+
+    return true;
+}
+
+bool SocketListener::run(bool* shutdown)
+{
+#ifdef _DEBUG
+    NDC ndc("run");
+#endif
+    // Save flag to monitor for shutdown request.
+    m_shutdown=shutdown;
+    unsigned long count = 0;
 
     while (!*m_shutdown) {
         fd_set readfds;
@@ -215,7 +224,7 @@ bool SocketListener::run(bool* shutdown)
         FD_SET(m_socket, &readfds);
         struct timeval tv = { 0, 0 };
         tv.tv_sec = 5;
-    
+
         switch (select(m_socket + 1, &readfds, 0, 0, &tv)) {
 #ifdef WIN32
             case SOCKET_ERROR:
@@ -225,24 +234,30 @@ bool SocketListener::run(bool* shutdown)
                 if (errno == EINTR) continue;
                 log_error();
                 log->error("select() on main listener socket failed");
-                return false;
-        
+                *m_shutdown = true;
+                break;
+
             case 0:
                 continue;
-        
+
             default:
             {
                 // Accept the connection.
                 SocketListener::ShibSocket newsock;
-                if (!accept(m_socket, newsock))
+                if (!accept(m_socket, newsock)) {
                     log->crit("failed to accept incoming socket connection");
+                    continue;
+                }
 
                 // We throw away the result because the children manage themselves...
                 try {
                     new ServerThread(newsock,this,++count);
                 }
+                catch (exception& ex) {
+                    log->crit("exception starting new server thread to service incoming request: %s", ex.what());
+                }
                 catch (...) {
-                    log->crit("error starting new server thread to service incoming request");
+                    log->crit("unknown error starting new server thread to service incoming request");
                     if (!m_catchAll)
                         *m_shutdown = true;
                 }
@@ -257,9 +272,13 @@ bool SocketListener::run(bool* shutdown)
         m_child_wait->wait(m_child_lock);
     m_child_lock->unlock();
 
+    return true;
+}
+
+void SocketListener::term()
+{
     this->close(m_socket);
     m_socket=(ShibSocket)0;
-    return true;
 }
 
 DDF SocketListener::send(const DDF& in)
@@ -285,7 +304,7 @@ DDF SocketListener::send(const DDF& in)
     SocketListener::ShibSocket sock;
     while (retry >= 0) {
         sock = m_socketpool->get();
-        
+
         int outlen = ostr.length();
         len = htonl(outlen);
         if (send(sock,(char*)&len,sizeof(len)) != sizeof(len) || send(sock,ostr.c_str(),outlen) != outlen) {
@@ -312,7 +331,7 @@ DDF SocketListener::send(const DDF& in)
         throw ListenerException("Failure receiving response to remoted message ($1).", params(1,in.name()));
     }
     len = ntohl(len);
-    
+
     char buf[16384];
     int size_read;
     stringstream is;
@@ -326,25 +345,25 @@ DDF SocketListener::send(const DDF& in)
     		break;
     	}
     }
-    
+
     if (len) {
         log->error("error reading output message from socket");
         this->close(sock);
         throw ListenerException("Failure receiving response to remoted message ($1).", params(1,in.name()));
     }
-    
+
     m_socketpool->put(sock);
 
     // Unmarshall data.
     DDF out;
     is >> out;
-    
+
     // Check for exception to unmarshall and throw, otherwise return.
     if (out.isstring() && out.name() && !strcmp(out.name(),"exception")) {
         // Reconstitute exception object.
         DDFJanitor jout(out);
         XMLToolingException* except=NULL;
-        try { 
+        try {
             except=XMLToolingException::fromString(out.string());
             log->error("remoted message returned an error: %s", except->what());
         }
@@ -418,7 +437,7 @@ ServerThread::~ServerThread()
     m_listener->m_children.erase(m_sock);
     m_listener->m_child_lock->unlock();
     m_listener->m_child_wait->signal();
-  
+
     delete m_child;
 }
 
@@ -432,7 +451,7 @@ void ServerThread::run()
         m_listener->m_child_wait->wait(m_listener->m_child_lock);
     m_listener->m_children[m_sock] = m_child;
     m_listener->m_child_lock->unlock();
-    
+
     int result;
     fd_set readfds;
     struct timeval tv = { 0, 0 };
@@ -494,19 +513,19 @@ int ServerThread::job()
             return -1;
         }
         len = ntohl(len);
-        
+
         int size_read;
         stringstream is;
         while (len && (size_read = m_listener->recv(m_sock, m_buf, sizeof(m_buf))) > 0) {
             is.write(m_buf, size_read);
             len -= size_read;
         }
-        
+
         if (len) {
             log.error("error reading input message from socket");
             return -1;
         }
-        
+
         // Unmarshall the message.
         DDF in;
         DDFJanitor jin(in);
@@ -544,7 +563,7 @@ int ServerThread::job()
         DDFJanitor jout(out);
         sink << out;
     }
-    
+
     // Return whatever's available.
     string response(sink.str());
     int outlen = response.length();
@@ -557,6 +576,6 @@ int ServerThread::job()
         log.error("error sending output message");
         return -1;
     }
-    
+
     return 0;
 }

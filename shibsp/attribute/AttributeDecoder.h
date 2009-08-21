@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,21 @@ namespace shibsp {
         /** Flag for case sensitivity of decoded attributes. */
         bool m_caseSensitive;
 
+        /** Flag for hiding attributes from CGI export. */
+        bool m_internal;
+
+        /**
+         * Helper method to handle base class decoding housekeeping.
+         *
+         * @param attr  the new Attribute object being created
+         * @return  the attr parameter
+         */
+        virtual Attribute* _decode(Attribute* attr) const {
+            attr->setCaseSensitive(m_caseSensitive);
+            attr->setInternal(m_internal);
+            return attr;
+        }
+
     public:
         virtual ~AttributeDecoder() {}
 
@@ -77,6 +92,15 @@ namespace shibsp {
 
     /** Decodes scoped attributes into a NameIDAttribute. */
     extern SHIBSP_API xmltooling::QName NameIDFromScopedAttributeDecoderType;
+
+    /** Decodes KeyInfo information into a SimpleAttribute. */
+    extern SHIBSP_API xmltooling::QName KeyInfoAttributeDecoderType;
+
+    /** Decodes arbitrary DOM information into an ExtensibleAttribute. */
+    extern SHIBSP_API xmltooling::QName DOMAttributeDecoderType;
+
+    /** Decodes arbitrary XML into an XMLAttribute. */
+    extern SHIBSP_API xmltooling::QName XMLAttributeDecoderType;
 
     /** Registers built-in AttributeDecoders into the runtime. */
     void registerAttributeDecoders();

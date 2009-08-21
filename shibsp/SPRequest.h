@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,8 +16,8 @@
 
 /**
  * @file shibsp/SPRequest.h
- * 
- * Interface to server request being processed  
+ *
+ * Interface to server request being processed
  */
 
 #ifndef __shibsp_req_h__
@@ -28,18 +28,18 @@
 #include <xmltooling/io/HTTPResponse.h>
 
 namespace shibsp {
-    
+
     class SHIBSP_API Application;
     class SHIBSP_API ServiceProvider;
     class SHIBSP_API Session;
-    
+
     /**
      * Interface to server request being processed
-     * 
+     *
      * <p>To supply information from the surrounding web server environment,
      * a shim must be supplied in the form of this interface to adapt the
      * library to different proprietary server APIs.
-     * 
+     *
      * <p>This interface need not be threadsafe.
      */
     class SHIBSP_API SPRequest : public virtual xmltooling::HTTPRequest, public virtual xmltooling::HTTPResponse
@@ -48,10 +48,10 @@ namespace shibsp {
         SPRequest() {}
     public:
         virtual ~SPRequest() {}
-        
+
         /**
          * Returns the locked ServiceProvider processing the request.
-         * 
+         *
          * @return reference to ServiceProvider
          */
         virtual const ServiceProvider& getServiceProvider() const=0;
@@ -59,14 +59,14 @@ namespace shibsp {
         /**
          * Returns RequestMapper Settings associated with the request, guaranteed
          * to be valid for the request's duration.
-         * 
+         *
          * @return copy of settings
          */
         virtual RequestMapper::Settings getRequestSettings() const=0;
-        
+
         /**
          * Returns the Application governing the request.
-         * 
+         *
          * @return reference to Application
          */
         virtual const Application& getApplication() const=0;
@@ -84,7 +84,7 @@ namespace shibsp {
         /**
          * Returns the effective base Handler URL for a resource,
          * or the current request URL.
-         * 
+         *
          * @param resource  resource URL to compute handler for
          * @return  base location of handler
          */
@@ -94,7 +94,7 @@ namespace shibsp {
          * Returns a non-spoofable request header value, if possible.
          * Platforms that support environment export can redirect header
          * lookups by overriding this method.
-         * 
+         *
          * @param name  the name of the secure header to return
          * @return the header's value, or an empty string
          */
@@ -104,7 +104,7 @@ namespace shibsp {
 
         /**
          * Ensures no value exists for a request header.
-         * 
+         *
          * @param rawname  raw name of header to clear
          * @param cginame  CGI-equivalent name of header
          */
@@ -112,7 +112,7 @@ namespace shibsp {
 
         /**
          * Sets a value for a request header.
-         * 
+         *
          * @param name  name of header to set
          * @param value value to set
          */
@@ -120,11 +120,19 @@ namespace shibsp {
 
         /**
          * Establish REMOTE_USER identity in request.
-         * 
+         *
          * @param user  REMOTE_USER value to set or NULL to clear
          */
         virtual void setRemoteUser(const char* user)=0;
-        
+
+        /**
+         * Establish AUTH_TYPE for request.
+         *
+         * @param authtype  AUTH_TYPE value to set or NULL to clear
+         */
+        virtual void setAuthType(const char* authtype) {
+        }
+
         /** Portable logging levels. */
         enum SPLogLevel {
           SPDebug,
@@ -136,7 +144,7 @@ namespace shibsp {
 
         /**
          * Log to native server environment.
-         * 
+         *
          * @param level logging level
          * @param msg   message to log
          */
@@ -144,7 +152,7 @@ namespace shibsp {
 
         /**
          * Test logging level.
-         * 
+         *
          * @param level logging level
          * @return true iff logging level is enabled
          */
@@ -152,16 +160,16 @@ namespace shibsp {
 
         /**
          * Indicates that processing was declined, meaning no action is required during this phase of processing.
-         * 
+         *
          * @return  a status code to pass back to the server-specific layer
-         */        
+         */
         virtual long returnDecline()=0;
 
         /**
          * Indicates that processing was completed.
-         * 
+         *
          * @return  a status code to pass back to the server-specific layer
-         */        
+         */
         virtual long returnOK()=0;
     };
 };

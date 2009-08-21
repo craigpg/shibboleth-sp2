@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,12 +39,10 @@
 #include <saml/saml1/binding/SAML1SOAPClient.h>
 #include <saml/saml1/core/Assertions.h>
 #include <saml/saml1/core/Protocols.h>
-#include <saml/saml1/profile/AssertionValidator.h>
 #include <saml/saml2/binding/SAML2SOAPClient.h>
 #include <saml/saml2/core/Protocols.h>
 #include <saml/saml2/metadata/Metadata.h>
 #include <saml/saml2/metadata/MetadataProvider.h>
-#include <saml/saml2/profile/AssertionValidator.h>
 #include <xmltooling/util/NDC.h>
 #include <xmltooling/util/XMLHelper.h>
 #include <xercesc/util/XMLUniDefs.hpp>
@@ -78,8 +76,7 @@ namespace shibsp {
             const NameID* nameid=NULL,
             const XMLCh* authncontext_class=NULL,
             const XMLCh* authncontext_decl=NULL,
-            const vector<const opensaml::Assertion*>* tokens=NULL,
-            const vector<Attribute*>* attributes=NULL
+            const vector<const opensaml::Assertion*>* tokens=NULL
             ) : m_query(true), m_app(application), m_session(NULL), m_metadata(NULL), m_entity(issuer),
                 m_protocol(protocol), m_nameid(nameid), m_class(authncontext_class), m_decl(authncontext_decl) {
 
@@ -188,7 +185,7 @@ namespace shibsp {
             const vector<const opensaml::Assertion*>* tokens=NULL,
             const vector<shibsp::Attribute*>* attributes=NULL
             ) const {
-            return new QueryContext(application,issuer,protocol,nameid,authncontext_class,authncontext_decl,tokens,attributes);
+            return new QueryContext(application,issuer,protocol,nameid,authncontext_class,authncontext_decl,tokens);
         }
 
         ResolutionContext* createResolutionContext(const Application& application, const Session& session) const {
@@ -206,6 +203,7 @@ namespace shibsp {
         bool SAML2Query(QueryContext& ctx) const;
 
         Category& m_log;
+        string m_policyId;
         vector<AttributeDesignator*> m_SAML1Designators;
         vector<saml2::Attribute*> m_SAML2Designators;
     };
@@ -215,6 +213,7 @@ namespace shibsp {
         return new QueryResolver(e);
     }
 
+    static const XMLCh _policyId[] = UNICODE_LITERAL_8(p,o,l,i,c,y,I,d);
 };
 
 QueryResolver::QueryResolver(const DOMElement* e) : m_log(Category::getInstance(SHIBSP_LOGCAT".AttributeResolver.Query"))
@@ -223,10 +222,16 @@ QueryResolver::QueryResolver(const DOMElement* e) : m_log(Category::getInstance(
     xmltooling::NDC ndc("QueryResolver");
 #endif
 
+    const XMLCh* pid = e ? e->getAttributeNS(NULL, _policyId) : NULL;
+    if (pid && *pid) {
+        auto_ptr_char temp(pid);
+        m_policyId = temp.get();
+    }
+
     DOMElement* child = XMLHelper::getFirstChildElement(e);
     while (child) {
         try {
-            if (XMLHelper::isNodeNamed(e, samlconstants::SAML20_NS, saml2::Attribute::LOCAL_NAME)) {
+            if (XMLHelper::isNodeNamed(child, samlconstants::SAML20_NS, saml2::Attribute::LOCAL_NAME)) {
                 auto_ptr<XMLObject> obj(saml2::AttributeBuilder::buildOneFromElement(child));
                 saml2::Attribute* down = dynamic_cast<saml2::Attribute*>(obj.get());
                 if (down) {
@@ -234,7 +239,7 @@ QueryResolver::QueryResolver(const DOMElement* e) : m_log(Category::getInstance(
                     obj.release();
                 }
             }
-            else if (XMLHelper::isNodeNamed(e, samlconstants::SAML1P_NS, AttributeDesignator::LOCAL_NAME)) {
+            else if (XMLHelper::isNodeNamed(child, samlconstants::SAML1P_NS, AttributeDesignator::LOCAL_NAME)) {
                 auto_ptr<XMLObject> obj(AttributeDesignatorBuilder::buildOneFromElement(child));
                 AttributeDesignator* down = dynamic_cast<AttributeDesignator*>(obj.get());
                 if (down) {
@@ -266,7 +271,16 @@ bool QueryResolver::SAML1Query(QueryContext& ctx) const
 
     const Application& application = ctx.getApplication();
     const PropertySet* relyingParty = application.getRelyingParty(ctx.getEntityDescriptor());
-    shibsp::SecurityPolicy policy(application);
+
+    // Locate policy key.
+    const char* policyId = m_policyId.empty() ? application.getString("policyId").second : m_policyId.c_str();
+
+    // Access policy properties.
+    const PropertySet* settings = application.getServiceProvider().getPolicySettings(policyId);
+    pair<bool,bool> validate = settings->getBool("validate");
+
+    shibsp::SecurityPolicy policy(application, NULL, validate.first && validate.second, policyId);
+    policy.getAudiences().push_back(relyingParty->getXMLString("entityID").second);
     MetadataCredentialCriteria mcc(*AA);
     shibsp::SOAPClient soaper(policy);
 
@@ -274,7 +288,7 @@ bool QueryResolver::SAML1Query(QueryContext& ctx) const
     saml1p::Response* response=NULL;
     const vector<AttributeService*>& endpoints=AA->getAttributeServices();
     for (vector<AttributeService*>::const_iterator ep=endpoints.begin(); !response && ep!=endpoints.end(); ++ep) {
-        if (!XMLString::equals((*ep)->getBinding(),binding.get()))
+        if (!XMLString::equals((*ep)->getBinding(),binding.get()) || !(*ep)->getLocation())
             continue;
         auto_ptr_char loc((*ep)->getLocation());
         try {
@@ -344,13 +358,9 @@ bool QueryResolver::SAML1Query(QueryContext& ctx) const
         // Now we can check the security status of the policy.
         if (!policy.isAuthenticated())
             throw SecurityPolicyException("Security of SAML 1.x query result not established.");
-
-        // Lastly, check it over.
-        saml1::AssertionValidator tokval(relyingParty->getXMLString("entityID").second, application.getAudiences(), time(NULL));
-        tokval.validateAssertion(*newtoken);
     }
     catch (exception& ex) {
-        m_log.error("assertion failed policy/validation: %s", ex.what());
+        m_log.error("assertion failed policy validation: %s", ex.what());
         return true;
     }
 
@@ -396,19 +406,28 @@ bool QueryResolver::SAML2Query(QueryContext& ctx) const
     }
 
     const Application& application = ctx.getApplication();
-    shibsp::SecurityPolicy policy(application);
-    MetadataCredentialCriteria mcc(*AA);
-    shibsp::SOAPClient soaper(policy);
-
     const PropertySet* relyingParty = application.getRelyingParty(ctx.getEntityDescriptor());
+
+    // Locate policy key.
+    const char* policyId = m_policyId.empty() ? application.getString("policyId").second : m_policyId.c_str();
+
+    // Access policy properties.
+    const PropertySet* settings = application.getServiceProvider().getPolicySettings(policyId);
+    pair<bool,bool> validate = settings->getBool("validate");
+
     pair<bool,bool> signedAssertions = relyingParty->getBool("requireSignedAssertions");
     pair<bool,const char*> encryption = relyingParty->getString("encryption");
+
+    shibsp::SecurityPolicy policy(application, NULL, validate.first && validate.second, policyId);
+    policy.getAudiences().push_back(relyingParty->getXMLString("entityID").second);
+    MetadataCredentialCriteria mcc(*AA);
+    shibsp::SOAPClient soaper(policy);
 
     auto_ptr_XMLCh binding(samlconstants::SAML20_BINDING_SOAP);
     saml2p::StatusResponseType* srt=NULL;
     const vector<AttributeService*>& endpoints=AA->getAttributeServices();
     for (vector<AttributeService*>::const_iterator ep=endpoints.begin(); !srt && ep!=endpoints.end(); ++ep) {
-        if (!XMLString::equals((*ep)->getBinding(),binding.get()))
+        if (!XMLString::equals((*ep)->getBinding(),binding.get())  || !(*ep)->getLocation())
             continue;
         auto_ptr_char loc((*ep)->getLocation());
         try {
@@ -495,13 +514,9 @@ bool QueryResolver::SAML2Query(QueryContext& ctx) const
         // Now we can check the security status of the policy.
         if (!policy.isAuthenticated())
             throw SecurityPolicyException("Security of SAML 2.0 query result not established.");
-
-        // Lastly, check it over.
-        saml2::AssertionValidator tokval(relyingParty->getXMLString("entityID").second, application.getAudiences(), time(NULL));
-        tokval.validateAssertion(*newtoken);
     }
     catch (exception& ex) {
-        m_log.error("assertion failed policy/validation: %s", ex.what());
+        m_log.error("assertion failed policy validation: %s", ex.what());
         return true;
     }
 

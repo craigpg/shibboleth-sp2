@@ -1,0 +1,69 @@
+PortSystem 1.0
+
+name               @PACKAGE@
+version            @PACKAGE_VERSION@
+categories         security www shibboleth
+maintainers        scantor snc
+description        Shibboleth Native Service Provider
+long_description   Standards-based attribute-based Web SSO system
+homepage           http://shibboleth.internet2.edu/
+master_sites       http://shibboleth.internet2.edu/downloads/${name}/cppsp/${version}/
+distname           ${name}-sp-${version}
+worksrcdir         ${name}-${version}
+checksums          sha1 @CHECKSUM@
+
+depends_lib        port:opensaml \
+                   port:xmltooling \
+                   port:xercesc \
+                   port:xml-security-c \
+                   port:log4shib
+
+pre-fetch {
+    set status 0
+    if {[catch {exec ${prefix}/bin/curl --version | grep SSL} results]} {
+        if {[lindex $::errorCode 0] eq "CHILDSTATUS"} {
+            set status [lindex $::errorCode 2]
+        } else {
+            set status [lindex $::errorCode 3]
+        }
+    }
+    if {${status} != 0} {
+        return -code error "\n
+    ${name} requires curl to be installed with SSL support.
+    Please deactivate your current curl installation and
+    install the proper version of curl:
+        sudo port deactivate curl
+        sudo port install curl +ssl\n"
+    }
+}
+
+configure.args     --with-xmltooling=${prefix} \
+                   --with-opensaml=${prefix} \
+                   --with-xerces=${prefix} \
+                   --with-xmlsec=${prefix} \
+                   --with-log4shib=${prefix}
+
+variant odbc {
+    depends_lib-append port:unixODBC
+    configure.args-append --enable-odbc
+}
+
+destroot.keepdirs ${destroot}${prefix}/var/log/${name} ${destroot}${prefix}/var/log/httpd ${destroot}${prefix}/var/run/${name}
+
+destroot.args	NOKEYGEN=1
+
+post-destroot {
+	eval file delete [glob ${destroot}${prefix}/etc/${name}/*.logger]
+	eval file delete [glob ${destroot}${prefix}/etc/${name}/*.html]
+	eval file delete [glob ${destroot}${prefix}/etc/${name}/*.xml]
+    eval file delete [glob ${destroot}${prefix}/etc/${name}/shibd-*]
+	eval file delete [glob ${destroot}${prefix}/lib/${name}/*.la]
+}
+
+startupitem.create      yes
+startupitem.name        shibd
+startupitem.executable  ${prefix}/sbin/shibd -F -f -p ${prefix}/var/run/${name}/shibd.pid
+
+livecheck.check         regex
+livecheck.url           http://shibboleth.internet2.edu/downloads/shibboleth/cppsp/latest/mac/ports/shibboleth/shibboleth/Portfile
+livecheck.regex         "version *(\\d+\\.\\d+(\\.\\d+)?)"

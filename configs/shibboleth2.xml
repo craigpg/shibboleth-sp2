@@ -16,19 +16,25 @@
     
     <!-- The InProcess section conrains settings affecting web server modules/filters. -->
     <InProcess logger="native.logger">
-        <ISAPI normalizeRequest="true">
+        <ISAPI normalizeRequest="true" safeHeaderNames="true">
             <!--
-            Maps IIS Instance ID values to the host scheme/name/port/sslport. The name is
+            Maps IIS Instance ID values to the host scheme/name/port. The name is
             required so that the proper <Host> in the request map above is found without
             having to cover every possible DNS/IP combination the user might enter.
-            The port and scheme can usually be omitted, so the HTTP request's port and
-            scheme will be used.
             -->
             <Site id="1" name="sp.example.org"/>
+            <!--
+            When the port and scheme are omitted, the HTTP request's port and scheme are used.
+            If these are wrong because of virtualization, they can be explicitly set here to
+            ensure proper redirect generation.
+            -->
+            <!--
+            <Site id="42" name="virtual.example.org" scheme="https" port="443"/>
+            -->
         </ISAPI>
     </InProcess>
 
-    <!-- Only one listener can be defined, to connect in process modules to shibd. -->
+    <!-- Only one listener can be defined, to connect in-process modules to shibd. -->
     <UnixListener address="shibd.sock"/>
     <!-- <TCPListener address="127.0.0.1" port="12345" acl="127.0.0.1"/> -->
     
@@ -76,10 +82,8 @@
     -->
     <ApplicationDefaults id="default" policyId="default"
         entityID="https://sp.example.org/shibboleth"
-        homeURL="https://sp.example.org/index.html"
         REMOTE_USER="eppn persistent-id targeted-id"
-        signing="false" encryption="false"
-        >
+        signing="false" encryption="false">
 
         <!--
         Controls session lifetimes, address checks, cookie handling, and the protocol handlers.
@@ -104,22 +108,22 @@
             <!-- Default example directs to a specific IdP's SSO service (favoring SAML 2 over Shib 1). -->
             <SessionInitiator type="Chaining" Location="/Login" isDefault="true" id="Intranet"
                     relayState="cookie" entityID="https://idp.example.org/shibboleth">
-                <SessionInitiator type="SAML2" defaultACSIndex="1" acsByIndex="false" template="bindingTemplate.html"/>
+                <SessionInitiator type="SAML2" defaultACSIndex="1" template="bindingTemplate.html"/>
                 <SessionInitiator type="Shib1" defaultACSIndex="5"/>
             </SessionInitiator>
             
             <!-- An example using an old-style WAYF, which means Shib 1 only unless an entityID is provided. -->
             <SessionInitiator type="Chaining" Location="/WAYF" id="WAYF" relayState="cookie">
-                <SessionInitiator type="SAML2" defaultACSIndex="1" acsByIndex="false" template="bindingTemplate.html"/>
+                <SessionInitiator type="SAML2" defaultACSIndex="1" template="bindingTemplate.html"/>
                 <SessionInitiator type="Shib1" defaultACSIndex="5"/>
                 <SessionInitiator type="WAYF" defaultACSIndex="5" URL="https://wayf.example.org/WAYF"/>
             </SessionInitiator>
 
             <!-- An example supporting the new-style of discovery service. -->
             <SessionInitiator type="Chaining" Location="/DS" id="DS" relayState="cookie">
-                <SessionInitiator type="SAML2" defaultACSIndex="1" acsByIndex="false" template="bindingTemplate.html"/>
+                <SessionInitiator type="SAML2" defaultACSIndex="1" template="bindingTemplate.html"/>
                 <SessionInitiator type="Shib1" defaultACSIndex="5"/>
-                <SessionInitiator type="SAMLDS" URL="https://ds.example.org/DS"/>
+                <SessionInitiator type="SAMLDS" URL="https://ds.example.org/DS/WAYF"/>
             </SessionInitiator>
             
             <!--
@@ -210,7 +214,8 @@
             <!--
             <MetadataProvider type="XML" uri="http://federation.org/federation-metadata.xml"
                  backingFilePath="federation-metadata.xml" reloadInterval="7200">
-               <SignatureMetadataFilter certificate="fedsigner.pem"/>
+               <MetadataFilter type="RequireValidUntil" maxValidityInterval="2419200"/>
+               <MetadataFilter type="Signature" certificate="fedsigner.pem"/>
             </MetadataProvider>
             -->
 
@@ -245,14 +250,21 @@
     
     <!-- Each policy defines a set of rules to use to secure messages. -->
     <SecurityPolicies>
-        <!-- The predefined policy enforces replay/freshness and permits signing and client TLS. -->
+        <!--
+        The predefined policy enforces replay/freshness, standard
+        condition processing, and permits signing and client TLS.
+        -->
         <Policy id="default" validate="false">
-            <Rule type="MessageFlow" checkReplay="true" expires="60"/>
-            <Rule type="ClientCertAuth" errorFatal="true"/>
-            <Rule type="XMLSigning" errorFatal="true"/>
-            <Rule type="SimpleSigning" errorFatal="true"/>
+            <PolicyRule type="MessageFlow" checkReplay="true" expires="60"/>
+            <PolicyRule type="Conditions">
+                <PolicyRule type="Audience"/>
+                <!-- Enable Delegation rule to permit delegated access. -->
+                <!-- <PolicyRule type="Delegation"/> -->
+            </PolicyRule>
+            <PolicyRule type="ClientCertAuth" errorFatal="true"/>
+            <PolicyRule type="XMLSigning" errorFatal="true"/>
+            <PolicyRule type="SimpleSigning" errorFatal="true"/>
         </Policy>
     </SecurityPolicies>
 
 </SPConfig>
-

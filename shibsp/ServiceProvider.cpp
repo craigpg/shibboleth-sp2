@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,12 @@ namespace shibsp {
         bool mderror = dynamic_cast<const opensaml::saml2md::MetadataException*>(tp.getRichException())!=NULL;
         pair<bool,const char*> redirectErrors = pair<bool,const char*>(false,NULL);
         pair<bool,const char*> pathname = pair<bool,const char*>(false,NULL);
-        const PropertySet* props=app ? app->getPropertySet("Errors") : NULL;
+
+        // Strictly for error handling, detect a NULL application and point at the default.
+        if (!app)
+            app = request.getServiceProvider().getApplication("default");
+
+        const PropertySet* props=app->getPropertySet("Errors");
 
         try {
             RequestMapper::Settings settings = request.getRequestSettings();
@@ -101,13 +106,13 @@ namespace shibsp {
                 tp.setPropertySet(props);
                 stringstream str;
                 XMLToolingConfig::getConfig().getTemplateEngine()->run(infile, str, tp, tp.getRichException());
-                return request.sendResponse(str);
+                return request.sendError(str);
             }
         }
 
         if (!strcmp(page,"access")) {
             istringstream msg("Access Denied");
-            return request.sendResponse(msg, HTTPResponse::XMLTOOLING_HTTP_STATUS_UNAUTHORIZED);
+            return request.sendResponse(msg, HTTPResponse::XMLTOOLING_HTTP_STATUS_FORBIDDEN);
         }
 
         log.error("sendError could not process error template (%s)", page);
@@ -116,16 +121,16 @@ namespace shibsp {
     }
 
     void SHIBSP_DLLLOCAL clearHeaders(SPRequest& request) {
-        request.clearHeader("Shib-Session-ID", "HTTP_SHIB_SESSION_ID");
-        request.clearHeader("Shib-Identity-Provider", "HTTP_SHIB_IDENTITY_PROVIDER");
-        request.clearHeader("Shib-Authentication-Method", "HTTP_SHIB_AUTHENTICATION_METHOD");
-        request.clearHeader("Shib-Authentication-Instant", "HTTP_SHIB_AUTHENTICATION_INSTANT");
-        request.clearHeader("Shib-AuthnContext-Class", "HTTP_SHIB_AUTHNCONTEXT_CLASS");
-        request.clearHeader("Shib-AuthnContext-Decl", "HTTP_SHIB_AUTHNCONTEXT_DECL");
-        request.clearHeader("Shib-Assertion-Count", "HTTP_SHIB_ASSERTION_COUNT");
+        const Application& app = request.getApplication();
+        app.clearHeader(request, "Shib-Session-ID", "HTTP_SHIB_SESSION_ID");
+        app.clearHeader(request, "Shib-Identity-Provider", "HTTP_SHIB_IDENTITY_PROVIDER");
+        app.clearHeader(request, "Shib-Authentication-Method", "HTTP_SHIB_AUTHENTICATION_METHOD");
+        app.clearHeader(request, "Shib-Authentication-Instant", "HTTP_SHIB_AUTHENTICATION_INSTANT");
+        app.clearHeader(request, "Shib-AuthnContext-Class", "HTTP_SHIB_AUTHNCONTEXT_CLASS");
+        app.clearHeader(request, "Shib-AuthnContext-Decl", "HTTP_SHIB_AUTHNCONTEXT_DECL");
+        app.clearHeader(request, "Shib-Assertion-Count", "HTTP_SHIB_ASSERTION_COUNT");
+        app.clearAttributeHeaders(request);
         request.clearHeader("REMOTE_USER", "HTTP_REMOTE_USER");
-        //request.clearHeader("Shib-Application-ID");   handle inside app method
-        request.getApplication().clearAttributeHeaders(request);
     }
 };
 
@@ -240,12 +245,15 @@ pair<bool,long> ServiceProvider::doAuthentication(SPRequest& request, bool handl
             return initiator->run(request,false);
         }
 
+        request.setAuthType("shibboleth");
+
         // We're done.  Everything is okay.  Nothing to report.  Nothing to do..
         // Let the caller decide how to proceed.
         log.debug("doAuthentication succeeded");
         return make_pair(false,0L);
     }
     catch (exception& e) {
+        request.log(SPRequest::SPError, e.what());
         TemplateParameters tp(&e);
         tp.m_map["requestURL"] = targetURL.substr(0,targetURL.find('?'));
         return make_pair(true,sendError(log, request, app, "session", tp));
@@ -316,6 +324,7 @@ pair<bool,long> ServiceProvider::doAuthorization(SPRequest& request) const
         }
     }
     catch (exception& e) {
+        request.log(SPRequest::SPError, e.what());
         TemplateParameters tp(&e);
         tp.m_map["requestURL"] = targetURL.substr(0,targetURL.find('?'));
         return make_pair(true,sendError(log, request, app, "access", tp));
@@ -355,24 +364,24 @@ pair<bool,long> ServiceProvider::doExport(SPRequest& request, bool requireSessio
         		return make_pair(false,0L);	// just bail silently
         }
 
-        request.setHeader("Shib-Application-ID", app->getId());
-        request.setHeader("Shib-Session-ID", session->getID());
+        app->setHeader(request, "Shib-Application-ID", app->getId());
+        app->setHeader(request, "Shib-Session-ID", session->getID());
 
         // Export the IdP name and Authn method/context info.
         const char* hval = session->getEntityID();
         if (hval)
-            request.setHeader("Shib-Identity-Provider", hval);
+            app->setHeader(request, "Shib-Identity-Provider", hval);
         hval = session->getAuthnInstant();
         if (hval)
-            request.setHeader("Shib-Authentication-Instant", hval);
+            app->setHeader(request, "Shib-Authentication-Instant", hval);
         hval = session->getAuthnContextClassRef();
         if (hval) {
-            request.setHeader("Shib-Authentication-Method", hval);
-            request.setHeader("Shib-AuthnContext-Class", hval);
+            app->setHeader(request, "Shib-Authentication-Method", hval);
+            app->setHeader(request, "Shib-AuthnContext-Class", hval);
         }
         hval = session->getAuthnContextDeclRef();
         if (hval)
-            request.setHeader("Shib-AuthnContext-Decl", hval);
+            app->setHeader(request, "Shib-AuthnContext-Decl", hval);
 
         // Maybe export the assertion keys.
         pair<bool,bool> exp=settings.first->getBool("exportAssertion");
@@ -397,16 +406,18 @@ pair<bool,long> ServiceProvider::doExport(SPRequest& request, bool requireSessio
                     *(exportName.rbegin()) = '0' + (count%10);
                     *(++exportName.rbegin()) = '0' + (count/10);
                     string fullURL = baseURL + encoder->encode(*tokenids);
-                    request.setHeader(exportName.c_str(), fullURL.c_str());
+                    app->setHeader(request, exportName.c_str(), fullURL.c_str());
                 }
-                request.setHeader("Shib-Assertion-Count", exportName.c_str() + 15);
+                app->setHeader(request, "Shib-Assertion-Count", exportName.c_str() + 15);
             }
         }
 
         // Export the attributes.
         const multimap<string,const Attribute*>& attributes = session->getIndexedAttributes();
         for (multimap<string,const Attribute*>::const_iterator a = attributes.begin(); a!=attributes.end(); ++a) {
-            string header(request.getSecureHeader(a->first.c_str()));
+            if (a->second->isInternal())
+                continue;
+            string header(app->getSecureHeader(request, a->first.c_str()));
             const vector<string>& vals = a->second->getSerializedValues();
             for (vector<string>::const_iterator v = vals.begin(); v!=vals.end(); ++v) {
                 if (!header.empty())
@@ -424,7 +435,7 @@ pair<bool,long> ServiceProvider::doExport(SPRequest& request, bool requireSessio
                     header += (*v);
                 }
             }
-            request.setHeader(a->first.c_str(), header.c_str());
+            app->setHeader(request, a->first.c_str(), header.c_str());
         }
 
         // Check for REMOTE_USER.
@@ -433,7 +444,7 @@ pair<bool,long> ServiceProvider::doExport(SPRequest& request, bool requireSessio
         for (vector<string>::const_iterator rmid = rmids.begin(); !remoteUserSet && rmid != rmids.end(); ++rmid) {
             pair<multimap<string,const Attribute*>::const_iterator,multimap<string,const Attribute*>::const_iterator> matches =
                 attributes.equal_range(*rmid);
-            while (matches.first != matches.second) {
+            for (; matches.first != matches.second; ++matches.first) {
                 const vector<string>& vals = matches.first->second->getSerializedValues();
                 if (!vals.empty()) {
                     request.setRemoteUser(vals.front().c_str());
@@ -446,6 +457,7 @@ pair<bool,long> ServiceProvider::doExport(SPRequest& request, bool requireSessio
         return make_pair(false,0L);
     }
     catch (exception& e) {
+        request.log(SPRequest::SPError, e.what());
         TemplateParameters tp(&e);
         tp.m_map["requestURL"] = targetURL.substr(0,targetURL.find('?'));
         return make_pair(true,sendError(log, request, app, "session", tp));
@@ -525,6 +537,7 @@ pair<bool,long> ServiceProvider::doHandler(SPRequest& request) const
         throw ConfigurationException("Configured Shibboleth handler failed to process the request.");
     }
     catch (exception& e) {
+        request.log(SPRequest::SPError, e.what());
         TemplateParameters tp(&e);
         tp.m_map["requestURL"] = targetURL.substr(0,targetURL.find('?'));
         tp.m_request = &request;

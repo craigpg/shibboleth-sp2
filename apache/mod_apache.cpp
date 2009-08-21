@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,12 +91,10 @@ namespace {
     char* g_szSchemaDir = NULL;
     char* g_szPrefix = NULL;
     SPConfig* g_Config = NULL;
-    string g_unsetHeaderValue;
+    string g_unsetHeaderValue,g_spoofKey;
     bool g_checkSpoofing = true;
     bool g_catchAll = false;
     static const char* g_UserDataKey = "_shib_check_user_";
-    static const XMLCh path[] = UNICODE_LITERAL_4(p,a,t,h);
-    static const XMLCh validate[] = UNICODE_LITERAL_8(v,a,l,i,d,a,t,e);
 }
 
 /* Apache 2.2.x headers must be accumulated and set in the output filter.
@@ -302,7 +300,7 @@ class ShibTargetApache : public AbstractSPRequest
 {
   bool m_handler;
   mutable string m_body;
-  mutable bool m_gotBody;
+  mutable bool m_gotBody,m_firsttime;
   mutable vector<string> m_certs;
   set<string> m_allhttp;
 
@@ -312,13 +310,29 @@ public:
   shib_server_config* m_sc;
   shib_request_config* m_rc;
 
-  ShibTargetApache(request_rec* req, bool handler) : AbstractSPRequest(SHIBSP_LOGCAT".Apache"), m_handler(handler), m_gotBody(false) {
+  ShibTargetApache(request_rec* req, bool handler, bool shib_check_user)
+      : AbstractSPRequest(SHIBSP_LOGCAT".Apache"), m_handler(handler), m_gotBody(false),m_firsttime(true) {
     m_sc = (shib_server_config*)ap_get_module_config(req->server->module_config, &mod_shib);
     m_dc = (shib_dir_config*)ap_get_module_config(req->per_dir_config, &mod_shib);
     m_rc = (shib_request_config*)ap_get_module_config(req->request_config, &mod_shib);
     m_req = req;
 
     setRequestURI(m_req->unparsed_uri);
+
+    if (shib_check_user && m_dc->bUseHeaders == 1) {
+        // Try and see if this request was already processed, to skip spoof checking.
+        if (!ap_is_initial_req(m_req)) {
+            m_firsttime = false;
+        }
+        else if (!g_spoofKey.empty()) {
+            const char* hdr = ap_table_get(m_req->headers_in, "Shib-Spoof-Check");
+            if (hdr && g_spoofKey == hdr)
+                m_firsttime=false;
+        }
+
+        if (!m_firsttime)
+            log(SPDebug, "shib_check_user running more than once");
+    }
   }
   virtual ~ShibTargetApache() {}
 
@@ -342,7 +356,8 @@ public:
       return m_gotBody ? m_body.length() : m_req->remaining;
   }
   string getRemoteAddr() const {
-    return m_req->connection->remote_ip;
+    string ret = AbstractSPRequest::getRemoteAddr();
+    return ret.empty() ? m_req->connection->remote_ip : ret;
   }
   void log(SPLogLevel level, const string& msg) const {
     AbstractSPRequest::log(level,msg);
@@ -421,7 +436,7 @@ public:
   void clearHeader(const char* rawname, const char* cginame) {
     if (m_dc->bUseHeaders == 1) {
        // ap_log_rerror(APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO,SH_AP_R(m_req), "shib_clear_header: hdr\n");
-        if (g_checkSpoofing && ap_is_initial_req(m_req)) {
+        if (g_checkSpoofing && m_firsttime) {
             if (m_allhttp.empty()) {
                 // First time, so populate set with "CGI" versions of client-supplied headers.
 #ifdef SHIB_APACHE_13
@@ -483,9 +498,26 @@ public:
   }
   void setRemoteUser(const char* user) {
       SH_AP_USER(m_req) = user ? ap_pstrdup(m_req->pool, user) : NULL;
+      if (m_dc->bUseHeaders == 1) {
+          if (user) {
+              ap_table_set(m_req->headers_in, "REMOTE_USER", user);
+          }
+          else {
+              ap_table_unset(m_req->headers_in, "REMOTE_USER");
+              ap_table_set(m_req->headers_in, "REMOTE_USER", g_unsetHeaderValue.c_str());
+          }
+      }
   }
   string getRemoteUser() const {
     return string(SH_AP_USER(m_req) ? SH_AP_USER(m_req) : "");
+  }
+  void setAuthType(const char* authtype) {
+      if (authtype && m_dc->bBasicHijack == 1)
+          authtype = "Basic";
+      SH_AP_AUTH_TYPE(m_req) = authtype ? ap_pstrdup(m_req->pool, authtype) : NULL;
+  }
+  string getAuthType() const {
+    return string(SH_AP_AUTH_TYPE(m_req) ? SH_AP_AUTH_TYPE(m_req) : "");
   }
   void setContentType(const char* type) {
       m_req->content_type = ap_psprintf(m_req->pool, type);
@@ -495,8 +527,11 @@ public:
    if (!m_rc)
       // this happens on subrequests
       m_rc = init_request_config(m_req);
-    if (m_handler)
+    if (m_handler) {
+        if (!m_rc->hdr_out)
+            m_rc->hdr_out = ap_make_table(m_req->pool, 5);
         ap_table_add(m_rc->hdr_out, name, value);
+    }
     else
 #endif
     ap_table_add(m_req->err_headers_out, name, value);
@@ -554,11 +589,14 @@ extern "C" int shib_check_user(request_rec* r)
   xmltooling::NDC ndc(threadid.str().c_str());
 
   try {
-    ShibTargetApache sta(r,false);
+    ShibTargetApache sta(r,false,true);
 
     // Check user authentication and export information, then set the handler bypass
     pair<bool,long> res = sta.getServiceProvider().doAuthentication(sta,true);
     apr_pool_userdata_setn((const void*)42,g_UserDataKey,NULL,r->pool);
+    // If directed, install a spoof key to recognize when we've already cleared headers.
+    if (!g_spoofKey.empty() && (((shib_dir_config*)ap_get_module_config(r->per_dir_config, &mod_shib))->bUseHeaders==1))
+        ap_table_set(r->headers_in, "Shib-Spoof-Check", g_spoofKey.c_str());
     if (res.first) return res.second;
 
     // user auth was okay -- export the assertions now
@@ -605,7 +643,7 @@ extern "C" int shib_handler(request_rec* r)
   ap_log_rerror(APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO,SH_AP_R(r),"shib_handler(%d): ENTER: %s", (int)getpid(), r->handler);
 
   try {
-    ShibTargetApache sta(r,true);
+    ShibTargetApache sta(r,true,false);
 
     pair<bool,long> res = sta.getServiceProvider().doHandler(sta);
     if (res.first) return res.second;
@@ -642,7 +680,7 @@ extern "C" int shib_auth_checker(request_rec* r)
   xmltooling::NDC ndc(threadid.str().c_str());
 
   try {
-    ShibTargetApache sta(r,false);
+    ShibTargetApache sta(r,false,false);
 
     pair<bool,long> res = sta.getServiceProvider().doAuthorization(sta);
     if (res.first) return res.second;
@@ -1114,9 +1152,10 @@ AccessControl::aclresult_t htAccessControl::authorized(const SPRequest& request,
                         auto_ptr<xercesc::RegularExpression> temp(new xercesc::RegularExpression(trans.get()));
                         re=temp;
                     }
-
-                    for (; !status && attrs.first!=attrs.second; ++attrs.first) {
-                        if (checkAttribute(request, attrs.first->second, w, regexp ? re.get() : NULL)) {
+                    
+                    pair<multimap<string,const Attribute*>::const_iterator,multimap<string,const Attribute*>::const_iterator> attrs2(attrs);
+                    for (; !status && attrs2.first!=attrs2.second; ++attrs2.first) {
+                        if (checkAttribute(request, attrs2.first->second, w, regexp ? re.get() : NULL)) {
                             status = true;
                         }
                     }
@@ -1178,12 +1217,7 @@ AccessControl::aclresult_t htAccessControl::authorized(const SPRequest& request,
 static int shib_post_read(request_rec *r)
 {
     shib_request_config* rc = init_request_config(r);
-
-    ap_log_rerror(APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO,SH_AP_R(r), "shib_post_read");
-
-#ifdef SHIB_DEFERRED_HEADERS
-    rc->hdr_out = ap_make_table(r->pool, 5);
-#endif
+    //ap_log_rerror(APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO,SH_AP_R(r), "shib_post_read");
     return DECLINED;
 }
 
@@ -1285,13 +1319,18 @@ extern "C" void shib_child_init(apr_pool_t* p, server_rec* s)
 
     ServiceProvider* sp=g_Config->getServiceProvider();
     xmltooling::Locker locker(sp);
-    const PropertySet* props=sp->getPropertySet("Local");
+    const PropertySet* props=sp->getPropertySet("InProcess");
     if (props) {
         pair<bool,const char*> unsetValue=props->getString("unsetHeaderValue");
         if (unsetValue.first)
             g_unsetHeaderValue = unsetValue.second;
         pair<bool,bool> flag=props->getBool("checkSpoofing");
         g_checkSpoofing = !flag.first || flag.second;
+        if (g_checkSpoofing) {
+            unsetValue=props->getString("spoofKey");
+            if (unsetValue.first)
+                g_spoofKey = unsetValue.second;
+        }
         flag=props->getBool("catchAll");
         g_catchAll = flag.first && flag.second;
     }
@@ -1325,11 +1364,11 @@ static apr_status_t do_output_filter(ap_filter_t *f, apr_bucket_brigade *in)
     request_rec *r = f->r;
     shib_request_config *rc = (shib_request_config*) ap_get_module_config(r->request_config, &mod_shib);
 
-    if (rc) {
+    if (rc && rc->hdr_out) {
         ap_log_rerror(APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO,SH_AP_R(r),"shib_out_filter: merging %d headers", apr_table_elts(rc->hdr_out)->nelts);
-        apr_table_do(_table_add,r->headers_out, rc->hdr_out,NULL);
         // can't use overlap call because it will collapse Set-Cookie headers
         //apr_table_overlap(r->headers_out, rc->hdr_out, APR_OVERLAP_TABLES_MERGE);
+        apr_table_do(_table_add,r->headers_out, rc->hdr_out,NULL);
     }
 
     /* remove ourselves from the filter chain */
@@ -1344,11 +1383,11 @@ static apr_status_t do_error_filter(ap_filter_t *f, apr_bucket_brigade *in)
     request_rec *r = f->r;
     shib_request_config *rc = (shib_request_config*) ap_get_module_config(r->request_config, &mod_shib);
 
-    if (rc) {
+    if (rc && rc->hdr_out) {
         ap_log_rerror(APLOG_MARK,APLOG_DEBUG|APLOG_NOERRNO,SH_AP_R(r),"shib_err_filter: merging %d headers", apr_table_elts(rc->hdr_out)->nelts);
-        apr_table_do(_table_add,r->err_headers_out, rc->hdr_out,NULL);
         // can't use overlap call because it will collapse Set-Cookie headers
         //apr_table_overlap(r->err_headers_out, rc->hdr_out, APR_OVERLAP_TABLES_MERGE);
+        apr_table_do(_table_add,r->err_headers_out, rc->hdr_out,NULL);
     }
 
     /* remove ourselves from the filter chain */
@@ -1369,7 +1408,7 @@ static command_rec shire_cmds[] = {
   {"ShibPrefix", (config_fn_t)ap_set_global_string_slot, &g_szPrefix,
    RSRC_CONF, TAKE1, "Shibboleth installation directory"},
   {"ShibConfig", (config_fn_t)ap_set_global_string_slot, &g_szSHIBConfig,
-   RSRC_CONF, TAKE1, "Path to shibboleth.xml config file"},
+   RSRC_CONF, TAKE1, "Path to shibboleth2.xml config file"},
   {"ShibCatalogs", (config_fn_t)ap_set_global_string_slot, &g_szSchemaDir,
    RSRC_CONF, TAKE1, "Paths of XML schema catalogs"},
 
@@ -1473,7 +1512,7 @@ static command_rec shib_cmds[] = {
     AP_INIT_TAKE1("ShibPrefix", (config_fn_t)ap_set_global_string_slot, &g_szPrefix,
         RSRC_CONF, "Shibboleth installation directory"),
     AP_INIT_TAKE1("ShibConfig", (config_fn_t)ap_set_global_string_slot, &g_szSHIBConfig,
-        RSRC_CONF, "Path to shibboleth.xml config file"),
+        RSRC_CONF, "Path to shibboleth2.xml config file"),
     AP_INIT_TAKE1("ShibCatalogs", (config_fn_t)ap_set_global_string_slot, &g_szSchemaDir,
         RSRC_CONF, "Paths of XML schema catalogs"),
 
