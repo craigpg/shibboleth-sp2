@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * @file shibsp/remoting/ListenerService.h
- * 
+ *
  * Interprocess remoting engine.
  */
 
@@ -30,7 +30,7 @@ namespace shibsp {
 
     /**
      * Interface to a remoted service
-     * 
+     *
      * Classes that support remoted messages delivered by the Listener runtime
      * support this interface and register themselves with the runtime to receive
      * particular messages.
@@ -45,7 +45,7 @@ namespace shibsp {
 
         /**
          * Remoted classes implement this method to process incoming messages.
-         * 
+         *
          * @param in    incoming DDF message
          * @param out   stream to write outgoing DDF message to
          */
@@ -59,7 +59,7 @@ namespace shibsp {
 
     /**
      * Interface to a remoting engine.
-     * 
+     *
      * A ListenerService supports the remoting of DDF objects, which are dynamic data trees
      * that other class implementations can use to remote themselves by calling an
      * out-of-process peer implementation with arbitrary data to carry out tasks
@@ -77,52 +77,73 @@ namespace shibsp {
 
         /**
          * Send a remoted message and return the response.
-         * 
+         *
          * @param in    input message to send
          * @return      response from remote service
          */
         virtual DDF send(const DDF& in)=0;
-        
+
         void receive(DDF& in, std::ostream& out);
 
         // Remoted classes register and unregister for messages using these methods.
         // Registration returns any existing listeners, allowing message hooking.
-        
+
         /**
          * Register for a message. Returns existing remote service, allowing message hooking.
-         * 
+         *
          * @param address   message address to register
          * @param svc       pointer to remote service
          * @return  previous service registered for message, if any
          */
         virtual Remoted* regListener(const char* address, Remoted* svc);
-        
+
         /**
          * Unregisters service from an address, possibly restoring an original.
-         * 
+         *
          * @param address   message address to modify
          * @param current   pointer to unregistering service
          * @param restore   service to "restore" registration for
          * @return  true iff the current service was still registered
          */
         virtual bool unregListener(const char* address, Remoted* current, Remoted* restore=NULL);
-        
+
         /**
          * Returns current service registered at an address, if any.
-         * 
+         *
          * @param address message address to access
          * @return  registered service, or NULL
          */
         virtual Remoted* lookup(const char* address) const;
 
         /**
+         * OutOfProcess servers can implement server-side initialization that should occur
+         * before daemonization.
+         *
+         * <p>The parameter applies to implementations that can detect and remove
+         * the results of ungraceful shutdowns of previous executions and continue
+         * successfully. File-based sockets are the most common example.
+         *
+         * @param force     true iff remnant network state should be forcibly cleared
+         * @return true iff the service initialization was successful
+         */
+        virtual bool init(bool force) {
+            return true;
+        }
+
+        /**
          * OutOfProcess servers can implement server-side transport handling by
          * calling the run method and supplying a flag to monitor for shutdown.
-         * 
+         *
          * @param shutdown  pointer to flag that caller will set when shutdown is required
-         * @return true iff ListenerService initialization was successful
+         * @return true iff the service execution was successful
          */
         virtual bool run(bool* shutdown)=0;
+
+        /**
+         * OutOfProcess servers can implement server-side termination/cleanup.
+         */
+        virtual void term() {
+        }
 
     private:
         std::map<std::string,Remoted*> m_listenerMap;

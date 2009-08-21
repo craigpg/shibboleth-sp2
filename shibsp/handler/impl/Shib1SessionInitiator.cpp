@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * Shib1SessionInitiator.cpp
- * 
+ *
  * Shibboleth 1.x AuthnRequest support.
  */
 
@@ -64,17 +64,20 @@ namespace shibsp {
             }
         }
         virtual ~Shib1SessionInitiator() {}
-        
+
         void setParent(const PropertySet* parent);
         void receive(DDF& in, ostream& out);
+        pair<bool,long> unwrap(SPRequest& request, DDF& out) const;
         pair<bool,long> run(SPRequest& request, string& entityID, bool isHandler=true) const;
 
     private:
         pair<bool,long> doRequest(
             const Application& application,
+            const HTTPRequest* httpRequest,
             HTTPResponse& httpResponse,
             const char* entityID,
             const char* acsLocation,
+            bool artifact,
             string& relayState
             ) const;
         string m_appId;
@@ -111,6 +114,7 @@ pair<bool,long> Shib1SessionInitiator::run(SPRequest& request, string& entityID,
         return make_pair(false,0L);
 
     string target;
+    string postData;
     const Handler* ACS=NULL;
     const char* option;
     const Application& app=request.getApplication();
@@ -149,6 +153,21 @@ pair<bool,long> Shib1SessionInitiator::run(SPRequest& request, string& entityID,
             ACS = app.getDefaultAssertionConsumerService();
     }
 
+    // Validate the ACS for use with this protocol.
+    pair<bool,const char*> ACSbinding = ACS ? ACS->getString("Binding") : pair<bool,const char*>(false,NULL);
+    if (ACSbinding.first) {
+        pair<bool,const char*> compatibleBindings = getString("compatibleBindings");
+        if (compatibleBindings.first && strstr(compatibleBindings.second, ACSbinding.second) == NULL) {
+            m_log.info("configured or requested ACS has non-SAML 1.x binding");
+            return make_pair(false,0L);
+        }
+        else if (strcmp(ACSbinding.second, samlconstants::SAML1_PROFILE_BROWSER_POST) &&
+                 strcmp(ACSbinding.second, samlconstants::SAML1_PROFILE_BROWSER_ARTIFACT)) {
+            m_log.info("configured or requested ACS has non-SAML 1.x binding");
+            return make_pair(false,0L);
+        }
+    }
+
     // Compute the ACS URL. We add the ACS location to the base handlerURL.
     string ACSloc=request.getHandlerURL(target.c_str());
     pair<bool,const char*> loc=ACS ? ACS->getString("Location") : pair<bool,const char*>(false,NULL);
@@ -163,10 +182,17 @@ pair<bool,long> Shib1SessionInitiator::run(SPRequest& request, string& entityID,
             target = option;
     }
 
+    // Is the in-bound binding artifact?
+    bool artifactInbound = ACS ? XMLString::equals(ACS->getString("Binding").second, samlconstants::SAML1_PROFILE_BROWSER_ARTIFACT) : false;
+
     m_log.debug("attempting to initiate session using Shibboleth with provider (%s)", entityID.c_str());
 
-    if (SPConfig::getConfig().isEnabled(SPConfig::OutOfProcess))
-        return doRequest(app, request, entityID.c_str(), ACSloc.c_str(), target);
+    if (SPConfig::getConfig().isEnabled(SPConfig::OutOfProcess)) {
+        // Out of process means the POST data via the request can be exposed directly to the private method.
+        // The method will handle POST preservation if necessary *before* issuing the response, but only if
+        // it dispatches to an IdP.
+        return doRequest(app, &request, request, entityID.c_str(), ACSloc.c_str(), artifactInbound, target);
+    }
 
     // Remote the call.
     DDF out,in = DDF(m_address.c_str()).structure();
@@ -174,12 +200,24 @@ pair<bool,long> Shib1SessionInitiator::run(SPRequest& request, string& entityID,
     in.addmember("application_id").string(app.getId());
     in.addmember("entity_id").string(entityID.c_str());
     in.addmember("acsLocation").string(ACSloc.c_str());
+    if (artifactInbound)
+        in.addmember("artifact").integer(1);
     if (!target.empty())
-        in.addmember("RelayState").string(target.c_str());
+        in.addmember("RelayState").unsafe_string(target.c_str());
 
-    // Remote the processing.
+    // Remote the processing. Our unwrap method will handle POST data if necessary.
     out = request.getServiceProvider().getListenerService()->send(in);
     return unwrap(request, out);
+}
+
+pair<bool,long> Shib1SessionInitiator::unwrap(SPRequest& request, DDF& out) const
+{
+    // See if there's any response to send back.
+    if (!out["redirect"].isnull() || !out["response"].isnull()) {
+        // If so, we're responsible for handling the POST data, probably by dropping a cookie.
+        preservePostData(request.getApplication(), request, request, out["RelayState"].string());
+    }
+    return RemotedHandler::unwrap(request, out);
 }
 
 void Shib1SessionInitiator::receive(DDF& in, ostream& out)
@@ -209,15 +247,20 @@ void Shib1SessionInitiator::receive(DDF& in, ostream& out)
     // Since we're remoted, the result should either be a throw, which we pass on,
     // a false/0 return, which we just return as an empty structure, or a response/redirect,
     // which we capture in the facade and send back.
-    doRequest(*app, *http.get(), entityID, acsLocation, relayState);
+    doRequest(*app, NULL, *http.get(), entityID, acsLocation, (in["artifact"].integer() != 0), relayState);
+    if (!ret.isstruct())
+        ret.structure();
+    ret.addmember("RelayState").unsafe_string(relayState.c_str());
     out << ret;
 }
 
 pair<bool,long> Shib1SessionInitiator::doRequest(
     const Application& app,
+    const HTTPRequest* httpRequest,
     HTTPResponse& httpResponse,
     const char* entityID,
     const char* acsLocation,
+    bool artifact,
     string& relayState
     ) const
 {
@@ -232,11 +275,18 @@ pair<bool,long> Shib1SessionInitiator::doRequest(
         throw MetadataException("Unable to locate metadata for identity provider ($entityID)", namedparams(1, "entityID", entityID));
     }
     else if (!entity.second) {
-        m_log.warn("unable to locate Shibboleth-aware identity provider role for provider (%s)", entityID);
+        m_log.log(getParent() ? Priority::INFO : Priority::WARN, "unable to locate Shibboleth-aware identity provider role for provider (%s)", entityID);
         if (getParent())
             return make_pair(false,0L);
         throw MetadataException("Unable to locate Shibboleth-aware identity provider role for provider ($entityID)", namedparams(1, "entityID", entityID));
     }
+    else if (artifact && !SPConfig::getConfig().getArtifactResolver()->isSupported(dynamic_cast<const SSODescriptorType&>(*entity.second))) {
+        m_log.warn("artifact profile selected for response, but identity provider lacks support");
+        if (getParent())
+            return make_pair(false,0L);
+        throw MetadataException("Identity provider ($entityID) lacks SAML artifact support.", namedparams(1, "entityID", entityID));
+    }
+
     const EndpointType* ep=EndpointManager<SingleSignOnService>(
         dynamic_cast<const IDPSSODescriptor*>(entity.second)->getSingleSignOnServices()
         ).getByBinding(shibspconstants::SHIB1_AUTHNREQUEST_PROFILE_URI);
@@ -260,6 +310,11 @@ pair<bool,long> Shib1SessionInitiator::doRequest(
     string req=string(dest.get()) + (strchr(dest.get(),'?') ? '&' : '?') + "shire=" + urlenc->encode(acsLocation) +
         "&time=" + timebuf + "&target=" + urlenc->encode(relayState.c_str()) +
         "&providerId=" + urlenc->encode(app.getRelyingParty(entity.first)->getString("entityID").second);
+
+    if (httpRequest) {
+        // If the request object is available, we're responsible for the POST data.
+        preservePostData(app, *httpRequest, httpResponse, relayState.c_str());
+    }
 
     return make_pair(true, httpResponse.sendRedirect(req.c_str()));
 #else

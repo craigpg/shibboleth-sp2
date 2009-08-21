@@ -90,7 +90,7 @@ namespace shibsp {
 
         MessageEncoder* m_encoder;
         MessageDecoder* m_decoder;
-        QName m_role;
+        xmltooling::QName m_role;
 #endif
     };
 
@@ -121,7 +121,7 @@ SAML2ArtifactResolution::SAML2ArtifactResolution(const DOMElement* e, const char
                 getString("Binding").second,pair<const DOMElement*,const XMLCh*>(e,NULL)
                 );
         }
-        catch (exception& ex) {
+        catch (exception&) {
             m_log.error("error building MessageEncoder/Decoder pair for binding (%s)", getString("Binding").second);
             delete m_encoder;
             delete m_decoder;

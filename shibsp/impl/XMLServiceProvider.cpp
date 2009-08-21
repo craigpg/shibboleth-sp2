@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,12 +22,14 @@
 
 #include "internal.h"
 #include "exceptions.h"
+#include "version.h"
 #include "AccessControl.h"
 #include "Application.h"
 #include "RequestMapper.h"
 #include "ServiceProvider.h"
 #include "SessionCache.h"
 #include "SPConfig.h"
+#include "SPRequest.h"
 #include "handler/SessionInitiator.h"
 #include "remoting/ListenerService.h"
 #include "util/DOMPropertySet.h"
@@ -42,8 +44,10 @@
 #endif
 #include <xercesc/util/XMLUniDefs.hpp>
 #include <xmltooling/XMLToolingConfig.h>
+#include <xmltooling/version.h>
 #include <xmltooling/util/NDC.h>
 #include <xmltooling/util/ReloadableXMLFile.h>
+#include <xmltooling/util/TemplateEngine.h>
 #include <xmltooling/util/XMLHelper.h>
 
 #ifndef SHIBSP_LITE
@@ -53,12 +57,11 @@
 # include "attribute/resolver/AttributeResolver.h"
 # include "security/PKIXTrustEngine.h"
 # include <saml/SAMLConfig.h>
+# include <saml/version.h>
 # include <saml/binding/ArtifactMap.h>
 # include <saml/binding/SAMLArtifact.h>
 # include <saml/saml1/core/Assertions.h>
 # include <saml/saml2/binding/SAML2ArtifactType0004.h>
-# include <saml/saml2/metadata/ChainingMetadataProvider.h>
-# include <xmltooling/security/ChainingTrustEngine.h>
 # include <xmltooling/util/ReplayCache.h>
 using namespace opensaml::saml2;
 using namespace opensaml::saml2p;
@@ -69,6 +72,10 @@ using namespace opensaml;
 using namespace shibsp;
 using namespace xmltooling;
 using namespace std;
+
+#ifndef min
+# define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
 
 namespace {
 
@@ -85,7 +92,7 @@ namespace {
     public:
         XMLApplication(const ServiceProvider*, const DOMElement* e, const XMLApplication* base=NULL);
         ~XMLApplication() { cleanup(); }
-    
+
         const char* getHash() const {return m_hash.c_str();}
 
 #ifndef SHIBSP_LITE
@@ -135,6 +142,10 @@ namespace {
             return (m_remoteUsers.empty() && m_base) ? m_base->getRemoteUserAttributeIds() : m_remoteUsers;
         }
 
+        void clearHeader(SPRequest& request, const char* rawname, const char* cginame) const;
+        void setHeader(SPRequest& request, const char* name, const char* value) const;
+        string getSecureHeader(const SPRequest& request, const char* name) const;
+
         const SessionInitiator* getDefaultSessionInitiator() const;
         const SessionInitiator* getSessionInitiatorById(const char* id) const;
         const Handler* getDefaultAssertionConsumerService() const;
@@ -156,12 +167,18 @@ namespace {
         }
 
         // Provides filter to exclude special config elements.
-        short acceptNode(const DOMNode* node) const;
-    
+#ifdef SHIBSP_XERCESC_SHORT_ACCEPTNODE
+        short
+#else
+        FilterAction
+#endif
+        acceptNode(const DOMNode* node) const;
+
     private:
         void cleanup();
         const XMLApplication* m_base;
         string m_hash;
+        std::pair<std::string,std::string> m_attributePrefix;
 #ifndef SHIBSP_LITE
         MetadataProvider* m_metadata;
         TrustEngine* m_trust;
@@ -172,11 +189,7 @@ namespace {
         vector<const XMLCh*> m_audiences;
 
         // RelyingParty properties
-#ifdef HAVE_GOOD_STL
         map<xstring,PropertySet*> m_partyMap;
-#else
-        map<const XMLCh*,PropertySet*> m_partyMap;
-#endif
 #endif
         vector<string> m_remoteUsers,m_frontLogout,m_backLogout;
 
@@ -188,16 +201,12 @@ namespace {
 
         // maps unique indexes to consumer services
         map<unsigned int,const Handler*> m_acsIndexMap;
-        
+
         // pointer to default consumer service
         const Handler* m_acsDefault;
 
         // maps binding strings to supporting consumer service(s)
-#ifdef HAVE_GOOD_STL
         typedef map<xstring,vector<const Handler*> > ACSBindingMap;
-#else
-        typedef map<string,vector<const Handler*> > ACSBindingMap;
-#endif
         ACSBindingMap m_acsBindingMap;
 
         // pointer to default session initiator
@@ -222,16 +231,21 @@ namespace {
     public:
         XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* outer, Category& log);
         ~XMLConfigImpl();
-        
+
         RequestMapper* m_requestMapper;
         map<string,Application*> m_appmap;
 #ifndef SHIBSP_LITE
         map< string,pair< PropertySet*,vector<const SecurityPolicyRule*> > > m_policyMap;
         vector< pair< string, pair<string,string> > > m_transportOptions;
 #endif
-        
+
         // Provides filter to exclude special config elements.
-        short acceptNode(const DOMNode* node) const;
+#ifdef SHIBSP_XERCESC_SHORT_ACCEPTNODE
+        short
+#else
+        FilterAction
+#endif
+        acceptNode(const DOMNode* node) const;
 
         void setDocument(DOMDocument* doc) {
             m_document = doc;
@@ -258,7 +272,7 @@ namespace {
 #endif
         {
         }
-        
+
         void init() {
             load();
         }
@@ -406,6 +420,7 @@ namespace {
     static const XMLCh OutOfProcess[] =         UNICODE_LITERAL_12(O,u,t,O,f,P,r,o,c,e,s,s);
     static const XMLCh _path[] =                UNICODE_LITERAL_4(p,a,t,h);
     static const XMLCh Policy[] =               UNICODE_LITERAL_6(P,o,l,i,c,y);
+    static const XMLCh PolicyRule[] =           UNICODE_LITERAL_10(P,o,l,i,c,y,R,u,l,e);
     static const XMLCh _provider[] =            UNICODE_LITERAL_8(p,r,o,v,i,d,e,r);
     static const XMLCh RelyingParty[] =         UNICODE_LITERAL_12(R,e,l,y,i,n,g,P,a,r,t,y);
     static const XMLCh _ReplayCache[] =         UNICODE_LITERAL_11(R,e,p,l,a,y,C,a,c,h,e);
@@ -427,7 +442,12 @@ namespace {
     class SHIBSP_DLLLOCAL PolicyNodeFilter : public DOMNodeFilter
     {
     public:
-        short acceptNode(const DOMNode* node) const {
+#ifdef SHIBSP_XERCESC_SHORT_ACCEPTNODE
+        short
+#else
+        FilterAction
+#endif
+        acceptNode(const DOMNode* node) const {
             return FILTER_REJECT;
         }
     };
@@ -479,6 +499,18 @@ XMLApplication::XMLApplication(
             m_hash += (DIGITS[0x0F & *ch]);
         }
 
+        // Populate prefix pair.
+        m_attributePrefix.second = "HTTP_";
+        pair<bool,const char*> prefix = getString("attributePrefix");
+        if (prefix.first) {
+            m_attributePrefix.first = prefix.second;
+            const char* pch = prefix.second;
+            while (*pch) {
+                m_attributePrefix.second += (isalnum(*pch) ? toupper(*pch) : '_');
+                pch++;
+            }
+        }
+
         // Load attribute ID lists for REMOTE_USER and header clearing.
         if (conf.isEnabled(SPConfig::InProcess)) {
             pair<bool,const char*> attributes = getString("REMOTE_USER");
@@ -502,9 +534,9 @@ XMLApplication::XMLApplication(
 
             attributes = getString("unsetHeaders");
             if (attributes.first) {
-                string transformedprefix("HTTP_");
+                string transformedprefix(m_attributePrefix.second);
                 const char* pch;
-                pair<bool,const char*> prefix = getString("metadataAttributePrefix");
+                prefix = getString("metadataAttributePrefix");
                 if (prefix.first) {
                     pch = prefix.second;
                     while (*pch) {
@@ -530,13 +562,14 @@ XMLApplication::XMLApplication(
                         transformed += (isalnum(*pch) ? toupper(*pch) : '_');
                         pch++;
                     }
-                    m_unsetHeaders.push_back(pair<string,string>(start,string("HTTP_") + transformed));
+
+                    m_unsetHeaders.push_back(pair<string,string>(m_attributePrefix.first + start, m_attributePrefix.second + transformed));
                     if (prefix.first)
-                        m_unsetHeaders.push_back(pair<string,string>(string(prefix.second) + start, transformedprefix + transformed));
+                        m_unsetHeaders.push_back(pair<string,string>(m_attributePrefix.first + prefix.second + start, transformedprefix + transformed));
                     start = pos ? pos+1 : NULL;
                 }
                 free(dup);
-                m_unsetHeaders.push_back(pair<string,string>("Shib-Application-ID","HTTP_SHIB_APPLICATION_ID"));
+                m_unsetHeaders.push_back(pair<string,string>(m_attributePrefix.first + "Shib-Application-ID", m_attributePrefix.second + "SHIB_APPLICATION_ID"));
             }
         }
 
@@ -589,13 +622,9 @@ XMLApplication::XMLApplication(
                     }
                     handler=conf.AssertionConsumerServiceManager.newPlugin(bindprop.get(),make_pair(child, getId()));
                     // Map by binding (may be > 1 per binding, e.g. SAML 1.0 vs 1.1)
-#ifdef HAVE_GOOD_STL
                     m_acsBindingMap[handler->getXMLString("Binding").second].push_back(handler);
-#else
-                    m_acsBindingMap[handler->getString("Binding").second].push_back(handler);
-#endif
                     m_acsIndexMap[handler->getUnsignedInt("index").second]=handler;
-                    
+
                     if (!hardACS) {
                         pair<bool,bool> defprop=handler->getBool("isDefault");
                         if (defprop.first) {
@@ -649,7 +678,7 @@ XMLApplication::XMLApplication(
                         continue;
                     }
                     handler=conf.ArtifactResolutionServiceManager.newPlugin(bindprop.get(),make_pair(child, getId()));
-                    
+
                     if (!hardArt) {
                         pair<bool,bool> defprop=handler->getBool("isDefault");
                         if (defprop.first) {
@@ -703,7 +732,7 @@ XMLApplication::XMLApplication(
             catch (exception& ex) {
                 log.error("caught exception processing handler element: %s", ex.what());
             }
-            
+
             child = XMLHelper::getNextSiblingElement(child);
         }
 
@@ -724,9 +753,12 @@ XMLApplication::XMLApplication(
 
 #ifndef SHIBSP_LITE
         nlist=e->getElementsByTagNameNS(samlconstants::SAML20_NS,Audience::LOCAL_NAME);
-        for (XMLSize_t i=0; nlist && i<nlist->getLength(); i++)
-            if (nlist->item(i)->getParentNode()->isSameNode(e) && nlist->item(i)->hasChildNodes())
-                m_audiences.push_back(nlist->item(i)->getFirstChild()->getNodeValue());
+        if (nlist && nlist->getLength()) {
+            log.warn("use of <saml:Audience> elements outside of a Security Policy Rule is deprecated");
+            for (XMLSize_t i=0; i<nlist->getLength(); i++)
+                if (nlist->item(i)->getParentNode()->isSameNode(e) && nlist->item(i)->hasChildNodes())
+                    m_audiences.push_back(nlist->item(i)->getFirstChild()->getNodeValue());
+        }
 
         if (conf.isEnabled(SPConfig::Metadata)) {
             child = XMLHelper::getFirstChildElement(e,_MetadataProvider);
@@ -801,18 +833,20 @@ XMLApplication::XMLApplication(
                     Locker extlock(m_attrExtractor);
                     m_attrExtractor->getAttributeIds(unsetHeaders);
                 }
+                else if (m_base && m_base->m_attrExtractor) {
+                    Locker extlock(m_base->m_attrExtractor);
+                    m_base->m_attrExtractor->getAttributeIds(unsetHeaders);
+                }
                 if (m_attrResolver) {
                     Locker reslock(m_attrResolver);
                     m_attrResolver->getAttributeIds(unsetHeaders);
                 }
-                if (unsetHeaders.empty()) {
-                    if (m_base)
-                        m_unsetHeaders.insert(m_unsetHeaders.end(), m_base->m_unsetHeaders.begin(), m_base->m_unsetHeaders.end());
-                    else
-                        m_unsetHeaders.push_back(pair<string,string>("Shib-Application-ID","HTTP_SHIB_APPLICATION_ID"));
+                else if (m_base && m_base->m_attrResolver) {
+                    Locker extlock(m_base->m_attrResolver);
+                    m_base->m_attrResolver->getAttributeIds(unsetHeaders);
                 }
-                else {
-                    string transformedprefix("HTTP_");
+                if (!unsetHeaders.empty()) {
+                    string transformedprefix(m_attributePrefix.second);
                     const char* pch;
                     pair<bool,const char*> prefix = getString("metadataAttributePrefix");
                     if (prefix.first) {
@@ -829,12 +863,12 @@ XMLApplication::XMLApplication(
                             transformed += (isalnum(*pch) ? toupper(*pch) : '_');
                             pch++;
                         }
-                        m_unsetHeaders.push_back(pair<string,string>(*hdr, string("HTTP_") + transformed));
+                        m_unsetHeaders.push_back(pair<string,string>(m_attributePrefix.first + *hdr, m_attributePrefix.second + transformed));
                         if (prefix.first)
-                            m_unsetHeaders.push_back(pair<string,string>(string(prefix.second) + *hdr, transformedprefix + transformed));
+                            m_unsetHeaders.push_back(pair<string,string>(m_attributePrefix.first + prefix.second + *hdr, transformedprefix + transformed));
                     }
-                    m_unsetHeaders.push_back(pair<string,string>("Shib-Application-ID","HTTP_SHIB_APPLICATION_ID"));
                 }
+                m_unsetHeaders.push_back(pair<string,string>(m_attributePrefix.first + "Shib-Application-ID", m_attributePrefix.second + "SHIB_APPLICATION_ID"));
             }
         }
 
@@ -896,11 +930,7 @@ void XMLApplication::cleanup()
     for_each(m_handlers.begin(),m_handlers.end(),xmltooling::cleanup<Handler>());
     m_handlers.clear();
 #ifndef SHIBSP_LITE
-#ifdef HAVE_GOOD_STL
     for_each(m_partyMap.begin(),m_partyMap.end(),cleanup_pair<xstring,PropertySet>());
-#else
-    for_each(m_partyMap.begin(),m_partyMap.end(),cleanup_pair<const XMLCh*,PropertySet>());
-#endif
     m_partyMap.clear();
     delete m_credResolver;
     m_credResolver = NULL;
@@ -917,7 +947,12 @@ void XMLApplication::cleanup()
 #endif
 }
 
-short XMLApplication::acceptNode(const DOMNode* node) const
+#ifdef SHIBSP_XERCESC_SHORT_ACCEPTNODE
+short
+#else
+DOMNodeFilter::FilterAction
+#endif
+XMLApplication::acceptNode(const DOMNode* node) const
 {
     const XMLCh* name=node->getLocalName();
     if (XMLString::equals(name,ApplicationOverride) ||
@@ -948,8 +983,7 @@ const PropertySet* XMLApplication::getRelyingParty(const EntityDescriptor* provi
 {
     if (!provider)
         return this;
-        
-#ifdef HAVE_GOOD_STL
+
     map<xstring,PropertySet*>::const_iterator i=m_partyMap.find(provider->getEntityID());
     if (i!=m_partyMap.end())
         return i->second;
@@ -962,19 +996,6 @@ const PropertySet* XMLApplication::getRelyingParty(const EntityDescriptor* provi
         }
         group=dynamic_cast<const EntitiesDescriptor*>(group->getParent());
     }
-#else
-    map<const XMLCh*,PropertySet*>::const_iterator i=m_partyMap.begin();
-    for (; i!=m_partyMap.end(); i++) {
-        if (XMLString::equals(i->first,provider->getEntityID()))
-            return i->second;
-        const EntitiesDescriptor* group=dynamic_cast<const EntitiesDescriptor*>(provider->getParent());
-        while (group) {
-            if (XMLString::equals(i->first,group->getName()))
-                return i->second;
-            group=dynamic_cast<const EntitiesDescriptor*>(group->getParent());
-        }
-    }
-#endif
     return this;
 }
 
@@ -982,18 +1003,10 @@ const PropertySet* XMLApplication::getRelyingParty(const XMLCh* entityID) const
 {
     if (!entityID)
         return this;
-        
-#ifdef HAVE_GOOD_STL
+
     map<xstring,PropertySet*>::const_iterator i=m_partyMap.find(entityID);
     if (i!=m_partyMap.end())
         return i->second;
-#else
-    map<const XMLCh*,PropertySet*>::const_iterator i=m_partyMap.begin();
-    for (; i!=m_partyMap.end(); i++) {
-        if (XMLString::equals(i->first,entityID))
-            return i->second;
-    }
-#endif
     return this;
 }
 
@@ -1015,7 +1028,7 @@ string XMLApplication::getNotificationURL(const char* resource, bool front, unsi
         throw ConfigurationException("Request URL was not absolute.");
 
     const char* handler=locs[index].c_str();
-    
+
     // Should never happen...
     if (!handler || (*handler!='/' && strncmp(handler,"http:",5) && strncmp(handler,"https:",6)))
         throw ConfigurationException(
@@ -1071,6 +1084,49 @@ string XMLApplication::getNotificationURL(const char* resource, bool front, unsi
     return notifyURL;
 }
 
+void XMLApplication::clearHeader(SPRequest& request, const char* rawname, const char* cginame) const
+{
+    if (!m_attributePrefix.first.empty()) {
+        string temp = m_attributePrefix.first + rawname;
+        string temp2 = m_attributePrefix.second + (cginame + 5);
+        request.clearHeader(temp.c_str(), temp2.c_str());
+    }
+    else if (m_base) {
+        m_base->clearHeader(request, rawname, cginame);
+    }
+    else {
+        request.clearHeader(rawname, cginame);
+    }
+}
+
+void XMLApplication::setHeader(SPRequest& request, const char* name, const char* value) const
+{
+    if (!m_attributePrefix.first.empty()) {
+        string temp = m_attributePrefix.first + name;
+        request.setHeader(temp.c_str(), value);
+    }
+    else if (m_base) {
+        m_base->setHeader(request, name, value);
+    }
+    else {
+        request.setHeader(name, value);
+    }
+}
+
+string XMLApplication::getSecureHeader(const SPRequest& request, const char* name) const
+{
+    if (!m_attributePrefix.first.empty()) {
+        string temp = m_attributePrefix.first + name;
+        return request.getSecureHeader(temp.c_str());
+    }
+    else if (m_base) {
+        return m_base->getSecureHeader(request,name);
+    }
+    else {
+        return request.getSecureHeader(name);
+    }
+}
+
 const SessionInitiator* XMLApplication::getDefaultSessionInitiator() const
 {
     if (m_sessionInitDefault) return m_sessionInitDefault;
@@ -1099,12 +1155,7 @@ const Handler* XMLApplication::getAssertionConsumerServiceByIndex(unsigned short
 
 const vector<const Handler*>& XMLApplication::getAssertionConsumerServicesByBinding(const XMLCh* binding) const
 {
-#ifdef HAVE_GOOD_STL
     ACSBindingMap::const_iterator i=m_acsBindingMap.find(binding);
-#else
-    auto_ptr_char temp(binding);
-    ACSBindingMap::const_iterator i=m_acsBindingMap.find(temp.get());
-#endif
     if (i!=m_acsBindingMap.end())
         return i->second;
     return m_base ? m_base->getAssertionConsumerServicesByBinding(binding) : g_noHandlers;
@@ -1113,6 +1164,7 @@ const vector<const Handler*>& XMLApplication::getAssertionConsumerServicesByBind
 const Handler* XMLApplication::getHandler(const char* path) const
 {
     string wrap(path);
+    wrap = wrap.substr(0,wrap.find(';'));
     map<string,const Handler*>::const_iterator i=m_handlerMap.find(wrap.substr(0,wrap.find('?')));
     if (i!=m_handlerMap.end())
         return i->second;
@@ -1130,7 +1182,12 @@ void XMLApplication::getHandlers(vector<const Handler*>& handlers) const
     }
 }
 
-short XMLConfigImpl::acceptNode(const DOMNode* node) const
+#ifdef SHIBSP_XERCESC_SHORT_ACCEPTNODE
+short
+#else
+DOMNodeFilter::FilterAction
+#endif
+XMLConfigImpl::acceptNode(const DOMNode* node) const
 {
     if (!XMLString::equals(node->getNamespaceURI(),shibspconstants::SHIB2SPCONFIG_NS))
         return FILTER_ACCEPT;
@@ -1162,7 +1219,8 @@ void XMLConfigImpl::doExtensions(const DOMElement* e, const char* label, Categor
             auto_ptr_char path(exts->getAttributeNS(NULL,_path));
             try {
                 if (path.get()) {
-                    XMLToolingConfig::getConfig().load_library(path.get(),(void*)exts);
+                    if (!XMLToolingConfig::getConfig().load_library(path.get(),(void*)exts))
+                        throw ConfigurationException("XMLToolingConfig::load_library failed.");
                     log.debug("loaded %s extension library (%s)", label, path.get());
                 }
             }
@@ -1209,15 +1267,29 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
             if (logconf && *logconf) {
                 auto_ptr_char logpath(logconf);
                 log.debug("loading new logging configuration from (%s), check log destination for status of configuration",logpath.get());
-                XMLToolingConfig::getConfig().log_config(logpath.get());
+                if (!XMLToolingConfig::getConfig().log_config(logpath.get()))
+                    log.crit("failed to load new logging configuration from (%s)", logpath.get());
             }
-            
+
 #ifndef SHIBSP_LITE
             if (first)
                 m_outer->m_tranLog = new TransactionLog();
 #endif
         }
-        
+
+        // Re-log library versions now that logging is set up.
+#ifndef SHIBSP_LITE
+        log.info(
+            "Library versions: Xerces-C %s, XML-Security-C %s, XMLTooling-C %s, OpenSAML-C %s, Shibboleth %s",
+            XERCES_FULLVERSIONDOT, XSEC_FULLVERSIONDOT, XMLTOOLING_FULLVERSIONDOT, OPENSAML_FULLVERSIONDOT, SHIBSP_FULLVERSIONDOT
+            );
+#else
+        log.info(
+            "Library versions: Xerces-C %s, XMLTooling-C %s, Shibboleth %s",
+            XERCES_FULLVERSIONDOT, XMLTOOLING_FULLVERSIONDOT, SHIBSP_FULLVERSIONDOT
+            );
+#endif
+
         // First load any property sets.
         load(e,NULL,this);
 
@@ -1229,7 +1301,11 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
             // Set clock skew.
             pair<bool,unsigned int> skew=getUnsignedInt("clockSkew");
             if (skew.first)
-                xmlConf.clock_skew_secs=skew.second;
+                xmlConf.clock_skew_secs=min(skew.second,(60*60*24*7*28));
+
+            pair<bool,const char*> unsafe = getString("unsafeChars");
+            if (unsafe.first)
+                TemplateEngine::unsafe_chars = unsafe.second;
 
             // Extensions
             doExtensions(e, "global", log);
@@ -1238,7 +1314,7 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
 
             if (conf.isEnabled(SPConfig::InProcess))
                 doExtensions(SHIRE, "in process", log);
-            
+
             // Instantiate the ListenerService and SessionCache objects.
             if (conf.isEnabled(SPConfig::Listener)) {
                 child=XMLHelper::getFirstChildElement(e,UnixListener);
@@ -1269,8 +1345,10 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
 
 #ifndef SHIBSP_LITE
             if (m_outer->m_listener && conf.isEnabled(SPConfig::OutOfProcess) && !conf.isEnabled(SPConfig::InProcess)) {
-                m_outer->m_listener->regListener("set::RelayState", m_outer->m_listener);
-                m_outer->m_listener->regListener("get::RelayState", m_outer->m_listener);
+                m_outer->m_listener->regListener("set::RelayState", const_cast<XMLConfig*>(m_outer));
+                m_outer->m_listener->regListener("get::RelayState", const_cast<XMLConfig*>(m_outer));
+                m_outer->m_listener->regListener("set::PostData", const_cast<XMLConfig*>(m_outer));
+                m_outer->m_listener->regListener("get::PostData", const_cast<XMLConfig*>(m_outer));
             }
 #endif
 
@@ -1310,7 +1388,7 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
                     else {
                         log.warn("no ReplayCache built, missing conf:ReplayCache element?");
                     }
-                    
+
                     // ArtifactMap
                     child=XMLHelper::getFirstChildElement(e,_ArtifactMap);
                     if (child) {
@@ -1338,7 +1416,7 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
                 }
             }
         } // end of first-time-only stuff
-        
+
         // Back to the fully dynamic stuff...next up is the RequestMapper.
         if (conf.isEnabled(SPConfig::RequestMapping)) {
             child=XMLHelper::getFirstChildElement(e,_RequestMapper);
@@ -1352,7 +1430,7 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
                 throw ConfigurationException("Can't build RequestMapper, missing conf:RequestMapper element?");
             }
         }
-        
+
 #ifndef SHIBSP_LITE
         // Load security policies.
         child = XMLHelper::getLastChildElement(e,SecurityPolicies);
@@ -1366,9 +1444,9 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
                 auto_ptr<DOMPropertySet> settings(new DOMPropertySet());
                 settings->load(child, NULL, &filter);
                 rules.first = settings.release();
-                
-                // Process Rule elements.
-                const DOMElement* rule = XMLHelper::getFirstChildElement(child,Rule);
+
+                // Process PolicyRule elements.
+                const DOMElement* rule = XMLHelper::getFirstChildElement(child,PolicyRule);
                 while (rule) {
                     auto_ptr_char type(rule->getAttributeNS(NULL,_type));
                     try {
@@ -1377,9 +1455,29 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
                     catch (exception& ex) {
                         log.crit("error instantiating policy rule (%s) in policy (%s): %s", type.get(), id.get(), ex.what());
                     }
-                    rule = XMLHelper::getNextSiblingElement(rule,Rule);
+                    rule = XMLHelper::getNextSiblingElement(rule,PolicyRule);
                 }
-                
+
+                if (rules.second.size() == 0) {
+                    // Process Rule elements.
+                    log.warn("detected legacy Policy configuration, please convert to new PolicyRule syntax");
+                    rule = XMLHelper::getFirstChildElement(child,Rule);
+                    while (rule) {
+                        auto_ptr_char type(rule->getAttributeNS(NULL,_type));
+                        try {
+                            rules.second.push_back(samlConf.SecurityPolicyRuleManager.newPlugin(type.get(),rule));
+                        }
+                        catch (exception& ex) {
+                            log.crit("error instantiating policy rule (%s) in policy (%s): %s", type.get(), id.get(), ex.what());
+                        }
+                        rule = XMLHelper::getNextSiblingElement(rule,Rule);
+                    }
+
+                    // Manually add a basic Conditions rule.
+                    log.info("installing a default Conditions rule in policy (%s) for compatibility with legacy configuration", id.get());
+                    rules.second.push_back(samlConf.SecurityPolicyRuleManager.newPlugin(CONDITIONS_POLICY_RULE, NULL));
+                }
+
                 child = XMLHelper::getNextSiblingElement(child,Policy);
             }
         }
@@ -1407,7 +1505,7 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
         }
         XMLApplication* defapp=new XMLApplication(m_outer,child);
         m_appmap[defapp->getId()]=defapp;
-        
+
         // Load any overrides.
         child = XMLHelper::getFirstChildElement(child,ApplicationOverride);
         while (child) {
@@ -1475,7 +1573,7 @@ void XMLConfig::receive(DDF& in, ostream& out)
         }
 
         // Repack for return to caller.
-        DDF ret=DDF(NULL).string(relayState.c_str());
+        DDF ret=DDF(NULL).unsafe_string(relayState.c_str());
         DDFJanitor jret(ret);
         out << ret;
     }
@@ -1503,6 +1601,60 @@ void XMLConfig::receive(DDF& in, ostream& out)
         DDFJanitor jret(ret);
         out << ret;
     }
+    else if (!strcmp(in.name(), "get::PostData")) {
+        const char* id = in["id"].string();
+        const char* key = in["key"].string();
+        if (!id || !key)
+            throw ListenerException("Required parameters missing for PostData recovery.");
+
+        string postData;
+        StorageService* storage = getStorageService(id);
+        if (storage) {
+            if (storage->readString("PostData",key,&postData) > 0) {
+                storage->deleteString("PostData",key);
+            }
+        }
+        else {
+            Category::getInstance(SHIBSP_LOGCAT".ServiceProvider").error(
+                "Storage-backed PostData with invalid StorageService ID (%s)", id
+                );
+        }
+        // If the data's empty, we'll send nothing back.
+        // If not, we don't need to round trip it, just send back the serialized DDF list.
+        if (postData.empty()) {
+            DDF ret(NULL);
+            DDFJanitor jret(ret);
+            out << ret;
+        }
+        else {
+            out << postData;
+        }
+    }
+    else if (!strcmp(in.name(), "set::PostData")) {
+        const char* id = in["id"].string();
+        if (!id || !in["parameters"].islist())
+            throw ListenerException("Required parameters missing for PostData creation.");
+
+        string rsKey;
+        StorageService* storage = getStorageService(id);
+        if (storage) {
+            SAMLConfig::getConfig().generateRandomBytes(rsKey,20);
+            rsKey = SAMLArtifact::toHex(rsKey);
+            ostringstream params;
+            params << in["parameters"];
+            storage->createString("PostData", rsKey.c_str(), params.str().c_str(), time(NULL) + 600);
+        }
+        else {
+            Category::getInstance(SHIBSP_LOGCAT".ServiceProvider").error(
+                "Storage-backed PostData with invalid StorageService ID (%s)", id
+                );
+        }
+
+        // Repack for return to caller.
+        DDF ret=DDF(NULL).string(rsKey.c_str());
+        DDFJanitor jret(ret);
+        out << ret;
+    }
 }
 #endif
 
@@ -1510,12 +1662,12 @@ pair<bool,DOMElement*> XMLConfig::load()
 {
     // Load from source using base class.
     pair<bool,DOMElement*> raw = ReloadableXMLFile::load();
-    
+
     // If we own it, wrap it.
     XercesJanitor<DOMDocument> docjanitor(raw.first ? raw.second->getOwnerDocument() : NULL);
 
     XMLConfigImpl* impl = new XMLConfigImpl(raw.second,(m_impl==NULL),this,m_log);
-    
+
     // If we held the document, transfer it to the impl. If we didn't, it's a no-op.
     impl->setDocument(docjanitor.release());
 

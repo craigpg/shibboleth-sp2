@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * @file shibsp/Application.h
- * 
+ *
  * Interface to a Shibboleth Application instance.
  */
 
@@ -36,7 +36,7 @@
 #include <xmltooling/util/Threads.h>
 
 namespace shibsp {
-    
+
 #ifndef SHIBSP_LITE
     class SHIBSP_API AttributeExtractor;
     class SHIBSP_API AttributeFilter;
@@ -55,7 +55,7 @@ namespace shibsp {
 
     /**
      * Interface to a Shibboleth Application instance.
-     * 
+     *
      * <p>An Application is a logical set of resources that act as a unit
      * of session management and policy.
      */
@@ -72,7 +72,7 @@ namespace shibsp {
          * @param sp    parent ServiceProvider instance
          */
         Application(const ServiceProvider* sp);
-        
+
         /** Pointer to parent SP instance. */
         const ServiceProvider* m_sp;
 
@@ -96,23 +96,23 @@ namespace shibsp {
 
         /**
          * Returns the Application's ID.
-         * 
+         *
          * @return  the ID
-         */        
+         */
         virtual const char* getId() const {
             return getString("id").second;
         }
 
         /**
          * Returns a unique hash for the Application.
-         * 
+         *
          * @return a value resulting from a computation over the Application's configuration
          */
         virtual const char* getHash() const=0;
 
         /**
          * Returns the name and cookie properties to use for this Application.
-         * 
+         *
          * @param prefix    a value to prepend to the base cookie name
          * @param lifetime  if non-null, will be populated with a suggested lifetime for the cookie, or 0 if session-bound
          * @return  a pair containing the cookie name and the string to append to the cookie value
@@ -122,15 +122,15 @@ namespace shibsp {
 #ifndef SHIBSP_LITE
         /**
          * Returns a MetadataProvider for use with this Application.
-         * 
+         *
          * @param required  true iff an exception should be thrown if no MetadataProvider is available
          * @return  a MetadataProvider instance, or NULL
          */
         virtual opensaml::saml2md::MetadataProvider* getMetadataProvider(bool required=true) const=0;
-        
+
         /**
          * Returns a TrustEngine for use with this Application.
-         * 
+         *
          * @param required  true iff an exception should be thrown if no TrustEngine is available
          * @return  a TrustEngine instance, or NULL
          */
@@ -138,35 +138,35 @@ namespace shibsp {
 
         /**
          * Returns an AttributeExtractor for use with this Application.
-         * 
+         *
          * @return  an AttributeExtractor, or NULL
          */
         virtual AttributeExtractor* getAttributeExtractor() const=0;
 
         /**
          * Returns an AttributeFilter for use with this Application.
-         * 
+         *
          * @return  an AttributeFilter, or NULL
          */
         virtual AttributeFilter* getAttributeFilter() const=0;
 
         /**
          * Returns an AttributeResolver for use with this Application.
-         * 
+         *
          * @return  an AttributeResolver, or NULL
          */
         virtual AttributeResolver* getAttributeResolver() const=0;
 
         /**
          * Returns the CredentialResolver instance associated with this Application.
-         * 
+         *
          * @return  a CredentialResolver, or NULL
          */
         virtual xmltooling::CredentialResolver* getCredentialResolver() const=0;
 
         /**
          * Returns configuration properties governing security interactions with a peer.
-         * 
+         *
          * @param provider  a peer entity's metadata
          * @return  the applicable PropertySet
          */
@@ -174,15 +174,16 @@ namespace shibsp {
 
         /**
          * Returns configuration properties governing security interactions with a named peer.
-         * 
+         *
          * @param entityID  a peer name
          * @return  the applicable PropertySet
          */
         virtual const PropertySet* getRelyingParty(const XMLCh* entityID) const=0;
 
         /**
+         * @deprecated
          * Returns any additional audience values associated with this Application.
-         * 
+         *
          * @return additional audience values associated with the Application, or NULL
          */
         virtual const std::vector<const XMLCh*>* getAudiences() const=0;
@@ -206,6 +207,33 @@ namespace shibsp {
         virtual const std::vector<std::string>& getRemoteUserAttributeIds() const=0;
 
         /**
+         * Ensures no value exists for a request header, allowing for application-specific customization.
+         *
+         * @param request  SP request to modify
+         * @param rawname  raw name of header to clear
+         * @param cginame  CGI-equivalent name of header, <strong>MUST</strong> begin with "HTTP_".
+         */
+        virtual void clearHeader(SPRequest& request, const char* rawname, const char* cginame) const;
+
+        /**
+         * Sets a value for a request header allowing for application-specific customization.
+         *
+         * @param request   SP request to modify
+         * @param name      name of header to set
+         * @param value     value to set
+         */
+        virtual void setHeader(SPRequest& request, const char* name, const char* value) const;
+
+        /**
+         * Returns a non-spoofable request header value allowing for application-specific customization.
+         *
+         * @param request   SP request to access
+         * @param name      the name of the secure header to return
+         * @return  the header's value, or an empty string
+         */
+        virtual std::string getSecureHeader(const SPRequest& request, const char* name) const;
+
+        /**
          * Clears any headers that may be used to hold attributes after export.
          *
          * @param request   SP request to clear
@@ -214,14 +242,14 @@ namespace shibsp {
 
         /**
          * Returns the default SessionInitiator when automatically requesting a session.
-         * 
+         *
          * @return the default SessionInitiator, or NULL
          */
         virtual const SessionInitiator* getDefaultSessionInitiator() const=0;
-        
+
         /**
          * Returns a SessionInitiator with a particular ID when automatically requesting a session.
-         * 
+         *
          * @param id    an identifier unique to the Application
          * @return the designated SessionInitiator, or NULL
          */
@@ -230,7 +258,7 @@ namespace shibsp {
         /**
          * Returns the default AssertionConsumerService Handler
          * for use in AuthnRequest messages.
-         * 
+         *
          * @return the default AssertionConsumerService, or NULL
          */
         virtual const Handler* getDefaultAssertionConsumerService() const=0;
@@ -238,7 +266,7 @@ namespace shibsp {
         /**
          * Returns an AssertionConsumerService Handler with a particular index
          * for use in AuthnRequest messages.
-         * 
+         *
          * @param index an index unique to an application
          * @return the designated AssertionConsumerService, or NULL
          */
@@ -247,18 +275,18 @@ namespace shibsp {
         /**
          * Returns one or more AssertionConsumerService Handlers that support
          * a particular protocol binding.
-         * 
+         *
          * @param binding   a protocol binding identifier
          * @return a set of qualifying AssertionConsumerServices
          */
         virtual const std::vector<const Handler*>& getAssertionConsumerServicesByBinding(const XMLCh* binding) const=0;
-        
+
         /**
          * Returns the Handler associated with a particular path/location.
-         * 
+         *
          * @param path  the PATH_INFO appended to the end of a base Handler location
          *              that invokes the Handler
-         * @return the mapped Handler, or NULL 
+         * @return the mapped Handler, or NULL
          */
         virtual const Handler* getHandler(const char* path) const=0;
 

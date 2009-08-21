@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * SAML2Logout.cpp
- * 
+ *
  * Handles SAML 2.0 single logout protocol messages.
  */
 
@@ -55,7 +55,7 @@ namespace shibsp {
     #pragma warning( push )
     #pragma warning( disable : 4250 )
 #endif
-    
+
     class SHIBSP_DLLLOCAL SAML2Logout : public AbstractHandler, public LogoutHandler
     {
     public:
@@ -69,7 +69,7 @@ namespace shibsp {
             }
 #endif
         }
-        
+
         void receive(DDF& in, ostream& out);
         pair<bool,long> run(SPRequest& request, bool isHandler=true) const;
 
@@ -109,7 +109,7 @@ namespace shibsp {
             bool front
             ) const;
 
-        QName m_role;
+        xmltooling::QName m_role;
         MessageDecoder* m_decoder;
         XMLCh* m_outgoing;
         vector<const XMLCh*> m_bindings;
@@ -133,8 +133,8 @@ SAML2Logout::SAML2Logout(const DOMElement* e, const char* appId)
         ,m_role(samlconstants::SAML20MD_NS, IDPSSODescriptor::LOCAL_NAME), m_decoder(NULL), m_outgoing(NULL)
 #endif
 {
-#ifndef SHIBSP_LITE
     m_initiator = false;
+#ifndef SHIBSP_LITE
     m_preserve.push_back("ID");
     m_preserve.push_back("entityID");
     m_preserve.push_back("RelayState");
@@ -174,8 +174,14 @@ SAML2Logout::SAML2Logout(const DOMElement* e, const char* appId)
                     MessageEncoder * encoder = conf.MessageEncoderManager.newPlugin(
                         b.get(), pair<const DOMElement*,const XMLCh*>(e,shibspconstants::SHIB2SPCONFIG_NS)
                         );
-                    m_encoders[start] = encoder;
-                    m_log.debug("supporting outgoing front-channel binding (%s)", b.get());
+                    if (encoder->isUserAgentPresent()) {
+                        m_encoders[start] = encoder;
+                        m_log.debug("supporting outgoing binding (%s)", b.get());
+                    }
+                    else {
+                        delete encoder;
+                        m_log.warn("skipping outgoing binding (%s), not a front-channel mechanism", b.get());
+                    }
                 }
                 catch (exception& ex) {
                     m_log.error("error building MessageEncoder: %s", ex.what());
@@ -233,7 +239,7 @@ void SAML2Logout::receive(DDF& in, ostream& out)
         m_log.error("couldn't find application (%s) for logout", aid ? aid : "(missing)");
         throw ConfigurationException("Unable to locate application for logout, deleted?");
     }
-    
+
     // Unpack the request.
     auto_ptr<HTTPRequest> req(getRequest(in));
 
@@ -241,7 +247,7 @@ void SAML2Logout::receive(DDF& in, ostream& out)
     DDF ret(NULL);
     DDFJanitor jout(ret);
     auto_ptr<HTTPResponse> resp(getResponse(ret));
-    
+
     // Since we're remoted, the result should either be a throw, which we pass on,
     // a false/0 return, which we just return as an empty structure, or a response/redirect,
     // which we capture in the facade and send back.
@@ -324,7 +330,7 @@ pair<bool,long> SAML2Logout::doRequest(const Application& application, const HTT
     pair<bool,const char*> policyId = getString("policyId", m_configNS.get());  // namespace-qualified if inside handler element
     if (!policyId.first)
         policyId = application.getString("policyId");   // unqualified in Application(s) element
-        
+
     // Access policy properties.
     const PropertySet* settings = application.getServiceProvider().getPolicySettings(policyId.second);
     pair<bool,bool> validate = settings->getBool("validate");
@@ -334,7 +340,7 @@ pair<bool,long> SAML2Logout::doRequest(const Application& application, const HTT
 
     // Create the policy.
     shibsp::SecurityPolicy policy(application, &m_role, validate.first && validate.second);
-    
+
     // Decode the message.
     string relayState;
     auto_ptr<XMLObject> msg(m_decoder->decode(relayState, request, policy));
@@ -344,7 +350,7 @@ pair<bool,long> SAML2Logout::doRequest(const Application& application, const HTT
             throw SecurityPolicyException("Security of LogoutRequest not established.");
 
         // Message from IdP to logout one or more sessions.
-        
+
         // If this is front-channel, we have to have a session_id to use already.
         if (m_decoder->isUserAgentPresent() && session_id.empty()) {
             m_log.error("no active session");
@@ -441,6 +447,7 @@ pair<bool,long> SAML2Logout::doRequest(const Application& application, const HTT
             if (cacheex) {
                 time_t expires = logoutRequest->getNotOnOrAfter() ? logoutRequest->getNotOnOrAfterEpoch() : 0;
                 cacheex->logout(application, entity, *nameid, &indexes, expires, sessions);
+                m_log.debug("session cache returned %d sessions bound to NameID in logout request", sessions.size());
 
                 // Now we actually terminate everything except for the active session,
                 // if this is front-channel, for notification purposes.
@@ -482,17 +489,17 @@ pair<bool,long> SAML2Logout::doRequest(const Application& application, const HTT
             if (result.first)
                 return result;
         }
-        
+
         // For back-channel requests, or if no front-channel notification is needed...
-        bool worked1 = false,worked2 = false;
-        worked1 = notifyBackChannel(application, request.getRequestURL(), sessions, false);
+        bool worked1 = notifyBackChannel(application, request.getRequestURL(), sessions, false);
+        bool worked2 = true;
         if (!session_id.empty()) {
             // One last session to yoink...
             try {
                 cache->remove(application, request, &response);
-                worked2 = true;
             }
             catch (exception& ex) {
+                worked2 = false;
                 m_log.error("error removing active session (%s): %s", session_id.c_str(), ex.what());
             }
         }

@@ -71,7 +71,12 @@ namespace shibsp {
     class SHIBSP_DLLLOCAL SessionInitiatorNodeFilter : public DOMNodeFilter
     {
     public:
-        short acceptNode(const DOMNode* node) const {
+#ifdef SHIBSP_XERCESC_SHORT_ACCEPTNODE
+        short
+#else
+        FilterAction
+#endif
+        acceptNode(const DOMNode* node) const {
             if (XMLHelper::isNodeNamed(node,shibspconstants::SHIB2SPCONFIG_NS,_SessionInitiator))
                 return FILTER_REJECT;
             return FILTER_ACCEPT;

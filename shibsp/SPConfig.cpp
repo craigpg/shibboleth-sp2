@@ -1,6 +1,6 @@
 
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,6 @@
 # include "metadata/MetadataExt.h"
 # include "security/PKIXTrustEngine.h"
 # include <saml/SAMLConfig.h>
-# include <xmltooling/util/CurlNetAccessor.hpp>
 #else
 # include <xmltooling/XMLToolingConfig.h>
 #endif
@@ -124,6 +123,10 @@ bool SPConfig::init(const char* catalog_path, const char* inst_prefix)
     std::string ll(loglevel);
     PathResolver localpr;
     localpr.setDefaultPrefix(inst_prefix2.c_str());
+    inst_prefix = getenv("SHIBSP_CFGDIR");
+    if (!inst_prefix)
+        inst_prefix = SHIBSP_CFGDIR;
+    localpr.setCfgDir(inst_prefix);
     XMLToolingConfig::getConfig().log_config(localpr.resolve(ll, PathResolver::XMLTOOLING_CFG_FILE, PACKAGE_NAME).c_str());
 
     Category& log=Category::getInstance(SHIBSP_LOGCAT".Config");
@@ -140,15 +143,33 @@ bool SPConfig::init(const char* catalog_path, const char* inst_prefix)
         log.fatal("failed to initialize OpenSAML library");
         return false;
     }
-    XMLPlatformUtils::fgNetAccessor = new CurlNetAccessor();
 #else
     if (!XMLToolingConfig::getConfig().init()) {
         log.fatal("failed to initialize XMLTooling library");
         return false;
     }
 #endif
-    XMLToolingConfig::getConfig().getPathResolver()->setDefaultPackageName(PACKAGE_NAME);
-    XMLToolingConfig::getConfig().getPathResolver()->setDefaultPrefix(inst_prefix2.c_str());
+    PathResolver* pr = XMLToolingConfig::getConfig().getPathResolver();
+    pr->setDefaultPackageName(PACKAGE_NAME);
+    pr->setDefaultPrefix(inst_prefix2.c_str());
+    pr->setCfgDir(inst_prefix);
+    inst_prefix = getenv("SHIBSP_LIBDIR");
+    if (!inst_prefix)
+        inst_prefix = SHIBSP_LIBDIR;
+    pr->setLibDir(inst_prefix);
+    inst_prefix = getenv("SHIBSP_LOGDIR");
+    if (!inst_prefix)
+        inst_prefix = SHIBSP_LOGDIR;
+    pr->setLogDir(inst_prefix);
+    inst_prefix = getenv("SHIBSP_RUNDIR");
+    if (!inst_prefix)
+        inst_prefix = SHIBSP_RUNDIR;
+    pr->setRunDir(inst_prefix);
+    inst_prefix = getenv("SHIBSP_XMLDIR");
+    if (!inst_prefix)
+        inst_prefix = SHIBSP_XMLDIR;
+    pr->setXMLDir(inst_prefix);
+
     XMLToolingConfig::getConfig().setTemplateEngine(new TemplateEngine());
     XMLToolingConfig::getConfig().getTemplateEngine()->setTagPrefix("shibmlp");
 
@@ -220,6 +241,9 @@ void SPConfig::term()
     log.info("%s library shutting down", PACKAGE_STRING);
 
     setServiceProvider(NULL);
+    if (m_configDoc)
+        m_configDoc->release();
+    m_configDoc = NULL;
 #ifndef SHIBSP_LITE
     setArtifactResolver(NULL);
 #endif
@@ -289,6 +313,9 @@ bool SPConfig::instantiate(const char* config, bool rethrow)
             dummydoc = XMLToolingConfig::getConfig().getParser().parse(snippet);
             XercesJanitor<xercesc::DOMDocument> docjanitor(dummydoc);
             setServiceProvider(ServiceProviderManager.newPlugin(XML_SERVICE_PROVIDER, dummydoc->getDocumentElement()));
+            if (m_configDoc)
+                m_configDoc->release();
+            m_configDoc = docjanitor.release();
         }
         else {
             stringstream snippet(config);
@@ -300,6 +327,9 @@ bool SPConfig::instantiate(const char* config, bool rethrow)
                 setServiceProvider(ServiceProviderManager.newPlugin(type.get(), dummydoc->getDocumentElement()));
             else
                 throw ConfigurationException("The supplied XML bootstrapping configuration did not include a type attribute.");
+            if (m_configDoc)
+                m_configDoc->release();
+            m_configDoc = docjanitor.release();
         }
 
         getServiceProvider()->init();

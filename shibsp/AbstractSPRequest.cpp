@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,14 +52,19 @@ AbstractSPRequest::~AbstractSPRequest()
 
 RequestMapper::Settings AbstractSPRequest::getRequestSettings() const
 {
-    if (m_mapper)
-        return m_settings;
+    if (!m_mapper) {
+        // Map request to application and content settings.
+        m_mapper=m_sp->getRequestMapper();
+        m_mapper->lock();
+        m_settings = m_mapper->getSettings(*this);
 
-    // Map request to application and content settings.
-    m_mapper=m_sp->getRequestMapper();
-    m_mapper->lock();
-    return m_settings = m_mapper->getSettings(*this);
-
+        if (reinterpret_cast<Category*>(m_log)->isDebugEnabled()) {
+            reinterpret_cast<Category*>(m_log)->debug(
+                "mapped %s to %s", getRequestURL(), m_settings.first->getString("applicationId").second
+                );
+        }
+    }
+    return m_settings;
 }
 
 const Application& AbstractSPRequest::getApplication() const
@@ -68,7 +73,7 @@ const Application& AbstractSPRequest::getApplication() const
         // Now find the application from the URL settings
         m_app=m_sp->getApplication(getRequestSettings().first->getString("applicationId").second);
         if (!m_app)
-            throw ConfigurationException("Unable to map request to application settings, check configuration.");
+            throw ConfigurationException("Unable to map request to ApplicationOverride settings, check configuration.");
     }
     return *m_app;
 }
@@ -127,17 +132,6 @@ void AbstractSPRequest::setRequestURI(const char* uri)
                 m_uri += uri;
                 break;
             }
-            else if (*uri == ';') {
-                // If this is Java being stupid, skip everything up to the query string, if any.
-                if (!strncmp(uri, ";jsessionid=", 12)) {
-                    if (uri = strchr(uri, '?'))
-                        m_uri += uri;
-                    break;
-                }
-                else {
-                    m_uri += *uri;
-                }
-            }
             else if (*uri != '%') {
                 m_uri += *uri;
             }
@@ -168,6 +162,12 @@ const char* AbstractSPRequest::getRequestURL() const
         m_url += m_uri;
     }
     return m_url.c_str();
+}
+
+string AbstractSPRequest::getRemoteAddr() const
+{
+    pair<bool,const char*> addr = getRequestSettings().first->getString("REMOTE_ADDR");
+    return addr.first ? getHeader(addr.second) : "";
 }
 
 const char* AbstractSPRequest::getParameter(const char* name) const
@@ -209,7 +209,7 @@ const char* AbstractSPRequest::getHandlerURL(const char* resource) const
 
     bool ssl_only=true;
     const char* handler=NULL;
-    const PropertySet* props=m_app->getPropertySet("Sessions");
+    const PropertySet* props=getApplication().getPropertySet("Sessions");
     if (props) {
         pair<bool,bool> p=props->getBool("handlerSSL");
         if (p.first)
@@ -222,7 +222,7 @@ const char* AbstractSPRequest::getHandlerURL(const char* resource) const
     // Should never happen...
     if (!handler || (*handler!='/' && strncmp(handler,"http:",5) && strncmp(handler,"https:",6)))
         throw ConfigurationException(
-            "Invalid handlerURL property ($1) in Application ($2)",
+            "Invalid handlerURL property ($1) in <Sessions> element for Application ($2)",
             params(2, handler ? handler : "null", m_app->getId())
             );
 

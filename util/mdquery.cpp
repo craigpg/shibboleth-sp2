@@ -94,22 +94,8 @@ int main(int argc,char* argv[])
 
     if (!entityID) {
         usage();
-        exit(-10);
+        return -10;
     }
-
-    char* path=getenv("SHIBSP_SCHEMAS");
-    if (!path)
-        path=SHIBSP_SCHEMAS;
-    char* config=getenv("SHIBSP_CONFIG");
-    if (!config)
-        config=SHIBSP_CONFIG;
-
-    XMLToolingConfig::getConfig().log_config(getenv("SHIBSP_LOGGING") ? getenv("SHIBSP_LOGGING") : SHIBSP_LOGGING);
-
-    SPConfig& conf=SPConfig::getConfig();
-    conf.setFeatures(SPConfig::Metadata | SPConfig::Trust | SPConfig::OutOfProcess | SPConfig::Credentials);
-    if (!conf.init(path))
-        return -1;
 
     if (rname) {
         if (!protocol) {
@@ -117,25 +103,16 @@ int main(int argc,char* argv[])
                 protocol = XMLString::transcode(prot);
         }
         if (!protocol) {
-            conf.term();
             usage();
-            exit(-10);
+            return -10;
         }
     }
 
-    try {
-        static const XMLCh _path[] = UNICODE_LITERAL_4(p,a,t,h);
-        static const XMLCh validate[] = UNICODE_LITERAL_8(v,a,l,i,d,a,t,e);
-        xercesc::DOMDocument* dummydoc=XMLToolingConfig::getConfig().getParser().newDocument();
-        XercesJanitor<xercesc::DOMDocument> docjanitor(dummydoc);
-        xercesc::DOMElement* dummy = dummydoc->createElementNS(NULL,_path);
-        auto_ptr_XMLCh src(config);
-        dummy->setAttributeNS(NULL,_path,src.get());
-        dummy->setAttributeNS(NULL,validate,xmlconstants::XML_ONE);
-        conf.setServiceProvider(conf.ServiceProviderManager.newPlugin(XML_SERVICE_PROVIDER,dummy));
-        conf.getServiceProvider()->init();
-    }
-    catch (exception&) {
+    SPConfig& conf=SPConfig::getConfig();
+    conf.setFeatures(SPConfig::Metadata | SPConfig::Trust | SPConfig::OutOfProcess | SPConfig::Credentials);
+    if (!conf.init())
+        return -1;
+    if (!conf.instantiate()) {
         conf.term();
         return -2;
     }

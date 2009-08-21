@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2008 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,14 +127,16 @@ saml2md::EntityDescriptor* DynamicMetadataProvider::resolve(const saml2md::Metad
     Category& log=Category::getInstance(SHIBSP_LOGCAT".MetadataProvider.Dynamic");
 
     string name;
-    if (criteria.entityID_ascii)
+    if (criteria.entityID_ascii) {
         name = criteria.entityID_ascii;
+    }
     else if (criteria.entityID_unicode) {
         auto_ptr_char temp(criteria.entityID_unicode);
         name = temp.get();
     }
-    else if (criteria.artifact)
-        name = criteria.artifact->getSource();
+    else if (criteria.artifact) {
+        throw saml2md::MetadataException("Unable to resolve metadata dynamically from an artifact.");
+    }
 
     // Establish networking properties based on calling application.
     const MetadataProviderCriteria* mpc = dynamic_cast<const MetadataProviderCriteria*>(&criteria);
@@ -239,9 +241,8 @@ saml2md::EntityDescriptor* DynamicMetadataProvider::resolve(const saml2md::Metad
     }
 
     try {
-        // Use an empty stream to trigger a body-less "GET" operation.
-        istringstream dummy;
-        transport->send(dummy);
+        // Use a NULL stream to trigger a body-less "GET" operation.
+        transport->send();
         istream& msg = transport->receive();
 
         DOMDocument* doc=NULL;

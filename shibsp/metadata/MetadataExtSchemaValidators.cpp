@@ -46,12 +46,12 @@ namespace shibsp {
 };
 
 #define REGISTER_ELEMENT(cname) \
-    q=QName(SHIBMD_NS,cname::LOCAL_NAME); \
+    q=xmltooling::QName(SHIBMD_NS,cname::LOCAL_NAME); \
     XMLObjectBuilder::registerBuilder(q,new cname##Builder()); \
     SchemaValidators.registerValidator(q,new cname##SchemaValidator())
     
 void shibsp::registerMetadataExtClasses() {
-    QName q;
+    xmltooling::QName q;
     REGISTER_ELEMENT(Scope);
     REGISTER_ELEMENT(KeyAuthority);
 

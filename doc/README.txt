@@ -1,5 +1,4 @@
-August 8, 2008
-Version 2.1
+Version 2.2.1
 
 Welcome to Internet2's Shibboleth
 

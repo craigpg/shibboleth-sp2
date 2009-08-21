@@ -74,7 +74,7 @@ shift
 goto opt_start
 
 :opt_years
-set DAYS=%2
+set YEARS=%2
 shift
 shift
 goto opt_start

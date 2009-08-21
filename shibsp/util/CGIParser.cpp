@@ -61,7 +61,9 @@ CGIParser::~CGIParser()
 
 pair<CGIParser::walker,CGIParser::walker> CGIParser::getParameters(const char* name) const
 {
-    return kvp_map.equal_range(name);
+    if (name)
+        return kvp_map.equal_range(name);
+    return make_pair(kvp_map.begin(), kvp_map.end());
 }
 
 /* Parsing routines modified from NCSA source. */

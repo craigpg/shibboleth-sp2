@@ -1,6 +1,6 @@
 /*
- *  Copyright 2001-2007 Internet2
- * 
+ *  Copyright 2001-2009 Internet2
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * StatusHandler.cpp
- * 
+ *
  * Handler for exposing information about the internals of the SP.
  */
 
@@ -50,7 +50,12 @@ namespace shibsp {
     class SHIBSP_DLLLOCAL Blocker : public DOMNodeFilter
     {
     public:
-        short acceptNode(const DOMNode* node) const {
+#ifdef SHIBSP_XERCESC_SHORT_ACCEPTNODE
+        short
+#else
+        FilterAction
+#endif
+        acceptNode(const DOMNode* node) const {
             return FILTER_REJECT;
         }
     };
@@ -146,17 +151,6 @@ namespace shibsp {
                     m_uri += slash;
                     break;
                 }
-                else if (*slash == ';') {
-                    // If this is Java being stupid, skip everything up to the query string, if any.
-                    if (!strncmp(slash, ";jsessionid=", 12)) {
-                        if (slash = strchr(slash, '?'))
-                            m_uri += slash;
-                        break;
-                    }
-                    else {
-                        m_uri += *slash;
-                    }
-                }
                 else if (*slash != '%') {
                     m_uri += *slash;
                 }
@@ -215,7 +209,7 @@ namespace shibsp {
         {
             if (!m_parser)
                 m_parser=new CGIParser(*this);
-            
+
             pair<CGIParser::walker,CGIParser::walker> bounds=m_parser->getParameters(name);
             return (bounds.first==bounds.second) ? NULL : bounds.first->second;
         }
@@ -238,7 +232,7 @@ namespace shibsp {
 #ifndef XMLTOOLING_NO_XMLSEC
             std::vector<XSECCryptoX509*>&
 #else
-            std::vector<std::string>& 
+            std::vector<std::string>&
 #endif
             getClientCertificates() const {
                 return g_NoCerts;
@@ -283,7 +277,7 @@ pair<bool,long> StatusHandler::run(SPRequest& request, bool isHandler) const
         if (!m_acl.empty() && m_acl.count(request.getRemoteAddr()) == 0) {
             m_log.error("status handler request blocked from invalid address (%s)", request.getRemoteAddr().c_str());
             istringstream msg("Status Handler Blocked");
-            return make_pair(true,request.sendResponse(msg, HTTPResponse::XMLTOOLING_HTTP_STATUS_UNAUTHORIZED));
+            return make_pair(true,request.sendResponse(msg, HTTPResponse::XMLTOOLING_HTTP_STATUS_FORBIDDEN));
         }
     }
 
@@ -312,7 +306,7 @@ pair<bool,long> StatusHandler::run(SPRequest& request, bool isHandler) const
         msg << "</StatusHandler>";
         return make_pair(true,request.sendResponse(msg));
     }
-    
+
     try {
         if (conf.isEnabled(SPConfig::OutOfProcess)) {
             // When out of process, we run natively and directly process the message.
@@ -321,7 +315,7 @@ pair<bool,long> StatusHandler::run(SPRequest& request, bool isHandler) const
         else {
             // When not out of process, we remote all the message processing.
             DDF out,in = wrap(request);
-            DDFJanitor jin(in), jout(out);            
+            DDFJanitor jin(in), jout(out);
             out=request.getServiceProvider().getListenerService()->send(in);
             return unwrap(request, out);
         }
@@ -368,13 +362,13 @@ void StatusHandler::receive(DDF& in, ostream& out)
         m_log.error("couldn't find application (%s) for status request", aid ? aid : "(missing)");
         throw ConfigurationException("Unable to locate application for status request, deleted?");
     }
-    
+
     // Wrap a response shim.
     DDF ret(NULL);
     DDFJanitor jout(ret);
     auto_ptr<HTTPRequest> req(getRequest(in));
     auto_ptr<HTTPResponse> resp(getResponse(ret));
-        
+
     // Since we're remoted, the result should either be a throw, a false/0 return,
     // which we just return as an empty structure, or a response/redirect,
     // which we capture in the facade and send back.

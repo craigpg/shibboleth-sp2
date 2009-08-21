@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2005 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,24 +23,31 @@
 #ifndef __shibsp_paths_h__
 #define __shibsp_paths_h__
 
-/**
- * Default schema catalogs.
- */
+/** Default schema catalogs. */
 #define SHIBSP_SCHEMAS "@-XMLTOOLINGXMLDIR-@/catalog.xml:@-OPENSAMLXMLDIR-@/saml20-catalog.xml:@-OPENSAMLXMLDIR-@/saml11-catalog.xml:@-PKGXMLDIR-@/catalog.xml"
 
-/**
- * Default name of SP configuration file.
- */
+/** Default name of SP configuration file. */
 #define SHIBSP_CONFIG "shibboleth2.xml"
 
-/**
- * Default name of SP console tool logging file.
- */
+/** Default name of SP console tool logging file. */
 #define SHIBSP_LOGGING "console.logger"
 
-/**
- * Default prefix for installation (used to resolve relative paths).
- */
+/** Default prefix for installation (used to resolve relative paths). */
 #define SHIBSP_PREFIX  "@-PREFIX-@"
+
+/** Library directory for installation (used to resolve relative paths). */
+#define SHIBSP_LIBDIR  "@-LIBDIR-@"
+
+/** Log directory for installation (used to resolve relative paths). */
+#define SHIBSP_LOGDIR  "@-LOGDIR-@"
+
+/** Configuration directory for installation (used to resolve relative paths). */
+#define SHIBSP_CFGDIR  "@-SYSCONFDIR-@"
+
+/** Runtime state directory for installation (used to resolve relative paths). */
+#define SHIBSP_RUNDIR  "@-RUNDIR-@"
+
+/** XML directory for installation (used to resolve relative paths). */
+#define SHIBSP_XMLDIR  "@-XMLDIR-@"
 
 #endif /* __shibsp_paths_h__ */

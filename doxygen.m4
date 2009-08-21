@@ -51,6 +51,9 @@ AC_DEFUN([DX_FEATURE_xml],  OFF)
 AC_DEFUN([DX_FEATURE_pdf],  ON)
 AC_DEFUN([DX_FEATURE_ps],   ON)
 
+# Compatibility with older autoconf versions.
+m4_ifdef([AS_HELP_STRING], , [m4_define([AS_HELP_STRING], m4_defn([AC_HELP_STRING]))])
+
 ## --------------- ##
 ## Private macros. ##
 ## --------------- ##

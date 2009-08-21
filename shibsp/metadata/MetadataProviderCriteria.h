@@ -37,6 +37,14 @@ namespace shibsp {
          * Constructor.
          *
          * @param app   application performing the lookup
+         */
+        MetadataProviderCriteria(const Application& app) : application(app) {
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param app   application performing the lookup
          * @param id    entityID to lookup
          * @param q     element/type of role, if any
          * @param prot  protocol support constant, if any

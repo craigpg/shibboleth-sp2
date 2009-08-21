@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
 
 #define _CRT_NONSTDC_NO_DEPRECATE 1
 #define _CRT_SECURE_NO_DEPRECATE 1
+#define _CRT_RAND_S
 
 #include <shibsp/AbstractSPRequest.h>
 #include <shibsp/SPConfig.h>
@@ -88,18 +89,14 @@ namespace {
         set<string> m_aliases;
     };
 
-    struct context_t {
-    	char* m_user;
-    	bool m_checked;
-    };
-
     HINSTANCE g_hinstDLL;
     SPConfig* g_Config = NULL;
     map<string,site_t> g_Sites;
     bool g_bNormalizeRequest = true;
-    string g_unsetHeaderValue;
+    string g_unsetHeaderValue,g_spoofKey;
     bool g_checkSpoofing = true;
     bool g_catchAll = false;
+    bool g_bSafeHeaderNames = false;
     vector<string> g_NoCerts;
 }
 
@@ -115,6 +112,17 @@ BOOL LogEvent(
     HANDLE hElog = RegisterEventSource(lpUNCServerName, "Shibboleth ISAPI Filter");
     BOOL res = ReportEvent(hElog, wType, 0, dwEventID, lpUserSid, 1, 0, messages, NULL);
     return (DeregisterEventSource(hElog) && res);
+}
+
+void _my_invalid_parameter_handler(
+   const wchar_t * expression,
+   const wchar_t * function,
+   const wchar_t * file,
+   unsigned int line,
+   uintptr_t pReserved
+   )
+{
+    return;
 }
 
 extern "C" __declspec(dllexport) BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID)
@@ -189,18 +197,72 @@ extern "C" BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
     Locker locker(sp);
     const PropertySet* props=sp->getPropertySet("InProcess");
     if (props) {
-        pair<bool,const char*> unsetValue=props->getString("unsetHeaderValue");
-        if (unsetValue.first)
-            g_unsetHeaderValue = unsetValue.second;
         pair<bool,bool> flag=props->getBool("checkSpoofing");
         g_checkSpoofing = !flag.first || flag.second;
         flag=props->getBool("catchAll");
         g_catchAll = flag.first && flag.second;
 
+<<<<<<< .mine
+        pair<bool,const char*> unsetValue=props->getString("unsetHeaderValue");
+        if (unsetValue.first)
+            g_unsetHeaderValue = unsetValue.second;
+        if (g_checkSpoofing) {
+            unsetValue = props->getString("spoofKey");
+            if (unsetValue.first)
+                g_spoofKey = unsetValue.second;
+            else {
+                unsigned int randkey=0,randkey2=0,randkey3=0,randkey4=0;
+                if (rand_s(&randkey) == 0 && rand_s(&randkey2) == 0 && rand_s(&randkey3) == 0 && rand_s(&randkey4) == 0) {
+                    ostringstream keystr;
+                    keystr << randkey << randkey2 << randkey3 << randkey4;
+                    g_spoofKey = keystr.str();
+                }
+                else {
+                    LogEvent(NULL, EVENTLOG_ERROR_TYPE, 2100, NULL,
+                            "Filter failed to generate a random anti-spoofing key (if this is Windows 2000 set one manually).");
+                    g_Config->term();
+                    g_Config=NULL;
+                    return FALSE;
+                }
+            }
+        }
+
+=======
+        pair<bool,const char*> unsetValue=props->getString("unsetHeaderValue");
+        if (unsetValue.first)
+            g_unsetHeaderValue = unsetValue.second;
+        if (g_checkSpoofing) {
+            unsetValue = props->getString("spoofKey");
+            if (unsetValue.first)
+                g_spoofKey = unsetValue.second;
+            else {
+                _invalid_parameter_handler old = _set_invalid_parameter_handler(_my_invalid_parameter_handler);
+                unsigned int randkey=0,randkey2=0,randkey3=0,randkey4=0;
+                if (rand_s(&randkey) == 0 && rand_s(&randkey2) == 0 && rand_s(&randkey3) == 0 && rand_s(&randkey4) == 0) {
+                    _set_invalid_parameter_handler(old);
+                    ostringstream keystr;
+                    keystr << randkey << randkey2 << randkey3 << randkey4;
+                    g_spoofKey = keystr.str();
+                }
+                else {
+                    _set_invalid_parameter_handler(old);
+                    LogEvent(NULL, EVENTLOG_ERROR_TYPE, 2100, NULL,
+                            "Filter failed to generate a random anti-spoofing key (if this is Windows 2000 set one manually).");
+                    locker.assign();    // pops lock on SP config
+                    g_Config->term();
+                    g_Config=NULL;
+                    return FALSE;
+                }
+            }
+        }
+
+>>>>>>> .r3097
         props = props->getPropertySet("ISAPI");
         if (props) {
             flag = props->getBool("normalizeRequest");
             g_bNormalizeRequest = !flag.first || flag.second;
+            flag = props->getBool("safeHeaderNames");
+            g_bSafeHeaderNames = flag.first && flag.second;
             const DOMElement* child = XMLHelper::getFirstChildElement(props->getElement(),Site);
             while (child) {
                 auto_ptr_char id(child->getAttributeNS(NULL,id));
@@ -348,10 +410,11 @@ class ShibTargetIsapiF : public AbstractSPRequest
   string m_scheme,m_hostname;
   mutable string m_remote_addr,m_content_type,m_method;
   dynabuf m_allhttp;
+  bool m_firsttime;
 
 public:
   ShibTargetIsapiF(PHTTP_FILTER_CONTEXT pfc, PHTTP_FILTER_PREPROC_HEADERS pn, const site_t& site)
-      : AbstractSPRequest(SHIBSP_LOGCAT".ISAPI"), m_pfc(pfc), m_pn(pn), m_allhttp(4096) {
+      : AbstractSPRequest(SHIBSP_LOGCAT".ISAPI"), m_pfc(pfc), m_pn(pn), m_allhttp(4096), m_firsttime(true) {
 
     // URL path always come from IIS.
     dynabuf var(256);
@@ -382,13 +445,14 @@ public:
     if (site.m_name!=m_hostname && site.m_aliases.find(m_hostname)==site.m_aliases.end())
         m_hostname=site.m_name;
 
-    if (!pfc->pFilterContext) {
-        pfc->pFilterContext = pfc->AllocMem(pfc, sizeof(context_t), NULL);
-        if (static_cast<context_t*>(pfc->pFilterContext)) {
-            static_cast<context_t*>(pfc->pFilterContext)->m_user = NULL;
-            static_cast<context_t*>(pfc->pFilterContext)->m_checked = false;
-        }
+    if (!g_spoofKey.empty()) {
+        GetHeader(pn, pfc, "ShibSpoofCheck:", var, 32, false);
+        if (!var.empty() && g_spoofKey == (char*)var)
+            m_firsttime = false;
     }
+
+    if (!m_firsttime)
+        log(SPDebug, "ISAPI filter running more than once");
   }
   ~ShibTargetIsapiF() { }
 
@@ -401,10 +465,15 @@ public:
   int getPort() const {
     return m_port;
   }
+  const char* getQueryString() const {
+      const char* uri = getRequestURI();
+      uri = (uri ? strchr(uri, '?') : NULL);
+      return uri ? (uri + 1) : NULL;
+  }
   const char* getMethod() const {
     if (m_method.empty()) {
         dynabuf var(5);
-        GetServerVariable(m_pfc,"REQUEST_METHOD",var,5,false);
+        GetServerVariable(m_pfc,"HTTP_METHOD",var,5,false);
         if (!var.empty())
             m_method = var;
     }
@@ -413,16 +482,14 @@ public:
   string getContentType() const {
     if (m_content_type.empty()) {
         dynabuf var(32);
-        GetServerVariable(m_pfc,"CONTENT_TYPE",var,32,false);
+        GetServerVariable(m_pfc,"HTTP_CONTENT_TYPE",var,32,false);
         if (!var.empty())
             m_content_type = var;
     }
     return m_content_type;
   }
-  long getContentLength() const {
-      return 0;
-  }
   string getRemoteAddr() const {
+    m_remote_addr = AbstractSPRequest::getRemoteAddr();
     if (m_remote_addr.empty()) {
         dynabuf var(16);
         GetServerVariable(m_pfc,"REMOTE_ADDR",var,16,false);
@@ -433,43 +500,64 @@ public:
   }
   void log(SPLogLevel level, const string& msg) {
     AbstractSPRequest::log(level,msg);
-    if (level >= SPError)
+    if (level >= SPCrit)
         LogEvent(NULL, EVENTLOG_ERROR_TYPE, 2100, NULL, msg.c_str());
   }
+  string makeSafeHeader(const char* rawname) const {
+      string hdr;
+      for (; *rawname; ++rawname) {
+          if (isalnum(*rawname))
+              hdr += *rawname;
+      }
+      return (hdr + ':');
+  }
   void clearHeader(const char* rawname, const char* cginame) {
-	if (g_checkSpoofing && m_pfc->pFilterContext && !static_cast<context_t*>(m_pfc->pFilterContext)->m_checked) {
+    if (g_checkSpoofing && m_firsttime) {
         if (m_allhttp.empty())
-	        GetServerVariable(m_pfc,"ALL_HTTP",m_allhttp,4096);
-        if (strstr(m_allhttp, cginame))
-            throw opensaml::SecurityPolicyException("Attempt to spoof header ($1) was detected.", params(1, rawname));
+	        GetServerVariable(m_pfc, "ALL_HTTP", m_allhttp, 4096);
+        string hdr = g_bSafeHeaderNames ? ("HTTP_" + makeSafeHeader(cginame + 5)) : (string(cginame) + ':');
+        if (strstr(m_allhttp, hdr.c_str()))
+            throw opensaml::SecurityPolicyException("Attempt to spoof header ($1) was detected.", params(1, hdr.c_str()));
     }
-    string hdr(!strcmp(rawname,"REMOTE_USER") ? "remote-user" : rawname);
-    hdr += ':';
-    m_pn->SetHeader(m_pfc, const_cast<char*>(hdr.c_str()), const_cast<char*>(g_unsetHeaderValue.c_str()));
+    if (g_bSafeHeaderNames) {
+        string hdr = makeSafeHeader(rawname);
+        m_pn->SetHeader(m_pfc, const_cast<char*>(hdr.c_str()), const_cast<char*>(g_unsetHeaderValue.c_str()));
+    }
+    else if (!strcmp(rawname,"REMOTE_USER")) {
+	    m_pn->SetHeader(m_pfc, "remote-user:", const_cast<char*>(g_unsetHeaderValue.c_str()));
+        m_pn->SetHeader(m_pfc, "remote_user:", const_cast<char*>(g_unsetHeaderValue.c_str()));
+	}
+	else {
+	    string hdr = string(rawname) + ':';
+	    m_pn->SetHeader(m_pfc, const_cast<char*>(hdr.c_str()), const_cast<char*>(g_unsetHeaderValue.c_str()));
+	}
   }
   void setHeader(const char* name, const char* value) {
-    string hdr(name);
-    hdr += ':';
+    string hdr = g_bSafeHeaderNames ? makeSafeHeader(name) : (string(name) + ':');
     m_pn->SetHeader(m_pfc, const_cast<char*>(hdr.c_str()), const_cast<char*>(value));
+  }
+  string getSecureHeader(const char* name) const {
+    string hdr = g_bSafeHeaderNames ? makeSafeHeader(name) : (string(name) + ':');
+    dynabuf buf(256);
+    GetHeader(m_pn, m_pfc, const_cast<char*>(hdr.c_str()), buf, 256, false);
+    return string(buf.empty() ? "" : buf);
   }
   string getHeader(const char* name) const {
     string hdr(name);
     hdr += ':';
     dynabuf buf(256);
     GetHeader(m_pn, m_pfc, const_cast<char*>(hdr.c_str()), buf, 256, false);
-    return string(buf);
+    return string(buf.empty() ? "" : buf);
   }
   void setRemoteUser(const char* user) {
     setHeader("remote-user", user);
-    if (m_pfc->pFilterContext) {
-        if (!user || !*user)
-            static_cast<context_t*>(m_pfc->pFilterContext)->m_user = NULL;
-        else if (static_cast<context_t*>(m_pfc->pFilterContext)->m_user = (char*)m_pfc->AllocMem(m_pfc, sizeof(char) * (strlen(user) + 1), NULL))
-            strcpy(static_cast<context_t*>(m_pfc->pFilterContext)->m_user, user);
-    }
+    if (!user || !*user)
+        m_pfc->pFilterContext = NULL;
+    else if (m_pfc->pFilterContext = m_pfc->AllocMem(m_pfc, sizeof(char) * (strlen(user) + 1), NULL))
+        strcpy(reinterpret_cast<char*>(m_pfc->pFilterContext), user);
   }
   string getRemoteUser() const {
-    return getHeader("remote-user");
+    return getSecureHeader("remote-user");
   }
   void setResponseHeader(const char* name, const char* value) {
     // Set for later.
@@ -527,8 +615,8 @@ public:
   }
 
   // The filter never processes the POST, so stub these methods.
-  const char* getQueryString() const { throw IOException("getQueryString not implemented"); }
-  const char* getRequestBody() const { throw IOException("getRequestBody not implemented"); }
+  long getContentLength() const { throw IOException("The request's Content-Length is not available to an ISAPI filter."); }
+  const char* getRequestBody() const { throw IOException("The request body is not available to an ISAPI filter."); }
 };
 
 DWORD WriteClientError(PHTTP_FILTER_CONTEXT pfc, const char* msg)
@@ -552,8 +640,8 @@ extern "C" DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc, DWORD notificat
 {
     // Is this a log notification?
     if (notificationType==SF_NOTIFY_LOG) {
-        if (pfc->pFilterContext && static_cast<context_t*>(pfc->pFilterContext)->m_user)
-        	((PHTTP_FILTER_LOG)pvNotification)->pszClientUserName=static_cast<context_t*>(pfc->pFilterContext)->m_user;
+        if (pfc->pFilterContext)
+        	((PHTTP_FILTER_LOG)pvNotification)->pszClientUserName=reinterpret_cast<char*>(pfc->pFilterContext);
         return SF_STATUS_REQ_NEXT_NOTIFICATION;
     }
 
@@ -577,8 +665,8 @@ extern "C" DWORD WINAPI HttpFilterProc(PHTTP_FILTER_CONTEXT pfc, DWORD notificat
 
         // "false" because we don't override the Shib settings
         pair<bool,long> res = stf.getServiceProvider().doAuthentication(stf);
-        if (pfc->pFilterContext)
-            static_cast<context_t*>(pfc->pFilterContext)->m_checked = true;
+        if (!g_spoofKey.empty())
+            pn->SetHeader(pfc, "ShibSpoofCheck:", const_cast<char*>(g_spoofKey.c_str()));
         if (res.first) return res.second;
 
         // "false" because we don't override the Shib settings
@@ -754,6 +842,7 @@ public:
     return m_remote_user;
   }
   string getRemoteAddr() const {
+    m_remote_addr = AbstractSPRequest::getRemoteAddr();
     if (m_remote_addr.empty()) {
         dynabuf var(16);
         GetServerVariable(m_lpECB, "REMOTE_ADDR", var, 16, false);
@@ -764,7 +853,7 @@ public:
   }
   void log(SPLogLevel level, const string& msg) const {
       AbstractSPRequest::log(level,msg);
-      if (level >= SPError)
+      if (level >= SPCrit)
           LogEvent(NULL, EVENTLOG_ERROR_TYPE, 2100, NULL, msg.c_str());
   }
   string getHeader(const char* name) const {
@@ -796,13 +885,19 @@ public:
         throw opensaml::SecurityPolicyException("Size of request body exceeded 1M size limit.");
     else if (m_lpECB->cbTotalBytes > m_lpECB->cbAvailable) {
       m_gotBody=true;
-      char buf[8192];
       DWORD datalen=m_lpECB->cbTotalBytes;
+      if (m_lpECB->cbAvailable > 0) {
+        m_body.assign(reinterpret_cast<char*>(m_lpECB->lpbData),m_lpECB->cbAvailable);
+        datalen-=m_lpECB->cbAvailable;
+      }
+      char buf[8192];
       while (datalen) {
         DWORD buflen=8192;
         BOOL ret = m_lpECB->ReadClient(m_lpECB->ConnID, buf, &buflen);
-        if (!ret || !buflen)
+        if (!ret)
             throw IOException("Error reading request body from browser.");
+        else if (!buflen)
+            throw IOException("Socket closed while reading request body from browser.");
         m_body.append(buf, buflen);
         datalen-=buflen;
       }
@@ -872,10 +967,14 @@ public:
 
         if (m_lpECB->ServerSupportFunction(m_lpECB->ConnID, HSE_REQ_GET_CERT_INFO_EX, (LPVOID)&ccex, (LPDWORD)dwSize, NULL)) {
             if (ccex.CertContext.cbCertEncoded) {
-                unsigned int outlen;
+                xsecsize_t outlen;
                 XMLByte* serialized = Base64::encode(reinterpret_cast<XMLByte*>(CertificateBuf), ccex.CertContext.cbCertEncoded, &outlen);
                 m_certs.push_back(reinterpret_cast<char*>(serialized));
+#ifdef SHIBSP_XERCESC_HAS_XMLBYTE_RELEASE
                 XMLString::release(&serialized);
+#else
+                XMLString::release((char**)&serialized);
+#endif
             }
         }
       }

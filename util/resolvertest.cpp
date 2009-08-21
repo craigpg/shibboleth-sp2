@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,8 +115,6 @@ int main(int argc,char* argv[])
     char* i_param=NULL;
     char* prot = NULL;
     const XMLCh* protocol = NULL;
-    char* path=NULL;
-    char* config=NULL;
 
     for (int i=1; i<argc; i++) {
         if (!strcmp(argv[i],"-n") && i+1<argc)
@@ -139,19 +137,22 @@ int main(int argc,char* argv[])
 
     if (n_param && !i_param) {
         usage();
-        exit(-10);
+        return -10;
     }
 
-    path=getenv("SHIBSP_SCHEMAS");
-    if (!path)
-        path=SHIBSP_SCHEMAS;
-    config=getenv("SHIBSP_CONFIG");
-    if (!config)
-        config=SHIBSP_CONFIG;
     if (!a_param)
         a_param="default";
 
-    XMLToolingConfig::getConfig().log_config(getenv("SHIBSP_LOGGING") ? getenv("SHIBSP_LOGGING") : SHIBSP_LOGGING);
+    if (n_param) {
+        if (!protocol) {
+            if (prot)
+                protocol = XMLString::transcode(prot);
+        }
+        if (!protocol) {
+            usage();
+            return -10;
+        }
+    }
 
     SPConfig& conf=SPConfig::getConfig();
     conf.setFeatures(
@@ -161,35 +162,9 @@ int main(int argc,char* argv[])
         SPConfig::Credentials |
         SPConfig::OutOfProcess
         );
-    if (!conf.init(path))
+    if (!conf.init())
         return -1;
-
-    if (n_param) {
-        if (!protocol) {
-            if (prot)
-                protocol = XMLString::transcode(prot);
-        }
-        if (!protocol) {
-            conf.term();
-            usage();
-            exit(-10);
-        }
-    }
-   
-    try {
-        static const XMLCh path[] = UNICODE_LITERAL_4(p,a,t,h);
-        static const XMLCh validate[] = UNICODE_LITERAL_8(v,a,l,i,d,a,t,e);
-        xercesc::DOMDocument* dummydoc=XMLToolingConfig::getConfig().getParser().newDocument();
-        XercesJanitor<xercesc::DOMDocument> docjanitor(dummydoc);
-        xercesc::DOMElement* dummy = dummydoc->createElementNS(NULL,path);
-        auto_ptr_XMLCh src(config);
-        dummy->setAttributeNS(NULL,path,src.get());
-        dummy->setAttributeNS(NULL,validate,xmlconstants::XML_ONE);
-
-        conf.setServiceProvider(conf.ServiceProviderManager.newPlugin(XML_SERVICE_PROVIDER,dummy));
-        conf.getServiceProvider()->init();
-    }
-    catch (exception&) {
+    if (!conf.instantiate()) {
         conf.term();
         return -2;
     }
@@ -270,21 +245,25 @@ int main(int argc,char* argv[])
                     protocol = samlconstants::SAML11_PROTOCOL_ENUM;
                 v1name = a1->getAuthenticationStatements().size() ?
                     a1->getAuthenticationStatements().front()->getSubject()->getNameIdentifier() : NULL;
-                // Normalize the SAML 1.x NameIdentifier...
-                v2name = saml2::NameIDBuilder::buildNameID();
-                v2name->setName(v1name->getName());
-                v2name->setFormat(v1name->getFormat());
-                v2name->setNameQualifier(v1name->getNameQualifier());
+                if (!v1name)
+                    v1name = a1->getAttributeStatements().size() ?
+                    a1->getAttributeStatements().front()->getSubject()->getNameIdentifier() : NULL;
+                if (v1name) {
+                    // Normalize the SAML 1.x NameIdentifier...
+                    v2name = saml2::NameIDBuilder::buildNameID();
+                    v2name->setName(v1name->getName());
+                    v2name->setFormat(v1name->getFormat());
+                    v2name->setNameQualifier(v1name->getNameQualifier());
+                }
             }
             else {
                 throw FatalProfileException("Unknown assertion type.");
             }
 
-            if (!issuer) {
-                if (v1name)
-                    delete v2name;
+            auto_ptr<saml2::NameID> nameidwrapper(v1name ? v2name : NULL);
+
+            if (!issuer)
                 throw FatalProfileException("Unable to determine issuer.");
-            }
 
             MetadataProvider* m=app->getMetadataProvider();
             xmltooling::Locker mlocker(m);
@@ -297,23 +276,20 @@ int main(int argc,char* argv[])
             
             vector<const Assertion*> tokens(1, dynamic_cast<Assertion*>(token.get()));
             ResolverTest rt(NULL, a_param);
-            try {
-                ctx = rt.resolveAttributes(*app, site.second, protocol, v1name, v2name, NULL, NULL, &tokens);
-            }
-            catch (...) {
-                if (v1name)
-                    delete v2name;
-                throw;
-            }
+            ctx = rt.resolveAttributes(*app, site.second, protocol, v1name, v2name, NULL, NULL, &tokens);
         }
 
         auto_ptr<ResolutionContext> wrapper(ctx);
         for (vector<Attribute*>::const_iterator a = ctx->getResolvedAttributes().begin(); a != ctx->getResolvedAttributes().end(); ++a) {
-            cout << endl;
-            for (vector<string>::const_iterator s = (*a)->getAliases().begin(); s != (*a)->getAliases().end(); ++s)
-                cout << "ID: " << *s << endl;
-            for (vector<string>::const_iterator s = (*a)->getSerializedValues().begin(); s != (*a)->getSerializedValues().end(); ++s)
-                cout << "Value: " << *s << endl;
+            for (vector<string>::const_iterator s = (*a)->getAliases().begin(); s != (*a)->getAliases().end(); ++s) {
+                cout << *s << ": ";
+                for (vector<string>::const_iterator v = (*a)->getSerializedValues().begin(); v != (*a)->getSerializedValues().end(); ++v) {
+                    if (v != (*a)->getSerializedValues().begin())
+                        cout << ';';
+                    cout << *v;
+                }
+                cout << endl;
+            }
         }
         cout << endl;
     }

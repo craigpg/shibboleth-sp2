@@ -26,16 +26,25 @@
 # include "config.h"
 #endif
 
+#ifdef WIN32
+# define _CRT_NONSTDC_NO_DEPRECATE 1
+# define _CRT_SECURE_NO_DEPRECATE 1
+# define MCEXT_EXPORTS __declspec(dllexport)
+#else
+# define MCEXT_EXPORTS
+#endif
+
+#include <xmltooling/base.h>
+
+#include <iostream> 
+#include <libmemcached/memcached.h>
 #include <xercesc/util/XMLUniDefs.hpp>
 
 #include <xmltooling/logging.h>
-
 #include <xmltooling/XMLToolingConfig.h>
 #include <xmltooling/util/NDC.h>
 #include <xmltooling/util/StorageService.h>
 #include <xmltooling/util/XMLHelper.h>
-
-#include <libmemcached/memcached.h>
 
 using namespace xmltooling::logging;
 using namespace xmltooling;
@@ -100,7 +109,7 @@ namespace xmltooling {
     memcached_st *memc;
     string m_memcacheHosts;
     string m_prefix;
-    
+    Mutex* m_lock;
   };
   
   class MemcacheStorageService : public StorageService, public MemcacheBase {
@@ -151,15 +160,19 @@ bool MemcacheBase::addLock(string what, bool use_prefix) {
   string set_val = "1";
   unsigned tries = 5;
   while (!addMemcache(lock_name.c_str(), set_val, 5, 0, use_prefix)) {
-    if (tries-- < 0) {
+    if (tries-- == 0) {
       log.debug("Unable to get lock %s... FAILED.", lock_name.c_str());
       return false;
     }
     log.debug("Unable to get lock %s... Retrying.", lock_name.c_str());
     
     // sleep 100ms
+#ifdef WIN32
+    Sleep(100);
+#else
     struct timeval tv = { 0, 100000 };
-    select(0, 0, 0, 0, &tv);    
+    select(0, 0, 0, 0, &tv);
+#endif
   }
   return true;
 }
@@ -264,7 +277,6 @@ bool MemcacheBase::deleteMemcache(const char *key,
                                   bool use_prefix) {
   memcached_return rv;
   string final_key;
-  memcached_st clone;
   bool success;
 
   if (use_prefix) {
@@ -273,23 +285,25 @@ bool MemcacheBase::deleteMemcache(const char *key,
     final_key = key;
   }
 
-  if (memcached_clone(&clone, memc) == NULL) {
-    throw IOException("MemcacheBase::deleteMemcache(): memcached_clone() failed");
-  }
+  m_lock->lock();
+  rv = memcached_delete(memc, (char *)final_key.c_str(), final_key.length(), timeout);
+  m_lock->unlock();
 
-  rv = memcached_delete(&clone, (char *)final_key.c_str(), final_key.length(), timeout);
   if (rv == MEMCACHED_SUCCESS) {
     success = true;
   } else if (rv == MEMCACHED_NOTFOUND) {
     // Key wasn't there... No biggie.
     success = false;
+  } else if (rv == MEMCACHED_ERRNO) {
+    // System error
+    log.error(string("Memcache::deleteMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno)));
+    success = false;
   } else {
-    log.error(string("Memcache::deleteMemcache() Problems: ") + memcached_strerror(&clone, rv));
+    log.error(string("Memcache::deleteMemcache() Problems: ") + memcached_strerror(memc, rv));
     // shouldn't be here
     success = false;
   }
 
-  memcached_free(&clone);
   return success;
 }
 
@@ -301,7 +315,6 @@ bool MemcacheBase::getMemcache(const char *key,
   size_t len;
   char *result;
   string final_key;
-  memcached_st clone;
   bool success;
   
   if (use_prefix) {
@@ -310,11 +323,10 @@ bool MemcacheBase::getMemcache(const char *key,
     final_key = key;
   }
 
-  if (memcached_clone(&clone, memc) == NULL) {
-    throw IOException("MemcacheBase::getMemcache(): memcached_clone() failed");
-  }
+  m_lock->lock();
+  result = memcached_get(memc, (char *)final_key.c_str(), final_key.length(), &len, flags, &rv);
+  m_lock->unlock();
 
-  result = memcached_get(&clone, (char *)final_key.c_str(), final_key.length(), &len, flags, &rv);
   if (rv == MEMCACHED_SUCCESS) {
     dest = result;
     free(result);
@@ -322,12 +334,15 @@ bool MemcacheBase::getMemcache(const char *key,
   } else if (rv == MEMCACHED_NOTFOUND) {
     log.debug("Key %s not found in memcache...", key);
     success = false;
+  } else if (rv == MEMCACHED_ERRNO) {
+    // System error
+    log.error(string("Memcache::getMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno)));
+    success = false;
   } else {
-    log.error(string("Memcache::getMemcache() Problems: ") + memcached_strerror(&clone, rv));
+    log.error(string("Memcache::getMemcache() Problems: ") + memcached_strerror(memc, rv));
     success = false;
   }
 
-  memcached_free(&clone);
   return success;
 }
 
@@ -339,7 +354,6 @@ bool MemcacheBase::addMemcache(const char *key,
 
   memcached_return rv;
   string final_key;
-  memcached_st clone;
   bool success;
 
   if (use_prefix) {
@@ -348,23 +362,25 @@ bool MemcacheBase::addMemcache(const char *key,
     final_key = key;
   }
 
-  if (memcached_clone(&clone, memc) == NULL) {
-    throw IOException("MemcacheBase::addMemcache(): memcached_clone() failed");
-  }
+  m_lock->lock();
+  rv = memcached_add(memc, (char *)final_key.c_str(), final_key.length(), (char *)value.c_str(), value.length(), timeout, flags);
+  m_lock->unlock();
 
-  rv = memcached_add(&clone, (char *)final_key.c_str(), final_key.length(), (char *)value.c_str(), value.length(), timeout, flags);
   if (rv == MEMCACHED_SUCCESS) {
     success = true;
   } else if (rv == MEMCACHED_NOTSTORED) {
     // already there
     success = false;
+  } else if (rv == MEMCACHED_ERRNO) {
+    // System error
+    log.error(string("Memcache::addMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno)));
+    success = false;
   } else {
     // shouldn't be here
-    log.error(string("Memcache::addMemcache() Problems: ") + memcached_strerror(&clone, rv));
+    log.error(string("Memcache::addMemcache() Problems: ") + memcached_strerror(memc, rv));
     success = false;
   }
 
-  memcached_free(&clone);
   return success;
 }
 
@@ -376,7 +392,6 @@ bool MemcacheBase::setMemcache(const char *key,
 
   memcached_return rv;
   string final_key;
-  memcached_st clone;
   bool success;
 
   if (use_prefix) {
@@ -385,20 +400,22 @@ bool MemcacheBase::setMemcache(const char *key,
     final_key = key;
   }
 
-  if (memcached_clone(&clone, memc) == NULL) {
-    throw IOException("MemcacheBase::setMemcache(): memcached_clone() failed");
-  }
+  m_lock->lock();
+  rv = memcached_set(memc, (char *)final_key.c_str(), final_key.length(), (char *)value.c_str(), value.length(), timeout, flags);
+  m_lock->unlock();
 
-  rv = memcached_set(&clone, (char *)final_key.c_str(), final_key.length(), (char *)value.c_str(), value.length(), timeout, flags);
   if (rv == MEMCACHED_SUCCESS) {
     success = true;
+  } else if (rv == MEMCACHED_ERRNO) {
+    // System error
+    log.error(string("Memcache::setMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno)));
+    success = false;
   } else {
     // shouldn't be here
-    log.error(string("Memcache::setMemcache() Problems: ") + memcached_strerror(&clone, rv));
+    log.error(string("Memcache::setMemcache() Problems: ") + memcached_strerror(memc, rv));
     success = false;
   }
 
-  memcached_free(&clone);
   return success;
 }
 
@@ -410,7 +427,6 @@ bool MemcacheBase::replaceMemcache(const char *key,
   
   memcached_return rv;
   string final_key;
-  memcached_st clone;
   bool success;
 
   if (use_prefix) {
@@ -419,23 +435,25 @@ bool MemcacheBase::replaceMemcache(const char *key,
     final_key = key;
   }
 
-  if (memcached_clone(&clone, memc) == NULL) {
-    throw IOException("MemcacheBase::replaceMemcache(): memcached_clone() failed");
-  }
+  m_lock->lock();
+  rv = memcached_replace(memc, (char *)final_key.c_str(), final_key.length(), (char *)value.c_str(), value.length(), timeout, flags);
+  m_lock->unlock();
 
-  rv = memcached_replace(&clone, (char *)final_key.c_str(), final_key.length(), (char *)value.c_str(), value.length(), timeout, flags);
   if (rv == MEMCACHED_SUCCESS) {
     success = true;
   } else if (rv == MEMCACHED_NOTSTORED) {
     // not there
     success = false;
+  } else if (rv == MEMCACHED_ERRNO) {
+    // System error
+    log.error(string("Memcache::replaceMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno)));
+    success = false;
   } else {
     // shouldn't be here
-    log.error(string("Memcache::replaceMemcache() Problems: ") + memcached_strerror(&clone, rv));
+    log.error(string("Memcache::replaceMemcache() Problems: ") + memcached_strerror(memc, rv));
     success = false;
   }
 
-  memcached_free(&clone);
   return success;
 }
 
@@ -456,6 +474,9 @@ MemcacheBase::MemcacheBase(const DOMElement* e) : m_root(e), log(Category::getIn
   log.debug("INIT: GOT Hosts: %s", h.get());
   m_memcacheHosts = h.get();
 
+  m_lock = Mutex::create();
+  log.debug("Lock created");
+
   memc = memcached_create(NULL);
   if (memc == NULL) {
     throw XMLToolingException("MemcacheBase::Memcache(): memcached_create() failed");
@@ -463,9 +484,22 @@ MemcacheBase::MemcacheBase(const DOMElement* e) : m_root(e), log(Category::getIn
 
   log.debug("Memcache created");
 
-  unsigned int set = MEMCACHED_HASH_CRC;
-  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_HASH, set);
+  unsigned int hash = MEMCACHED_HASH_CRC;
+  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_HASH, hash);
   log.debug("CRC hash set");
+
+  int32_t timeout = 1000000;
+  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_SND_TIMEOUT, timeout);
+  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_RCV_TIMEOUT, timeout);
+
+  int32_t poll_timeout = 1000;
+  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_POLL_TIMEOUT, poll_timeout);
+
+  int32_t fail_limit = 5;
+  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_SERVER_FAILURE_LIMIT, fail_limit);
+
+  int32_t retry_timeout = 30;
+  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_RETRY_TIMEOUT, retry_timeout);
 
   memcached_server_st *servers;
   servers = memcached_servers_parse((char *)m_memcacheHosts.c_str());
@@ -480,6 +514,7 @@ MemcacheBase::MemcacheBase(const DOMElement* e) : m_root(e), log(Category::getIn
 
 MemcacheBase::~MemcacheBase() {
   memcached_free(memc);
+  delete m_lock;
   log.debug("Base object destroyed");
 }
 
@@ -564,6 +599,19 @@ int MemcacheStorageService::readString(const char* context, const char* key, str
   uint32_t rec_version;
   string value;
 
+  if (m_buildMap) {
+    log.debug("Checking context");
+
+    string map_name = context;
+    string ser_arr;
+    uint32_t flags;
+    bool ctx_found = getMemcache(map_name.c_str(), ser_arr, &flags);
+
+    if (!ctx_found) {
+      return 0;
+    }
+  }
+
   bool found = getMemcache(final_key.c_str(), value, &rec_version);
   if (!found) {
     return 0;
@@ -645,12 +693,6 @@ void MemcacheStorageService::updateContext(const char* context, time_t expiratio
   }
 
   string map_name = context;
-  
-  if (! addLock(map_name)) {
-    log.error("Unable to get lock for context %s!", context);
-    return;
-  }
-  
   string ser_arr;
   uint32_t flags;
   bool result = getMemcache(map_name.c_str(), ser_arr, &flags);
@@ -681,8 +723,6 @@ void MemcacheStorageService::updateContext(const char* context, time_t expiratio
     replaceMemcache(map_name.c_str(), ser_arr, expiration, flags);
   }
   
-  deleteLock(map_name);
-  
 }
 
 void MemcacheStorageService::deleteContext(const char* context) {
@@ -695,12 +735,6 @@ void MemcacheStorageService::deleteContext(const char* context) {
   }
 
   string map_name = context;
-  
-  if (! addLock(map_name)) {
-    log.error("Unable to get lock for context %s!", context);
-    return;
-  }
-  
   string ser_arr;
   uint32_t flags;
   bool result = getMemcache(map_name.c_str(), ser_arr, &flags);
@@ -723,16 +757,14 @@ void MemcacheStorageService::deleteContext(const char* context) {
     deleteMemcache(map_name.c_str(), 0);
   }
   
-  deleteLock(map_name);
-
 }
 
-extern "C" int xmltooling_extension_init(void*) {
+extern "C" int MCEXT_EXPORTS xmltooling_extension_init(void*) {
     // Register this SS type
     XMLToolingConfig::getConfig().StorageServiceManager.registerFactory("MEMCACHE", MemcacheStorageServiceFactory);
     return 0;
 }
 
-extern "C" void xmltooling_extension_term() {
+extern "C" void MCEXT_EXPORTS xmltooling_extension_term() {
     XMLToolingConfig::getConfig().StorageServiceManager.deregisterFactory("MEMCACHE");
 }
