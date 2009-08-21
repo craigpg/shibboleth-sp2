@@ -1,3 +1,13 @@
+shibboleth-sp2 (2.2.1+dfsg-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+  * Dynamically determine the Debian and upstream package versions for
+    get-orig-source from debian/changelog.
+  * Update libapache2-mod-shib2's README.Debian for changes to the
+    TestShib web pages.
+
+ -- Russ Allbery <rra@debian.org>  Fri, 24 Jul 2009 15:29:01 -0700
+
 shibboleth-sp2 (2.1.dfsg1-2) unstable; urgency=low
 
   * Redo the variable quoting in doxygen.m4 so that configure can be

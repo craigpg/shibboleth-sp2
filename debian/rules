@@ -26,9 +26,10 @@ endif
 
 # These variable is used only by get-orig-source, which will normally only be
 # run by maintainers.
-VERSION = 2.1
-DEBVERS = dfsg1
-URL     = http://shibboleth.internet2.edu/downloads/shibboleth/cppsp
+DEBVERS := $(shell dpkg-parsechangelog | grep ^Version: | cut -d' ' -f2 \
+		| cut -d- -f1)
+VERSION := $(shell echo '$(DEBVERS)' | sed -e 's/[+-].*//' -e 's/~//g')
+URL      = http://shibboleth.internet2.edu/downloads/shibboleth/cppsp
 
 # Download the upstream source and do the repackaging that we have to do for
 # DFSG reasons.  Depends on wget.
@@ -37,11 +38,11 @@ get-orig-source:
 	tar xfz shibboleth-sp-$(VERSION).tar.gz
 	rm shibboleth-sp-$(VERSION).tar.gz
 	rm shibboleth-$(VERSION)/schemas/WS-Trust.xsd
-	mv shibboleth-$(VERSION) shibboleth-sp2_$(VERSION).$(DEBVERS).orig
-	tar cf shibboleth-sp2_$(VERSION).$(DEBVERS).orig.tar \
-	    shibboleth-sp2_$(VERSION).$(DEBVERS).orig
-	rm -r shibboleth-sp2_$(VERSION).$(DEBVERS).orig
-	gzip -9 shibboleth-sp2_$(VERSION).$(DEBVERS).orig.tar
+	mv shibboleth-$(VERSION) shibboleth-sp2_$(DEBVERS).orig
+	tar cf shibboleth-sp2_$(DEBVERS).orig.tar \
+	    shibboleth-sp2_$(DEBVERS).orig
+	rm -r shibboleth-sp2_$(DEBVERS).orig
+	gzip -9 shibboleth-sp2_$(DEBVERS).orig.tar
 
 configure: configure-stamp
 configure-stamp:
