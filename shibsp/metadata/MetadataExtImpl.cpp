@@ -59,7 +59,7 @@ namespace shibsp {
 
     public:
 
-        ScopeImpl(const XMLCh* nsURI, const XMLCh* localName, const XMLCh* prefix, const QName* schemaType)
+        ScopeImpl(const XMLCh* nsURI, const XMLCh* localName, const XMLCh* prefix, const xmltooling::QName* schemaType)
                 : AbstractXMLObject(nsURI, localName, prefix, schemaType) {
             init();
         }
@@ -99,7 +99,7 @@ namespace shibsp {
             XMLString::release(&m_VerifyDepth);
         }
 
-        KeyAuthorityImpl(const XMLCh* nsURI, const XMLCh* localName, const XMLCh* prefix, const QName* schemaType)
+        KeyAuthorityImpl(const XMLCh* nsURI, const XMLCh* localName, const XMLCh* prefix, const xmltooling::QName* schemaType)
                 : AbstractXMLObject(nsURI, localName, prefix, schemaType) {
             init();
         }
@@ -119,7 +119,7 @@ namespace shibsp {
         IMPL_TYPED_CHILDREN(KeyInfo,m_children.end());
         
     public:
-        void setAttribute(const QName& qualifiedName, const XMLCh* value, bool ID=false) {
+        void setAttribute(const xmltooling::QName& qualifiedName, const XMLCh* value, bool ID=false) {
             if (!qualifiedName.hasNamespaceURI()) {
                 if (XMLString::equals(qualifiedName.getLocalPart(),VERIFYDEPTH_ATTRIB_NAME)) {
                     setVerifyDepth(value);

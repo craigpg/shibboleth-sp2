@@ -75,6 +75,7 @@ am__objects_1 = libshibsp_lite_la-AbstractSPRequest.lo \
 	libshibsp_lite_la-Application.lo \
 	libshibsp_lite_la-ServiceProvider.lo \
 	libshibsp_lite_la-SPConfig.lo libshibsp_lite_la-Attribute.lo \
+	libshibsp_lite_la-ExtensibleAttribute.lo \
 	libshibsp_lite_la-AbstractHandler.lo \
 	libshibsp_lite_la-AssertionConsumerService.lo \
 	libshibsp_lite_la-AssertionLookup.lo \
@@ -100,6 +101,7 @@ am__objects_1 = libshibsp_lite_la-AbstractSPRequest.lo \
 	libshibsp_lite_la-Shib1SessionInitiator.lo \
 	libshibsp_lite_la-TransformSessionInitiator.lo \
 	libshibsp_lite_la-WAYFSessionInitiator.lo \
+	libshibsp_lite_la-ChainingAccessControl.lo \
 	libshibsp_lite_la-StorageServiceSessionCache.lo \
 	libshibsp_lite_la-XMLAccessControl.lo \
 	libshibsp_lite_la-XMLRequestMapper.lo \
@@ -118,28 +120,30 @@ am_libshibsp_lite_la_OBJECTS = $(am__objects_1) \
 libshibsp_lite_la_OBJECTS = $(am_libshibsp_lite_la_OBJECTS)
 libshibsp_la_LIBADD =
 am__objects_2 = AbstractSPRequest.lo Application.lo ServiceProvider.lo \
-	SPConfig.lo Attribute.lo AbstractHandler.lo \
-	AssertionConsumerService.lo AssertionLookup.lo \
-	ChainingLogoutInitiator.lo ChainingSessionInitiator.lo \
-	CookieSessionInitiator.lo FormSessionInitiator.lo \
-	LocalLogoutInitiator.lo LogoutHandler.lo MetadataGenerator.lo \
-	RemotedHandler.lo StatusHandler.lo SessionHandler.lo \
-	SAML1Consumer.lo SAML2Consumer.lo SAML2ArtifactResolution.lo \
-	SAML2Logout.lo SAML2LogoutInitiator.lo SAML2NameIDMgmt.lo \
+	SPConfig.lo Attribute.lo ExtensibleAttribute.lo \
+	AbstractHandler.lo AssertionConsumerService.lo \
+	AssertionLookup.lo ChainingLogoutInitiator.lo \
+	ChainingSessionInitiator.lo CookieSessionInitiator.lo \
+	FormSessionInitiator.lo LocalLogoutInitiator.lo \
+	LogoutHandler.lo MetadataGenerator.lo RemotedHandler.lo \
+	StatusHandler.lo SessionHandler.lo SAML1Consumer.lo \
+	SAML2Consumer.lo SAML2ArtifactResolution.lo SAML2Logout.lo \
+	SAML2LogoutInitiator.lo SAML2NameIDMgmt.lo \
 	SAML2SessionInitiator.lo SAMLDSSessionInitiator.lo \
 	SessionInitiator.lo Shib1SessionInitiator.lo \
 	TransformSessionInitiator.lo WAYFSessionInitiator.lo \
-	StorageServiceSessionCache.lo XMLAccessControl.lo \
-	XMLRequestMapper.lo XMLServiceProvider.lo ddf.lo \
-	ListenerService.lo SocketListener.lo TCPListener.lo \
+	ChainingAccessControl.lo StorageServiceSessionCache.lo \
+	XMLAccessControl.lo XMLRequestMapper.lo XMLServiceProvider.lo \
+	ddf.lo ListenerService.lo SocketListener.lo TCPListener.lo \
 	UnixListener.lo CGIParser.lo DOMPropertySet.lo SPConstants.lo \
 	TemplateParameters.lo
-am_libshibsp_la_OBJECTS = $(am__objects_2) NameIDAttributeDecoder.lo \
+am_libshibsp_la_OBJECTS = $(am__objects_2) DOMAttributeDecoder.lo \
+	KeyInfoAttributeDecoder.lo NameIDAttributeDecoder.lo \
 	NameIDFromScopedAttributeDecoder.lo ScopedAttributeDecoder.lo \
-	StringAttributeDecoder.lo AttributeFilter.lo \
-	ChainingAttributeFilter.lo XMLAttributeFilter.lo \
-	MatchFunctor.lo AndMatchFunctor.lo AnyMatchFunctor.lo \
-	NotMatchFunctor.lo OrMatchFunctor.lo \
+	StringAttributeDecoder.lo XMLAttributeDecoder.lo \
+	AttributeFilter.lo ChainingAttributeFilter.lo \
+	XMLAttributeFilter.lo MatchFunctor.lo AndMatchFunctor.lo \
+	AnyMatchFunctor.lo NotMatchFunctor.lo OrMatchFunctor.lo \
 	AttributeIssuerStringFunctor.lo \
 	AttributeRequesterStringFunctor.lo \
 	AttributeScopeStringFunctor.lo AttributeValueStringFunctor.lo \
@@ -153,7 +157,9 @@ am_libshibsp_la_OBJECTS = $(am__objects_2) NameIDAttributeDecoder.lo \
 	AttributeRequesterInEntityGroupFunctor.lo \
 	AttributeScopeMatchesShibMDScopeFunctor.lo \
 	ChainingAttributeResolver.lo QueryAttributeResolver.lo \
-	ChainingAttributeExtractor.lo XMLAttributeExtractor.lo \
+	SimpleAggregationAttributeResolver.lo \
+	ChainingAttributeExtractor.lo DelegationAttributeExtractor.lo \
+	KeyDescriptorAttributeExtractor.lo XMLAttributeExtractor.lo \
 	ArtifactResolver.lo SOAPClient.lo DynamicMetadataProvider.lo \
 	MetadataExtImpl.lo MetadataExtSchemaValidators.lo \
 	PKIXTrustEngine.lo SecurityPolicy.lo
@@ -389,8 +395,6 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 xs = @xs@
 AUTOMAKE_OPTIONS = foreign
-pkgsysconfdir = $(sysconfdir)/@PACKAGE@
-pkgxmldir = $(datadir)/xml/@PACKAGE@
 lib_LTLIBRARIES = libshibsp.la libshibsp-lite.la
 libshibspincludedir = $(includedir)/shibsp
 attrincludedir = $(includedir)/shibsp/attribute
@@ -422,9 +426,11 @@ libshibspinclude_HEADERS = \
 attrinclude_HEADERS = \
 	attribute/Attribute.h \
 	attribute/AttributeDecoder.h \
+	attribute/ExtensibleAttribute.h \
 	attribute/NameIDAttribute.h \
 	attribute/ScopedAttribute.h \
-	attribute/SimpleAttribute.h
+	attribute/SimpleAttribute.h \
+	attribute/XMLAttribute.h
 
 attrfiltinclude_HEADERS = \
 	attribute/filtering/AttributeFilter.h \
@@ -483,6 +489,7 @@ common_sources = \
 	ServiceProvider.cpp \
 	SPConfig.cpp \
 	attribute/Attribute.cpp \
+	attribute/ExtensibleAttribute.cpp \
 	handler/impl/AbstractHandler.cpp \
 	handler/impl/AssertionConsumerService.cpp \
 	handler/impl/AssertionLookup.cpp \
@@ -508,6 +515,7 @@ common_sources = \
 	handler/impl/Shib1SessionInitiator.cpp \
 	handler/impl/TransformSessionInitiator.cpp \
 	handler/impl/WAYFSessionInitiator.cpp \
+	impl/ChainingAccessControl.cpp \
     impl/StorageServiceSessionCache.cpp \
 	impl/XMLAccessControl.cpp \
 	impl/XMLRequestMapper.cpp \
@@ -529,10 +537,13 @@ libshibsp_lite_la_SOURCES = \
 
 libshibsp_la_SOURCES = \
 	${common_sources} \
+	attribute/DOMAttributeDecoder.cpp \
+	attribute/KeyInfoAttributeDecoder.cpp \
 	attribute/NameIDAttributeDecoder.cpp \
 	attribute/NameIDFromScopedAttributeDecoder.cpp \
 	attribute/ScopedAttributeDecoder.cpp \
 	attribute/StringAttributeDecoder.cpp \
+	attribute/XMLAttributeDecoder.cpp \
 	attribute/filtering/impl/AttributeFilter.cpp \
 	attribute/filtering/impl/ChainingAttributeFilter.cpp \
 	attribute/filtering/impl/XMLAttributeFilter.cpp \
@@ -557,7 +568,10 @@ libshibsp_la_SOURCES = \
 	attribute/filtering/impl/AttributeScopeMatchesShibMDScopeFunctor.cpp \
 	attribute/resolver/impl/ChainingAttributeResolver.cpp \
 	attribute/resolver/impl/QueryAttributeResolver.cpp \
+	attribute/resolver/impl/SimpleAggregationAttributeResolver.cpp \
 	attribute/resolver/impl/ChainingAttributeExtractor.cpp \
+	attribute/resolver/impl/DelegationAttributeExtractor.cpp \
+	attribute/resolver/impl/KeyDescriptorAttributeExtractor.cpp \
 	attribute/resolver/impl/XMLAttributeExtractor.cpp \
 	binding/impl/ArtifactResolver.cpp \
 	binding/impl/SOAPClient.cpp \
@@ -570,9 +584,14 @@ libshibsp_la_SOURCES = \
 
 # this is different from the project version
 # http://sources.redhat.com/autobook/autobook/autobook_91.html
-libshibsp_la_LDFLAGS = $(XMLSEC_LIBS) -version-info 2:0:0
-libshibsp_lite_la_LDFLAGS = $(LITE_LIBS) -version-info 2:0:0
+libshibsp_la_LDFLAGS = $(XMLSEC_LIBS) -version-info 3:1:0
+libshibsp_lite_la_LDFLAGS = $(LITE_LIBS) -version-info 3:1:0
 libshibsp_lite_la_CPPFLAGS = -DSHIBSP_LITE
+pkgsysconfdir = $(sysconfdir)/@PACKAGE@
+pkgxmldir = $(datadir)/xml/@PACKAGE@
+logdir = ${localstatedir}/log
+rundir = $(localstatedir)/run
+xmldir = $(datadir)/xml
 EXTRA_DIST = shibsp.vcproj shibsp-lite.vcproj paths.h.in resource.h shibsp.rc
 BUILT_SOURCES = paths.h
 all: $(BUILT_SOURCES)
@@ -671,15 +690,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AuthenticationMethodRegexFunctor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AuthenticationMethodStringFunctor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CGIParser.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChainingAccessControl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChainingAttributeExtractor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChainingAttributeFilter.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChainingAttributeResolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChainingLogoutInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChainingSessionInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CookieSessionInitiator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DOMAttributeDecoder.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DOMPropertySet.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DelegationAttributeExtractor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DynamicMetadataProvider.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ExtensibleAttribute.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FormSessionInitiator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KeyDescriptorAttributeExtractor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KeyInfoAttributeDecoder.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ListenerService.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LocalLogoutInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LogoutHandler.Plo@am__quote@
@@ -712,6 +737,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SessionHandler.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SessionInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Shib1SessionInitiator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SimpleAggregationAttributeResolver.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SocketListener.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StatusHandler.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StorageServiceSessionCache.Plo@am__quote@
@@ -722,6 +748,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UnixListener.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/WAYFSessionInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLAccessControl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLAttributeDecoder.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLAttributeExtractor.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLAttributeFilter.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XMLRequestMapper.Plo@am__quote@
@@ -734,11 +761,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-AssertionLookup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-Attribute.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-CGIParser.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-ChainingAccessControl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-ChainingLogoutInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-ChainingSessionInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-CommonDomainCookie.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-CookieSessionInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-DOMPropertySet.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-ExtensibleAttribute.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-FormSessionInitiator.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-ListenerService.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libshibsp_lite_la-LocalLogoutInitiator.Plo@am__quote@
@@ -828,6 +857,13 @@ libshibsp_lite_la-Attribute.lo: attribute/Attribute.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/Attribute.cpp' object='libshibsp_lite_la-Attribute.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libshibsp_lite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libshibsp_lite_la-Attribute.lo `test -f 'attribute/Attribute.cpp' || echo '$(srcdir)/'`attribute/Attribute.cpp
+
+libshibsp_lite_la-ExtensibleAttribute.lo: attribute/ExtensibleAttribute.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libshibsp_lite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libshibsp_lite_la-ExtensibleAttribute.lo -MD -MP -MF "$(DEPDIR)/libshibsp_lite_la-ExtensibleAttribute.Tpo" -c -o libshibsp_lite_la-ExtensibleAttribute.lo `test -f 'attribute/ExtensibleAttribute.cpp' || echo '$(srcdir)/'`attribute/ExtensibleAttribute.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libshibsp_lite_la-ExtensibleAttribute.Tpo" "$(DEPDIR)/libshibsp_lite_la-ExtensibleAttribute.Plo"; else rm -f "$(DEPDIR)/libshibsp_lite_la-ExtensibleAttribute.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/ExtensibleAttribute.cpp' object='libshibsp_lite_la-ExtensibleAttribute.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libshibsp_lite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libshibsp_lite_la-ExtensibleAttribute.lo `test -f 'attribute/ExtensibleAttribute.cpp' || echo '$(srcdir)/'`attribute/ExtensibleAttribute.cpp
 
 libshibsp_lite_la-AbstractHandler.lo: handler/impl/AbstractHandler.cpp
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libshibsp_lite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libshibsp_lite_la-AbstractHandler.lo -MD -MP -MF "$(DEPDIR)/libshibsp_lite_la-AbstractHandler.Tpo" -c -o libshibsp_lite_la-AbstractHandler.lo `test -f 'handler/impl/AbstractHandler.cpp' || echo '$(srcdir)/'`handler/impl/AbstractHandler.cpp; \
@@ -1004,6 +1040,13 @@ libshibsp_lite_la-WAYFSessionInitiator.lo: handler/impl/WAYFSessionInitiator.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libshibsp_lite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libshibsp_lite_la-WAYFSessionInitiator.lo `test -f 'handler/impl/WAYFSessionInitiator.cpp' || echo '$(srcdir)/'`handler/impl/WAYFSessionInitiator.cpp
 
+libshibsp_lite_la-ChainingAccessControl.lo: impl/ChainingAccessControl.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libshibsp_lite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libshibsp_lite_la-ChainingAccessControl.lo -MD -MP -MF "$(DEPDIR)/libshibsp_lite_la-ChainingAccessControl.Tpo" -c -o libshibsp_lite_la-ChainingAccessControl.lo `test -f 'impl/ChainingAccessControl.cpp' || echo '$(srcdir)/'`impl/ChainingAccessControl.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libshibsp_lite_la-ChainingAccessControl.Tpo" "$(DEPDIR)/libshibsp_lite_la-ChainingAccessControl.Plo"; else rm -f "$(DEPDIR)/libshibsp_lite_la-ChainingAccessControl.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='impl/ChainingAccessControl.cpp' object='libshibsp_lite_la-ChainingAccessControl.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libshibsp_lite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libshibsp_lite_la-ChainingAccessControl.lo `test -f 'impl/ChainingAccessControl.cpp' || echo '$(srcdir)/'`impl/ChainingAccessControl.cpp
+
 libshibsp_lite_la-StorageServiceSessionCache.lo: impl/StorageServiceSessionCache.cpp
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libshibsp_lite_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libshibsp_lite_la-StorageServiceSessionCache.lo -MD -MP -MF "$(DEPDIR)/libshibsp_lite_la-StorageServiceSessionCache.Tpo" -c -o libshibsp_lite_la-StorageServiceSessionCache.lo `test -f 'impl/StorageServiceSessionCache.cpp' || echo '$(srcdir)/'`impl/StorageServiceSessionCache.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libshibsp_lite_la-StorageServiceSessionCache.Tpo" "$(DEPDIR)/libshibsp_lite_la-StorageServiceSessionCache.Plo"; else rm -f "$(DEPDIR)/libshibsp_lite_la-StorageServiceSessionCache.Tpo"; exit 1; fi
@@ -1115,6 +1158,13 @@ Attribute.lo: attribute/Attribute.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/Attribute.cpp' object='Attribute.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Attribute.lo `test -f 'attribute/Attribute.cpp' || echo '$(srcdir)/'`attribute/Attribute.cpp
+
+ExtensibleAttribute.lo: attribute/ExtensibleAttribute.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExtensibleAttribute.lo -MD -MP -MF "$(DEPDIR)/ExtensibleAttribute.Tpo" -c -o ExtensibleAttribute.lo `test -f 'attribute/ExtensibleAttribute.cpp' || echo '$(srcdir)/'`attribute/ExtensibleAttribute.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExtensibleAttribute.Tpo" "$(DEPDIR)/ExtensibleAttribute.Plo"; else rm -f "$(DEPDIR)/ExtensibleAttribute.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/ExtensibleAttribute.cpp' object='ExtensibleAttribute.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExtensibleAttribute.lo `test -f 'attribute/ExtensibleAttribute.cpp' || echo '$(srcdir)/'`attribute/ExtensibleAttribute.cpp
 
 AbstractHandler.lo: handler/impl/AbstractHandler.cpp
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AbstractHandler.lo -MD -MP -MF "$(DEPDIR)/AbstractHandler.Tpo" -c -o AbstractHandler.lo `test -f 'handler/impl/AbstractHandler.cpp' || echo '$(srcdir)/'`handler/impl/AbstractHandler.cpp; \
@@ -1291,6 +1341,13 @@ WAYFSessionInitiator.lo: handler/impl/WAYFSessionInitiator.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o WAYFSessionInitiator.lo `test -f 'handler/impl/WAYFSessionInitiator.cpp' || echo '$(srcdir)/'`handler/impl/WAYFSessionInitiator.cpp
 
+ChainingAccessControl.lo: impl/ChainingAccessControl.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChainingAccessControl.lo -MD -MP -MF "$(DEPDIR)/ChainingAccessControl.Tpo" -c -o ChainingAccessControl.lo `test -f 'impl/ChainingAccessControl.cpp' || echo '$(srcdir)/'`impl/ChainingAccessControl.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChainingAccessControl.Tpo" "$(DEPDIR)/ChainingAccessControl.Plo"; else rm -f "$(DEPDIR)/ChainingAccessControl.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='impl/ChainingAccessControl.cpp' object='ChainingAccessControl.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChainingAccessControl.lo `test -f 'impl/ChainingAccessControl.cpp' || echo '$(srcdir)/'`impl/ChainingAccessControl.cpp
+
 StorageServiceSessionCache.lo: impl/StorageServiceSessionCache.cpp
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT StorageServiceSessionCache.lo -MD -MP -MF "$(DEPDIR)/StorageServiceSessionCache.Tpo" -c -o StorageServiceSessionCache.lo `test -f 'impl/StorageServiceSessionCache.cpp' || echo '$(srcdir)/'`impl/StorageServiceSessionCache.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/StorageServiceSessionCache.Tpo" "$(DEPDIR)/StorageServiceSessionCache.Plo"; else rm -f "$(DEPDIR)/StorageServiceSessionCache.Tpo"; exit 1; fi
@@ -1382,6 +1439,20 @@ TemplateParameters.lo: util/TemplateParameters.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TemplateParameters.lo `test -f 'util/TemplateParameters.cpp' || echo '$(srcdir)/'`util/TemplateParameters.cpp
 
+DOMAttributeDecoder.lo: attribute/DOMAttributeDecoder.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DOMAttributeDecoder.lo -MD -MP -MF "$(DEPDIR)/DOMAttributeDecoder.Tpo" -c -o DOMAttributeDecoder.lo `test -f 'attribute/DOMAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/DOMAttributeDecoder.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DOMAttributeDecoder.Tpo" "$(DEPDIR)/DOMAttributeDecoder.Plo"; else rm -f "$(DEPDIR)/DOMAttributeDecoder.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/DOMAttributeDecoder.cpp' object='DOMAttributeDecoder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DOMAttributeDecoder.lo `test -f 'attribute/DOMAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/DOMAttributeDecoder.cpp
+
+KeyInfoAttributeDecoder.lo: attribute/KeyInfoAttributeDecoder.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT KeyInfoAttributeDecoder.lo -MD -MP -MF "$(DEPDIR)/KeyInfoAttributeDecoder.Tpo" -c -o KeyInfoAttributeDecoder.lo `test -f 'attribute/KeyInfoAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/KeyInfoAttributeDecoder.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/KeyInfoAttributeDecoder.Tpo" "$(DEPDIR)/KeyInfoAttributeDecoder.Plo"; else rm -f "$(DEPDIR)/KeyInfoAttributeDecoder.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/KeyInfoAttributeDecoder.cpp' object='KeyInfoAttributeDecoder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KeyInfoAttributeDecoder.lo `test -f 'attribute/KeyInfoAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/KeyInfoAttributeDecoder.cpp
+
 NameIDAttributeDecoder.lo: attribute/NameIDAttributeDecoder.cpp
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NameIDAttributeDecoder.lo -MD -MP -MF "$(DEPDIR)/NameIDAttributeDecoder.Tpo" -c -o NameIDAttributeDecoder.lo `test -f 'attribute/NameIDAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/NameIDAttributeDecoder.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NameIDAttributeDecoder.Tpo" "$(DEPDIR)/NameIDAttributeDecoder.Plo"; else rm -f "$(DEPDIR)/NameIDAttributeDecoder.Tpo"; exit 1; fi
@@ -1409,6 +1480,13 @@ StringAttributeDecoder.lo: attribute/StringAttributeDecoder.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/StringAttributeDecoder.cpp' object='StringAttributeDecoder.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o StringAttributeDecoder.lo `test -f 'attribute/StringAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/StringAttributeDecoder.cpp
+
+XMLAttributeDecoder.lo: attribute/XMLAttributeDecoder.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT XMLAttributeDecoder.lo -MD -MP -MF "$(DEPDIR)/XMLAttributeDecoder.Tpo" -c -o XMLAttributeDecoder.lo `test -f 'attribute/XMLAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/XMLAttributeDecoder.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/XMLAttributeDecoder.Tpo" "$(DEPDIR)/XMLAttributeDecoder.Plo"; else rm -f "$(DEPDIR)/XMLAttributeDecoder.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/XMLAttributeDecoder.cpp' object='XMLAttributeDecoder.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o XMLAttributeDecoder.lo `test -f 'attribute/XMLAttributeDecoder.cpp' || echo '$(srcdir)/'`attribute/XMLAttributeDecoder.cpp
 
 AttributeFilter.lo: attribute/filtering/impl/AttributeFilter.cpp
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AttributeFilter.lo -MD -MP -MF "$(DEPDIR)/AttributeFilter.Tpo" -c -o AttributeFilter.lo `test -f 'attribute/filtering/impl/AttributeFilter.cpp' || echo '$(srcdir)/'`attribute/filtering/impl/AttributeFilter.cpp; \
@@ -1578,12 +1656,33 @@ QueryAttributeResolver.lo: attribute/resolver/impl/QueryAttributeResolver.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o QueryAttributeResolver.lo `test -f 'attribute/resolver/impl/QueryAttributeResolver.cpp' || echo '$(srcdir)/'`attribute/resolver/impl/QueryAttributeResolver.cpp
 
+SimpleAggregationAttributeResolver.lo: attribute/resolver/impl/SimpleAggregationAttributeResolver.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SimpleAggregationAttributeResolver.lo -MD -MP -MF "$(DEPDIR)/SimpleAggregationAttributeResolver.Tpo" -c -o SimpleAggregationAttributeResolver.lo `test -f 'attribute/resolver/impl/SimpleAggregationAttributeResolver.cpp' || echo '$(srcdir)/'`attribute/resolver/impl/SimpleAggregationAttributeResolver.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SimpleAggregationAttributeResolver.Tpo" "$(DEPDIR)/SimpleAggregationAttributeResolver.Plo"; else rm -f "$(DEPDIR)/SimpleAggregationAttributeResolver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/resolver/impl/SimpleAggregationAttributeResolver.cpp' object='SimpleAggregationAttributeResolver.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SimpleAggregationAttributeResolver.lo `test -f 'attribute/resolver/impl/SimpleAggregationAttributeResolver.cpp' || echo '$(srcdir)/'`attribute/resolver/impl/SimpleAggregationAttributeResolver.cpp
+
 ChainingAttributeExtractor.lo: attribute/resolver/impl/ChainingAttributeExtractor.cpp
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChainingAttributeExtractor.lo -MD -MP -MF "$(DEPDIR)/ChainingAttributeExtractor.Tpo" -c -o ChainingAttributeExtractor.lo `test -f 'attribute/resolver/impl/ChainingAttributeExtractor.cpp' || echo '$(srcdir)/'`attribute/resolver/impl/ChainingAttributeExtractor.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChainingAttributeExtractor.Tpo" "$(DEPDIR)/ChainingAttributeExtractor.Plo"; else rm -f "$(DEPDIR)/ChainingAttributeExtractor.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/resolver/impl/ChainingAttributeExtractor.cpp' object='ChainingAttributeExtractor.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChainingAttributeExtractor.lo `test -f 'attribute/resolver/impl/ChainingAttributeExtractor.cpp' || echo '$(srcdir)/'`attribute/resolver/impl/ChainingAttributeExtractor.cpp
+
+DelegationAttributeExtractor.lo: attribute/resolver/impl/DelegationAttributeExtractor.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT DelegationAttributeExtractor.lo -MD -MP -MF "$(DEPDIR)/DelegationAttributeExtractor.Tpo" -c -o DelegationAttributeExtractor.lo `test -f 'attribute/resolver/impl/DelegationAttributeExtractor.cpp' || echo '$(srcdir)/'`attribute/resolver/impl/DelegationAttributeExtractor.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/DelegationAttributeExtractor.Tpo" "$(DEPDIR)/DelegationAttributeExtractor.Plo"; else rm -f "$(DEPDIR)/DelegationAttributeExtractor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/resolver/impl/DelegationAttributeExtractor.cpp' object='DelegationAttributeExtractor.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o DelegationAttributeExtractor.lo `test -f 'attribute/resolver/impl/DelegationAttributeExtractor.cpp' || echo '$(srcdir)/'`attribute/resolver/impl/DelegationAttributeExtractor.cpp
+
+KeyDescriptorAttributeExtractor.lo: attribute/resolver/impl/KeyDescriptorAttributeExtractor.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT KeyDescriptorAttributeExtractor.lo -MD -MP -MF "$(DEPDIR)/KeyDescriptorAttributeExtractor.Tpo" -c -o KeyDescriptorAttributeExtractor.lo `test -f 'attribute/resolver/impl/KeyDescriptorAttributeExtractor.cpp' || echo '$(srcdir)/'`attribute/resolver/impl/KeyDescriptorAttributeExtractor.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/KeyDescriptorAttributeExtractor.Tpo" "$(DEPDIR)/KeyDescriptorAttributeExtractor.Plo"; else rm -f "$(DEPDIR)/KeyDescriptorAttributeExtractor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='attribute/resolver/impl/KeyDescriptorAttributeExtractor.cpp' object='KeyDescriptorAttributeExtractor.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o KeyDescriptorAttributeExtractor.lo `test -f 'attribute/resolver/impl/KeyDescriptorAttributeExtractor.cpp' || echo '$(srcdir)/'`attribute/resolver/impl/KeyDescriptorAttributeExtractor.cpp
 
 XMLAttributeExtractor.lo: attribute/resolver/impl/XMLAttributeExtractor.cpp
 @am__fastdepCXX_TRUE@	if $(LIBTOOL) --tag=CXX --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT XMLAttributeExtractor.lo -MD -MP -MF "$(DEPDIR)/XMLAttributeExtractor.Tpo" -c -o XMLAttributeExtractor.lo `test -f 'attribute/resolver/impl/XMLAttributeExtractor.cpp' || echo '$(srcdir)/'`attribute/resolver/impl/XMLAttributeExtractor.cpp; \
@@ -2042,6 +2141,11 @@ paths.h: ${srcdir}/paths.h.in Makefile ${top_builddir}/config.status
 	rm -f $@.tmp
 	sed < ${srcdir}/$@.in > $@.tmp \
 	    -e 's:@-PREFIX-@:${prefix}:g' \
+        -e 's:@-LIBDIR-@:${libdir}:g' \
+        -e 's:@-SYSCONFDIR-@:${sysconfdir}:g' \
+        -e 's:@-LOGDIR-@:${logdir}:g' \
+        -e 's:@-RUNDIR-@:${rundir}:g' \
+        -e 's:@-XMLDIR-@:${xmldir}:g' \
 	    -e 's:@-PKGSYSCONFDIR-@:${pkgsysconfdir}:g' \
 	    -e 's:@-PKGXMLDIR-@:${pkgxmldir}:g' \
 	    -e 's:@-XMLTOOLINGXMLDIR-@:${XMLTOOLINGXMLDIR}:g' \

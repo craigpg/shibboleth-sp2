@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * SessionHandler.cpp
- * 
+ *
  * Handler for dumping information about an active session.
  */
 
@@ -45,7 +45,12 @@ namespace shibsp {
     class SHIBSP_DLLLOCAL Blocker : public DOMNodeFilter
     {
     public:
-        short acceptNode(const DOMNode* node) const {
+#ifdef SHIBSP_XERCESC_SHORT_ACCEPTNODE
+        short
+#else
+        FilterAction
+#endif
+        acceptNode(const DOMNode* node) const {
             return FILTER_REJECT;
         }
     };
@@ -102,7 +107,7 @@ pair<bool,long> SessionHandler::run(SPRequest& request, bool isHandler) const
     if (!m_acl.empty() && m_acl.count(request.getRemoteAddr()) == 0) {
         m_log.error("session handler request blocked from invalid address (%s)", request.getRemoteAddr().c_str());
         istringstream msg("Session Handler Blocked");
-        return make_pair(true,request.sendResponse(msg, HTTPResponse::XMLTOOLING_HTTP_STATUS_UNAUTHORIZED));
+        return make_pair(true,request.sendResponse(msg, HTTPResponse::XMLTOOLING_HTTP_STATUS_FORBIDDEN));
     }
 
     stringstream s;
@@ -186,7 +191,7 @@ pair<bool,long> SessionHandler::run(SPRequest& request, bool isHandler) const
 
     if (!m_values && !attributes.empty())
         s << count << " value(s)" << endl;
-    
+
     s << "</pre></body></html>";
     request.setContentType("text/html; charset=UTF-8");
     request.setResponseHeader("Expires","01-Jan-1997 12:00:00 GMT");

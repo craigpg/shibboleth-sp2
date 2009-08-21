@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,12 +38,8 @@ using namespace xmltooling;
 using namespace std;
 
 SOAPClient::SOAPClient(SecurityPolicy& policy)
-    : opensaml::SOAPClient(policy), m_app(policy.getApplication()), m_settings(NULL), m_relyingParty(NULL), m_credResolver(NULL)
+    : opensaml::SOAPClient(policy), m_app(policy.getApplication()), m_relyingParty(NULL), m_credResolver(NULL)
 {
-    m_settings = m_app.getServiceProvider().getPolicySettings(m_app.getString("policyId").second);
-    pair<bool,bool> validate = m_settings->getBool("validate");
-    policy.setValidating(validate.first && validate.second);
-    setValidating(validate.first && validate.second);
 }
 
 void SOAPClient::send(const soap11::Envelope& env, const char* from, MetadataCredentialCriteria& to, const char* endpoint)
@@ -114,8 +110,7 @@ void SOAPClient::prepareTransport(SOAPTransport& transport)
     if ((!flag.first || flag.second) && !transport.isConfidential())
         throw opensaml::BindingException("Transport confidentiality required, but not available."); 
 
-    flag = m_settings->getBool("validate");
-    setValidating(flag.first && flag.second);
+    setValidating(getPolicy().getValidating());
     flag = m_relyingParty->getBool("requireTransportAuth");
     forceTransportAuthentication(!flag.first || flag.second);
 

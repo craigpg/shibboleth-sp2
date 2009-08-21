@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,8 +16,8 @@
 
 /**
  * CommonDomainCookie.cpp
- * 
- * Helper class for maintaining discovery cookie. 
+ *
+ * Helper class for maintaining discovery cookie.
  */
 
 #include "internal.h"
@@ -55,12 +55,16 @@ CommonDomainCookie::CommonDomainCookie(const char* cookie)
     free(b64);
 
     // Now Base64 decode the list.
-    unsigned int len;
+    xsecsize_t len;
     for (vector<string>::iterator i=templist.begin(); i!=templist.end(); ++i) {
         XMLByte* decoded=Base64::decode(reinterpret_cast<const XMLByte*>(i->c_str()),&len);
         if (decoded && *decoded) {
             m_list.push_back(reinterpret_cast<char*>(decoded));
+#ifdef SHIBSP_XERCESC_HAS_XMLBYTE_RELEASE
             XMLString::release(&decoded);
+#else
+            XMLString::release((char**)&decoded);
+#endif
         }
     }
 }
@@ -74,27 +78,31 @@ const char* CommonDomainCookie::set(const char* entityID)
             break;
         }
     }
-    
+
     // Append it to the end.
     m_list.push_back(entityID);
-    
+
     // Now rebuild the delimited list.
-    unsigned int len;
+    xsecsize_t len;
     string delimited;
     for (vector<string>::const_iterator j=m_list.begin(); j!=m_list.end(); j++) {
         if (!delimited.empty()) delimited += ' ';
-        
+
         XMLByte* b64=Base64::encode(reinterpret_cast<const XMLByte*>(j->c_str()),j->length(),&len);
         XMLByte *pos, *pos2;
         for (pos=b64, pos2=b64; *pos2; pos2++)
             if (isgraph(*pos2))
                 *pos++=*pos2;
         *pos=0;
-        
+
         delimited += reinterpret_cast<char*>(b64);
+#ifdef SHIBSP_XERCESC_HAS_XMLBYTE_RELEASE
         XMLString::release(&b64);
+#else
+        XMLString::release((char**)&b64);
+#endif
     }
-    
+
     m_encoded=XMLToolingConfig::getConfig().getURLEncoder()->encode(delimited.c_str());
     return m_encoded.c_str();
 }

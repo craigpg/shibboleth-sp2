@@ -847,7 +847,7 @@ void SSCache::insert(const char* key, time_t expires, const char* name, const ch
     }
     else {
         // New record.
-        obj.structure();
+        obj = DDF(NULL).structure();
     }
 
     if (!index || !*index)

@@ -8,6 +8,7 @@
 	<key>ProgramArguments</key>
 	<array>
 		<string>@-PREFIX-@/sbin/shibd</string>
+        <string>-F</string>
 		<string>-f</string>
 		<string>-p</string>
 		<string>@-PKGRUNDIR-@/shibd.pid</string>

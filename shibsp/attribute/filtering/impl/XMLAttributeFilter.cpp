@@ -228,7 +228,7 @@ MatchFunctor* XMLFilterImpl::buildFunctor(
             id = "";
     }
 
-    auto_ptr<QName> type(XMLHelper::getXSIType(e));
+    auto_ptr<xmltooling::QName> type(XMLHelper::getXSIType(e));
     if (type.get()) {
         try {
             MatchFunctor* func = SPConfig::getConfig().MatchFunctorManager.newPlugin(*type.get(), make_pair(&functorMap,e));
@@ -300,10 +300,13 @@ pair< string,pair<const MatchFunctor*,const MatchFunctor*> > XMLFilterImpl::buil
     }
 
     if (perm || deny) {
-        if (*id)
-            return m_attrRules[id] = pair< string,pair<const MatchFunctor*,const MatchFunctor*> >(attrID.get(), pair<const MatchFunctor*,const MatchFunctor*>(perm,deny));
-        else
+        if (*id) {
+            m_attrRules[id] = pair< string,pair<const MatchFunctor*,const MatchFunctor*> >(attrID.get(), pair<const MatchFunctor*,const MatchFunctor*>(perm,deny));
+            return m_attrRules[id];
+        }
+        else {
             return pair< string,pair<const MatchFunctor*,const MatchFunctor*> >(attrID.get(), pair<const MatchFunctor*,const MatchFunctor*>(perm,deny));
+        }
     }
 
     m_log.warn("skipping AttributeRule (%s), permit and denial rule(s) invalid or missing", id);
@@ -430,18 +433,19 @@ void XMLFilterImpl::filterAttributes(const FilteringContext& context, vector<Att
                 if (row[index-1])
                     attr->removeValue(index-1);
             }
-
-            // Check for no values.
-            if (attr->valueCount() == 0) {
-                m_log.warn(
-                    "no values left, removing attribute (%s) from (%s)",
-                    attr->getId(), issuer.get() ? issuer.get() : "unknown source"
-                    );
-                delete attr;
-                attributes.erase(attributes.begin() + a);
-                continue;
-            }
         }
+
+        // Check for no values.
+        if (attr->valueCount() == 0) {
+            m_log.warn(
+                "no values left, removing attribute (%s) from (%s)",
+                attr->getId(), issuer.get() ? issuer.get() : "unknown source"
+                );
+            delete attr;
+            attributes.erase(attributes.begin() + a);
+            continue;
+        }
+
         ++a;
     }
 }

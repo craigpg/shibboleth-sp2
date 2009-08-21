@@ -74,6 +74,8 @@ namespace shibsp {
 
         const char* getRequestURL() const;
         
+        std::string getRemoteAddr() const;
+        
         const char* getParameter(const char* name) const;
 
         std::vector<const char*>::size_type getParameters(const char* name, std::vector<const char*>& values) const;

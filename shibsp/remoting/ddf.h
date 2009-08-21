@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ namespace shibsp {
         // constructors
         DDF() : m_handle(NULL) {}
         DDF(const char* n);
-        DDF(const char* n, const char* val);
+        DDF(const char* n, const char* val, bool safe=true);
         DDF(const char* n, long val);
         DDF(const char* n, double val);
         DDF(const char* n, void* val);
@@ -80,7 +80,10 @@ namespace shibsp {
         DDF& string(const char* val) {
             return string(const_cast<char*>(val), true);
         }
-        DDF& string(char* val, bool copyit=true);
+        DDF& unsafe_string(const char* val) {
+            return string(const_cast<char*>(val), true, false);
+        }
+        DDF& string(char* val, bool copyit=true, bool safe=true);
         DDF& string(long val);
         DDF& string(double val);
         DDF& integer(long val);

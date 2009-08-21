@@ -258,19 +258,21 @@ target_alias = @target_alias@
 xs = @xs@
 AUTOMAKE_OPTIONS = foreign
 pkglogdir = ${localstatedir}/log/@PACKAGE@
-pkgdocdir = ${datadir}/doc/@PACKAGE@
+pkgdocdir = $(datadir)/doc/@PACKAGE@-@PACKAGE_VERSION@
 shirelogdir = ${localstatedir}/log/httpd
 pkgxmldir = $(datadir)/xml/@PACKAGE@
 pkgrundir = $(localstatedir)/run/@PACKAGE@
 pkgsysconfdir = $(sysconfdir)/@PACKAGE@
 pkgsysconf_DATA = \
 	shibd-redhat \
+	shibd-suse \
 	shibd-debian \
 	shibd-osx.plist \
 	apache.config \
 	apache2.config \
 	apache22.config \
 	keygen.sh \
+	metagen.sh \
 	upgrade.xsl
 
 
@@ -297,6 +299,7 @@ CONFIGFILES = \
 	metadataError.html \
 	bindingTemplate.html \
 	discoveryTemplate.html \
+    postTemplate.html \
 	localLogout.html \
 	globalLogout.html \
 	sslError.html
@@ -306,6 +309,7 @@ CLEANFILES = \
 	apache2.config \
 	apache22.config \
 	shibd-redhat \
+	shibd-suse \
 	shibd-debian \
 	shibd-osx.plist \
 	shibd.logger \
@@ -318,10 +322,12 @@ EXTRA_DIST = \
 	apache2.config.in \
 	apache22.config.in \
 	shibd-redhat.in \
+	shibd-suse.in \
 	shibd-debian.in \
 	shibd-osx.plist.in \
 	keygen.bat \
 	keygen.sh \
+	metagen.sh \
 	upgrade.xsl \
 	xsltproc.js \
 	$(CONFIGFILES)
@@ -541,6 +547,9 @@ apache22.config: ${srcdir}/apache22.config.in Makefile ${top_builddir}/config.st
 shibd-redhat: ${srcdir}/shibd-redhat.in Makefile ${top_builddir}/config.status
 	$(MAKE) do-build-file FILE=$@
 
+shibd-suse: ${srcdir}/shibd-suse.in Makefile ${top_builddir}/config.status
+	$(MAKE) do-build-file FILE=$@
+
 shibd-debian: ${srcdir}/shibd-debian.in Makefile ${top_builddir}/config.status
 	$(MAKE) do-build-file FILE=$@
 
@@ -576,6 +585,8 @@ install-data-local:	all-data-local
         done
 
 install-data-hook:
+	chmod +x $(DESTDIR)$(pkgsysconfdir)/keygen.sh
+	chmod +x $(DESTDIR)$(pkgsysconfdir)/metagen.sh
 	if test -z "$(NOKEYGEN)"; then \
 		cd $(DESTDIR)$(pkgsysconfdir); \
 		sh ./keygen.sh -b ; \

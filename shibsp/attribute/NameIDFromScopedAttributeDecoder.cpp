@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,20 +34,28 @@ using namespace xmltooling;
 using namespace std;
 
 namespace shibsp {
-    static XMLCh format[] =                 UNICODE_LITERAL_6(f,o,r,m,a,t);
-    static XMLCh formatter[] =              UNICODE_LITERAL_9(f,o,r,m,a,t,t,e,r);
+    static const XMLCh defaultQualifiers[] =UNICODE_LITERAL_17(d,e,f,a,u,l,t,Q,u,a,l,i,f,i,e,r,s);
+    static const XMLCh format[] =           UNICODE_LITERAL_6(f,o,r,m,a,t);
+    static const XMLCh formatter[] =        UNICODE_LITERAL_9(f,o,r,m,a,t,t,e,r);
     static const XMLCh Scope[] =            UNICODE_LITERAL_5(S,c,o,p,e);
     static const XMLCh scopeDelimeter[] =   UNICODE_LITERAL_14(s,c,o,p,e,D,e,l,i,m,e,t,e,r);
 
     class SHIBSP_DLLLOCAL NameIDFromScopedAttributeDecoder : virtual public AttributeDecoder
     {
     public:
-        NameIDFromScopedAttributeDecoder(const DOMElement* e) : AttributeDecoder(e), m_delimeter('@'),
-                m_format(e ? e->getAttributeNS(NULL,format) : NULL), m_formatter(e ? e->getAttributeNS(NULL,formatter) : NULL) {
+        NameIDFromScopedAttributeDecoder(const DOMElement* e)
+            : AttributeDecoder(e),
+                m_delimeter('@'),
+                m_format(e ? e->getAttributeNS(NULL,format) : NULL),
+                m_formatter(e ? e->getAttributeNS(NULL,formatter) : NULL),
+                m_defaultQualifiers(false) {
             if (e && e->hasAttributeNS(NULL,scopeDelimeter)) {
                 auto_ptr_char d(e->getAttributeNS(NULL,scopeDelimeter));
                 m_delimeter = *(d.get());
             }
+            const XMLCh* flag = e ? e->getAttributeNS(NULL, defaultQualifiers) : NULL;
+            if (flag && (*flag == chLatin_t || *flag == chDigit_1))
+                m_defaultQualifiers = true;
         }
         ~NameIDFromScopedAttributeDecoder() {}
 
@@ -59,6 +67,7 @@ namespace shibsp {
         char m_delimeter;
         auto_ptr_char m_format;
         auto_ptr_char m_formatter;
+        bool m_defaultQualifiers;
     };
 
     AttributeDecoder* SHIBSP_DLLLOCAL NameIDFromScopedAttributeDecoderFactory(const DOMElement* const & e)
@@ -75,11 +84,10 @@ shibsp::Attribute* NameIDFromScopedAttributeDecoder::decode(
     char* val;
     char* scope;
     const XMLCh* xmlscope;
-    QName scopeqname(NULL,Scope);
+    xmltooling::QName scopeqname(NULL,Scope);
     auto_ptr<NameIDAttribute> nameid(
         new NameIDAttribute(ids, (m_formatter.get() && *m_formatter.get()) ? m_formatter.get() : DEFAULT_NAMEID_FORMATTER)
         );
-    nameid->setCaseSensitive(m_caseSensitive);
     vector<NameIDAttribute::Value>& dest = nameid->getValues();
     vector<XMLObject*>::const_iterator v,stop;
 
@@ -135,9 +143,9 @@ shibsp::Attribute* NameIDFromScopedAttributeDecoder::decode(
                     destval.m_Name = val;
                     if (m_format.get() && *m_format.get())
                         destval.m_Format = m_format.get();
-                    if (assertingParty)
+                    if (m_defaultQualifiers && assertingParty)
                         destval.m_NameQualifier = assertingParty;
-                    if (relyingParty)
+                    if (m_defaultQualifiers && relyingParty)
                         destval.m_SPNameQualifier = relyingParty;
                 }
                 else {
@@ -150,7 +158,7 @@ shibsp::Attribute* NameIDFromScopedAttributeDecoder::decode(
             }
         }
 
-        return dest.empty() ? NULL : nameid.release();
+        return dest.empty() ? NULL : _decode(nameid.release());
     }
 
     log.warn("XMLObject type not recognized by NameIDFromScopedAttributeDecoder, no values returned");

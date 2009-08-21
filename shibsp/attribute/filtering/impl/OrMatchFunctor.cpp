@@ -105,7 +105,7 @@ MatchFunctor* OrMatchFunctor::buildFunctor(const DOMElement* e, const FilterPoli
     if (*id && functorMap->getMatchFunctors().count(id))
         id = "";
 
-    auto_ptr<QName> type(XMLHelper::getXSIType(e));
+    auto_ptr<xmltooling::QName> type(XMLHelper::getXSIType(e));
     if (!type.get())
         throw ConfigurationException("Child Rule found with no xsi:type.");
 

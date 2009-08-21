@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,6 +134,8 @@ namespace shibsp {
     static const XMLCh _type[] =                UNICODE_LITERAL_4(t,y,p,e);
 
     SHIBSP_DLLLOCAL PluginManager<AttributeResolver,string,const DOMElement*>::Factory QueryResolverFactory;
+    SHIBSP_DLLLOCAL PluginManager<AttributeResolver,string,const DOMElement*>::Factory SimpleAggregationResolverFactory;
+
     AttributeResolver* SHIBSP_DLLLOCAL ChainingResolverFactory(const DOMElement* const & e)
     {
         return new ChainingAttributeResolver(e);
@@ -143,6 +145,7 @@ namespace shibsp {
 void SHIBSP_API shibsp::registerAttributeResolvers()
 {
     SPConfig::getConfig().AttributeResolverManager.registerFactory(QUERY_ATTRIBUTE_RESOLVER, QueryResolverFactory);
+    SPConfig::getConfig().AttributeResolverManager.registerFactory(SIMPLEAGGREGATION_ATTRIBUTE_RESOLVER, SimpleAggregationResolverFactory);
     SPConfig::getConfig().AttributeResolverManager.registerFactory(CHAINING_ATTRIBUTE_RESOLVER, ChainingResolverFactory);
 }
 
@@ -184,7 +187,7 @@ void ChainingAttributeResolver::resolveAttributes(ResolutionContext& ctx) const
         (*i)->resolveAttributes(*context.get());
 
         chain.m_attributes.insert(chain.m_attributes.end(), context->getResolvedAttributes().begin(), context->getResolvedAttributes().end());
-        chain.m_ownedAttributes.insert(chain.m_attributes.end(), context->getResolvedAttributes().begin(), context->getResolvedAttributes().end());
+        chain.m_ownedAttributes.insert(chain.m_ownedAttributes.end(), context->getResolvedAttributes().begin(), context->getResolvedAttributes().end());
         context->getResolvedAttributes().clear();
 
         chain.m_tokens.insert(chain.m_tokens.end(), context->getResolvedAssertions().begin(), context->getResolvedAssertions().end());

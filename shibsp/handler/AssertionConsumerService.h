@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,6 +75,23 @@ namespace shibsp {
 #ifndef SHIBSP_LITE
         void generateMetadata(opensaml::saml2md::SPSSODescriptor& role, const char* handlerURL) const;
         
+        /**
+         * Returns a SecurityPolicy instance to use for an incoming request.
+         *
+         * <p>Allows handlers to customize the type of policy object their policy rules might require.
+         * <p>The caller <strong>MUST</strong> lock the application's MetadataProvider for the life
+         * of the returned object.
+         *
+         * @param application   reference to application receiving message
+         * @param role          identifies the role (generally IdP or SP) of the policy peer
+         * @param validate      true iff XML parsing should be done with validation
+         * @param policyId      identifies policy rules to auto-attach, defaults to the application's set
+         * @return  a new policy instance, which the caller is responsible for freeing
+         */
+        virtual opensaml::SecurityPolicy* createSecurityPolicy(
+            const Application& application, const xmltooling::QName* role, bool validate, const char* policyId
+            ) const;
+
         /**
          * Implement protocol-specific handling of the incoming decoded message.
          * 

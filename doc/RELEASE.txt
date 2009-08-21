@@ -1,14 +1,14 @@
 Release Notes
 
 Shibboleth Native SP
-2.1
-8/8/2008
+2.2.1
 
 NOTE: The shibboleth2.xml configuration format in this release
-is fully compatible with the 2.0 release.
+is fully compatible with the 2.1 release, but there are some small
+changes required to eliminate various warnings about deprecated options.
 
 List of issues addressed by this release:
-https://bugs.internet2.edu/jira/secure/IssueNavigator.jspa?reset=true&&pid=10011&fixfor=10129&status=5&status=6&sorter/field=issuekey&sorter/order=ASC
+https://bugs.internet2.edu/jira/secure/IssueNavigator.jspa?reset=true&&pid=10011&fixfor=10232&status=5&status=6&sorter/field=issuekey&sorter/order=ASC
 
 Fully Supported
 
@@ -38,7 +38,8 @@ Fully Supported
 - Metadata Providers
 	- Bulk resolution via local file, or URL with local file backup
 	- Dynamic resolution and caching based on entityID 
-	- Filtering based on whitelist, blacklist, or signature verification  
+	- Filtering based on whitelist, blacklist, or signature verification
+	- Support for enhanced PKI processing in transport and signature verification
 
 - Metadata Generation Handler
     - Generates and optionally signs SAML metadata based on SP configuration
@@ -58,6 +59,7 @@ Fully Supported
 	- XML signing
 	- Simple "blob" signing
 	- TLS X.509 certificate authentication
+	- SAML condition handling
 
 - Client transport authentication to SOAP endpoints via libcurl
 	- TLS X.509 client certificates
@@ -74,6 +76,10 @@ Fully Supported
 		- Strings
 		- Value/scope pairs (legacy and value@scope syntaxes supported)
 		- NameIDs
+        - XML to base64-encoded XML
+		- DOM to internal data structure
+		- KeyInfo-based data, including metadata-derived KeyDescriptors
+		- Metadata EntityAttributes extension "tags"
 
 - Attribute Filtering
 	- Policy language compatible with IdP filtering, except that references
@@ -89,7 +95,7 @@ Fully Supported
 
 - Enhanced Spoofing Detection
 	- Detects and blocks client headers that would match known attribute headers
-	- Does not support Apache mod_rewrite, but can be disabled when necessary
+	- Key-based mechanism to handle internal server redirection while maintaining protection
 
 - ODBC Clustering Support
 	- Tested against a few different servers with various drivers
@@ -101,6 +107,9 @@ Fully Supported
 - Error handling enhancements
     - Reporting of SAML status errors
     - Optional redirection to custom error handler
+
+- Form POST data preservation
+    - Support on Apache for preserving URL-encoded form data across SSO 
 
 - Apache module enhancements
     - "OR" coexistence with other authorization modules

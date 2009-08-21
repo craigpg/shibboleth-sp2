@@ -1,6 +1,6 @@
 /*
  *  Copyright 2001-2007 Internet2
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 
 /**
  * LogoutHandler.cpp
- * 
+ *
  * Base class for logout-related handlers.
  */
 
@@ -71,7 +71,7 @@ pair<bool,long> LogoutHandler::run(SPRequest& request, bool isHandler) const
     // If we're inside a chain, do nothing.
     if (getParent())
         return make_pair(false,0L);
-    
+
     // If this isn't a LogoutInitiator, we only "continue" a notification loop, rather than starting one.
     if (!m_initiator && !request.getParameter("notifying"))
         return make_pair(false,0L);
@@ -172,6 +172,7 @@ pair<bool,long> LogoutHandler::notifyFrontChannel(
 #include <xmltooling/impl/AnyElement.h>
 #include <xmltooling/soap/SOAP.h>
 #include <xmltooling/soap/SOAPClient.h>
+#include <xmltooling/soap/HTTPSOAPTransport.h>
 using namespace soap11;
 namespace {
     static const XMLCh LogoutNotification[] =   UNICODE_LITERAL_18(L,o,g,o,u,t,N,o,t,i,f,i,c,a,t,i,o,n);
@@ -188,6 +189,12 @@ namespace {
     private:
         void prepareTransport(SOAPTransport& transport) {
             transport.setVerifyHost(false);
+            HTTPSOAPTransport* http = dynamic_cast<HTTPSOAPTransport*>(&transport);
+            if (http) {
+                http->useChunkedEncoding(false);
+                http->setRequestHeader("User-Agent", PACKAGE_NAME);
+                http->setRequestHeader(PACKAGE_NAME, PACKAGE_VERSION);
+            }
         }
     };
 };
@@ -197,6 +204,11 @@ bool LogoutHandler::notifyBackChannel(
     const Application& application, const char* requestURL, const vector<string>& sessions, bool local
     ) const
 {
+    if (sessions.empty()) {
+        Category::getInstance(SHIBSP_LOGCAT".Logout").error("no sessions supplied to back channel notification method");
+        return false;
+    }
+
     unsigned int index = 0;
     string endpoint = application.getNotificationURL(requestURL, false, index++);
     if (endpoint.empty())
@@ -209,7 +221,7 @@ bool LogoutHandler::notifyBackChannel(
         env->setBody(body);
         ElementProxy* msg = new AnyElementImpl(shibspconstants::SHIB2SPNOTIFY_NS, LogoutNotification);
         body->getUnknownXMLObjects().push_back(msg);
-        msg->setAttribute(QName(NULL, _type), local ? _local : _global);
+        msg->setAttribute(xmltooling::QName(NULL, _type), local ? _local : _global);
         for (vector<string>::const_iterator s = sessions.begin(); s!=sessions.end(); ++s) {
             auto_ptr_XMLCh temp(s->c_str());
             ElementProxy* child = new AnyElementImpl(shibspconstants::SHIB2SPNOTIFY_NS, SessionID);
