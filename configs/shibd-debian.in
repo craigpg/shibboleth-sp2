@@ -50,6 +50,9 @@ DAEMON_OPTS="$DAEMON_OPTS -p $PIDFILE"
 
 case "$1" in
 start)
+    # Ensure @-PKGRUNDIR-@ exists.  /var/run may be on a tmpfs file system.
+    [ -d '@-PKGRUNDIR-@' ] || mkdir -p '@-PKGRUNDIR-@'
+
     # Don't start shibd if NO_START is set.
     if [ "$NO_START" = 1 ] ; then
         echo "Not starting $DESC (see /etc/default/$NAME)"
@@ -67,6 +70,9 @@ stop)
     echo "$NAME."
     ;;
 restart|force-reload)
+    # Ensure @-PKGRUNDIR-@ exists.  /var/run may be on a tmpfs file system.
+    [ -d '@-PKGRUNDIR-@' ] || mkdir -p '@-PKGRUNDIR-@'
+
     echo -n "Restarting $DESC: "
     start-stop-daemon --stop --quiet --pidfile $PIDFILE \
         --exec $DAEMON
