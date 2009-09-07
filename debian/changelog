@@ -1,4 +1,4 @@
-shibboleth-sp2 (2.2.1+dfsg-1) UNRELEASED; urgency=low
+shibboleth-sp2 (2.2.1+dfsg-1) unstable; urgency=high
 
   * New upstream release.
     - SECURITY: Fix improper handling of certificate names containing nul
@@ -39,7 +39,7 @@ shibboleth-sp2 (2.2.1+dfsg-1) UNRELEASED; urgency=low
     - Don't ship /var/run/shibboleth in the package.
     - Remove /var/run/shibboleth in postrm if it exists.
 
- -- Russ Allbery <rra@debian.org>  Fri, 24 Jul 2009 15:29:01 -0700
+ -- Russ Allbery <rra@debian.org>  Mon, 07 Sep 2009 16:14:29 -0700
 
 shibboleth-sp2 (2.1.dfsg1-2) unstable; urgency=low
 
