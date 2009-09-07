@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 
 while getopts a:c:e:h:n:o:s:t: c
      do

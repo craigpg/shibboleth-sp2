@@ -5,3 +5,5 @@ set -e
 if [ "$1" = purge ] || [ "$1" = remove ] ; then
     rm -rf /var/run/shibboleth
 fi
+
+#DEBHELPER#
