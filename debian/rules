@@ -90,6 +90,7 @@ install-stamp:
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/*.config
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-osx.plist
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-redhat
+	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-suse
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/sp-*.pem
 	chmod +x $(CURDIR)/debian/tmp/etc/shibboleth/keygen.sh
 	mv $(CURDIR)/debian/tmp/etc/shibboleth/keygen.sh \
