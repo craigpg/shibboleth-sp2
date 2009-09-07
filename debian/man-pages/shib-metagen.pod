@@ -85,6 +85,8 @@ multiple times to list multiple contacts.  I<tech> should be in the form
 C<I<first>/I<last>/I<email>> where I<first> is the given name and I<last>
 is the surname.
 
+=back
+
 =head1 AUTHOR
 
 This manual page was written by Russ Allbery for Debian GNU/Linux.
