@@ -95,6 +95,8 @@ install-stamp:
 	chmod +x $(CURDIR)/debian/tmp/etc/shibboleth/keygen.sh
 	mv $(CURDIR)/debian/tmp/etc/shibboleth/keygen.sh \
 	    $(CURDIR)/debian/tmp/usr/sbin/shib-keygen
+	mv $(CURDIR)/debian/tmp/etc/shibboleth/metagen.sh \
+	    $(CURDIR)/debian/tmp/usr/bin/shib-metagen
 	mv $(CURDIR)/debian/tmp/etc/shibboleth/shibd-debian \
 	    $(CURDIR)/debian/libapache2-mod-shib2.shibd.init
 	dh_installdirs -s -i
@@ -107,6 +109,9 @@ install-stamp:
 	pod2man $(CURDIR)/debian/man-pages/resolvertest.pod --section 1 \
 	    --center 'Shibboleth' --release 2.0 \
 	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man1/resolvertest.1
+	pod2man $(CURDIR)/debian/man-pages/shib-metagen.pod --section 1 \
+	    --center 'Shibboleth' --release 2.0 \
+	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man1/shib-metagen.1
 	pod2man $(CURDIR)/debian/man-pages/shib-keygen.pod --section 8 \
 	    --center 'Shibboleth' --release 2.0 \
 	    $(CURDIR)/debian/libapache2-mod-shib2/usr/share/man/man8/shib-keygen.8

@@ -6,6 +6,7 @@ shibboleth-sp2 (2.2.1+dfsg-1) UNRELEASED; urgency=low
     - SECURITY: Correctly validate the use attribute of KeyDescriptors,
       preventing use of a key for signing or for encryption if its use
       field says it may not be used for that purpose.
+    - New shib-metagen script for generating Shibboleth SP metadata.
     - Support preserving form data across user authentication.
     - Support internal server redirection while maintaining protection.
     - Fix incompatibility between lazy sessions and servlet containers.
