@@ -1,3 +1,12 @@
+shibboleth-sp2 (2.2.1+dfsg-2) unstable; urgency=low
+
+  * Change the libapache2-mod-shib2 section to httpd, matching override.
+  * Add a NEWS.Debian entry for libapache2-mod-shib2 that explains the
+    recommended configuration update for the 2.2 version.  Thanks, Scott
+    Cantor and Kristof BAJNOK.
+
+ -- Russ Allbery <rra@debian.org>  Wed, 09 Sep 2009 12:15:08 -0700
+
 shibboleth-sp2 (2.2.1+dfsg-1) unstable; urgency=high
 
   * New upstream release.

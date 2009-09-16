@@ -1,3 +1,26 @@
+shibboleth-sp2 (2.2.1+dfsg-2) unstable; urgency=low
+
+  There are several changes to the configuration syntax and defaults in
+  Shibboleth 2.2, one of which produce deprecation warnings on startup
+  until /etc/shibboleth/shibboleth2.xml is updated.
+
+  The most significant change is that <Rule> tags in the <Policy> element
+  should be changed to <PolicyRule> and a new policy rule added:
+
+      <PolicyRule type="Conditions">
+          <PolicyRule type="Audience"/>
+          <!-- Enable Delegation rule to permit delegated access. -->
+          <!-- <PolicyRule type="Delegation"/> -->
+      </PolicyRule>
+
+  See:
+
+  https://spaces.internet2.edu/display/SHIB2/NativeSPConfigurationChanges
+
+  for all the details and further explanation.
+
+ -- Russ Allbery <rra@debian.org>  Tue, 15 Sep 2009 20:44:26 -0700
+
 shibboleth-sp2 (2.0.dfsg1-4) unstable; urgency=low
 
   With this release, the Apache module configuration fragments in
