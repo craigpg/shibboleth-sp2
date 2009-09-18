@@ -29,6 +29,7 @@ DAEMON=@-PREFIX-@/sbin/$NAME
 SCRIPTNAME=/etc/init.d/$NAME
 PIDFILE=@-PKGRUNDIR-@/$NAME.pid
 DAEMON_OPTS=""
+DAEMON_USER=_shibd
 
 # Force removal of socket
 DAEMON_OPTS="$DAEMON_OPTS -f"
@@ -48,10 +49,31 @@ DAEMON_OPTS="$DAEMON_OPTS -p $PIDFILE"
 # Get the setting of VERBOSE and other rcS variables.
 [ -f /etc/default/rcS ] && . /etc/default/rcS
 
-case "$1" in
-start)
+prepare_environment () {
     # Ensure @-PKGRUNDIR-@ exists.  /var/run may be on a tmpfs file system.
     [ -d '@-PKGRUNDIR-@' ] || mkdir -p '@-PKGRUNDIR-@'
+
+    if [ -n "$DAEMON_USER" ]; then
+        if DIAG=$(su -s $DAEMON $DAEMON_USER -- -t $DAEMON_OPTS 2>/dev/null); then
+            # openssl errstr 200100D (hex for 33558541) says:
+            # error:0200100D:system library:fopen:Permission denied
+            if  echo "$DIAG" | fgrep -q 'ERROR OpenSSL : error code: 33558541 '; then
+                unset DAEMON_USER
+                echo "$NAME warning: file permissions require running as root"
+            else
+                chown -R "$DAEMON_USER" '@-PKGRUNDIR-@' '@-PKGLOGDIR-@'
+            fi
+        else
+            unset DAEMON_USER
+            echo "$NAME error: unable to run config check as user $DAEMON_USER"
+        fi
+        unset DIAG
+    fi
+}
+
+case "$1" in
+start)
+    prepare_environment
 
     # Don't start shibd if NO_START is set.
     if [ "$NO_START" = 1 ] ; then
@@ -59,7 +81,7 @@ start)
         exit 0
     fi
     echo -n "Starting $DESC: "
-    start-stop-daemon --start --quiet \
+    start-stop-daemon --start --quiet ${DAEMON_USER:+--chuid $DAEMON_USER} \
         --pidfile $PIDFILE --exec $DAEMON -- $DAEMON_OPTS
     echo "$NAME."
     ;;
@@ -70,14 +92,13 @@ stop)
     echo "$NAME."
     ;;
 restart|force-reload)
-    # Ensure @-PKGRUNDIR-@ exists.  /var/run may be on a tmpfs file system.
-    [ -d '@-PKGRUNDIR-@' ] || mkdir -p '@-PKGRUNDIR-@'
+    prepare_environment
 
     echo -n "Restarting $DESC: "
     start-stop-daemon --stop --quiet --pidfile $PIDFILE \
         --exec $DAEMON
     sleep 1
-    start-stop-daemon --start --quiet \
+    start-stop-daemon --start --quiet ${DAEMON_USER:+--chuid $DAEMON_USER} \
         --pidfile $PIDFILE --exec $DAEMON -- $DAEMON_OPTS
     echo "$NAME."
     ;;

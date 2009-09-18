@@ -16,7 +16,7 @@ Vcs-Browser: http://git.debian.org/?p=pkg-shibboleth/shibboleth-sp2.git
 Package: libapache2-mod-shib2
 Section: httpd
 Architecture: any
-Depends: ${shlibs:Depends}
+Depends: adduser, ${shlibs:Depends}
 Recommends: apache2, openssl
 Conflicts: libapache2-mod-shib
 Description: Federated web single sign-on system (Apache module)
