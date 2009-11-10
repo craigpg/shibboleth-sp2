@@ -1,8 +1,16 @@
-shibboleth-sp2 (2.2.1+dfsg-3) unstable; urgency=low
+shibboleth-sp2 (2.3+dfsg-1) UNRELEASED; urgency=low
 
+  [ Russ Allbery ]
+  * New upstream release.
+    - SECURITY: Partial fix for improper handling of URLs that could be
+      abused for script injection and other cross-site scripting attacks.
+      The complete fix also requires newer xmltooling and opensaml2
+      packages.  (Closes: #555608, CVE-2009-3300)
+
+  [ Ferenc Wagner ]
   * Run shibd as non-root.
 
- -- Ferenc Wagner <wferi@niif.hu>  Fri, 18 Sep 2009 17:52:07 +0200
+ -- Russ Allbery <rra@debian.org>  Tue, 10 Nov 2009 14:55:56 -0800
 
 shibboleth-sp2 (2.2.1+dfsg-2) unstable; urgency=low
 
