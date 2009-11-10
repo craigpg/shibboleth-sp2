@@ -83,7 +83,7 @@ install-stamp:
 	dh_testdir
 	dh_testroot
 	dh_clean -k
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	$(MAKE) NOKEYGEN=1 DESTDIR=$(CURDIR)/debian/tmp install
 	rm -r $(CURDIR)/debian/tmp/usr/share/doc/shibboleth*
 	rm -r $(CURDIR)/debian/tmp/var/run
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/*.dist
@@ -91,7 +91,6 @@ install-stamp:
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-osx.plist
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-redhat
 	rm $(CURDIR)/debian/tmp/etc/shibboleth/shibd-suse
-	rm $(CURDIR)/debian/tmp/etc/shibboleth/sp-*.pem
 	chmod +x $(CURDIR)/debian/tmp/etc/shibboleth/keygen.sh
 	mv $(CURDIR)/debian/tmp/etc/shibboleth/keygen.sh \
 	    $(CURDIR)/debian/tmp/usr/sbin/shib-keygen

@@ -24,6 +24,10 @@ shibboleth-sp2 (2.3+dfsg-1) UNRELEASED; urgency=high
     require the versions with the security fix.
   * Fix watch file for the new version mangling.
 
+  [ Faidon Liambotis ]
+  * Run make install with NOKEYGEN=1 and stop rm-ing generated
+    certificates.  Fixes FTBFS.
+
   [ Ferenc Wagner ]
   * Run shibd as non-root.
 
