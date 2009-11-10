@@ -1,6 +1,7 @@
-shibboleth-sp2 (2.3+dfsg-1) UNRELEASED; urgency=low
+shibboleth-sp2 (2.3+dfsg-1) UNRELEASED; urgency=high
 
   [ Russ Allbery ]
+  * Urgency set to high for security fix.
   * New upstream release.
     - SECURITY: Partial fix for improper handling of URLs that could be
       abused for script injection and other cross-site scripting attacks.
