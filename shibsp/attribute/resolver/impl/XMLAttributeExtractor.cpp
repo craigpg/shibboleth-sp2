@@ -21,22 +21,29 @@
  */
 
 #include "internal.h"
+#include "exceptions.h"
 #include "Application.h"
 #include "ServiceProvider.h"
+#include "attribute/Attribute.h"
 #include "attribute/AttributeDecoder.h"
 #include "attribute/filtering/AttributeFilter.h"
 #include "attribute/filtering/BasicFilteringContext.h"
 #include "attribute/resolver/AttributeExtractor.h"
+#include "remoting/ddf.h"
 #include "security/SecurityPolicy.h"
 #include "util/SPConstants.h"
 
 #include <saml/SAMLConfig.h>
 #include <saml/saml1/core/Assertions.h>
 #include <saml/saml2/core/Assertions.h>
+#include <saml/saml2/metadata/Metadata.h>
 #include <saml/saml2/metadata/MetadataCredentialCriteria.h>
 #include <saml/saml2/metadata/ObservableMetadataProvider.h>
+#include <xmltooling/XMLToolingConfig.h>
+#include <xmltooling/security/TrustEngine.h>
 #include <xmltooling/util/NDC.h>
 #include <xmltooling/util/ReloadableXMLFile.h>
+#include <xmltooling/util/Threads.h>
 #include <xmltooling/util/XMLHelper.h>
 #include <xercesc/util/XMLUniDefs.hpp>
 

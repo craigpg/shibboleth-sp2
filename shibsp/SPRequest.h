@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 /**
  * @file shibsp/SPRequest.h
  *
- * Interface to server request being processed
+ * Interface to server request being processed.
  */
 
 #ifndef __shibsp_req_h__
@@ -45,9 +45,9 @@ namespace shibsp {
     class SHIBSP_API SPRequest : public virtual xmltooling::HTTPRequest, public virtual xmltooling::HTTPResponse
     {
     protected:
-        SPRequest() {}
+        SPRequest();
     public:
-        virtual ~SPRequest() {}
+        virtual ~SPRequest();
 
         /**
          * Returns the locked ServiceProvider processing the request.
@@ -98,9 +98,7 @@ namespace shibsp {
          * @param name  the name of the secure header to return
          * @return the header's value, or an empty string
          */
-        virtual std::string getSecureHeader(const char* name) const {
-            return getHeader(name);
-        }
+        virtual std::string getSecureHeader(const char* name) const;
 
         /**
          * Ensures no value exists for a request header.
@@ -130,8 +128,7 @@ namespace shibsp {
          *
          * @param authtype  AUTH_TYPE value to set or NULL to clear
          */
-        virtual void setAuthType(const char* authtype) {
-        }
+        virtual void setAuthType(const char* authtype);
 
         /** Portable logging levels. */
         enum SPLogLevel {

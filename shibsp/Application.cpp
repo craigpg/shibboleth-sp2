@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@
 #include "remoting/ListenerService.h"
 
 #include <algorithm>
+#include <xmltooling/util/Threads.h>
 
 using namespace shibsp;
 using namespace xmltooling;
@@ -40,6 +41,16 @@ Application::Application(const ServiceProvider* sp) : m_sp(sp), m_lock(RWLock::c
 Application::~Application()
 {
     delete m_lock;
+}
+
+const ServiceProvider& Application::getServiceProvider() const
+{
+    return *m_sp;
+}
+
+const char* Application::getId() const
+{
+    return getString("id").second;
 }
 
 pair<string,const char*> Application::getCookieNameProps(const char* prefix, time_t* lifetime) const

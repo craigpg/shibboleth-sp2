@@ -5,7 +5,7 @@
 	
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 	<link rel="stylesheet" type="text/css" href="<shibmlp styleSheet/>" />
 	<title>Global Logout</title>
 </head>
@@ -17,24 +17,11 @@
 
 <p><strong>Status of Global Logout:</strong> <shibmlp logoutStatus/></p>
 
-<shibmlpif statusCode>
-	<p>Error from your identity provider:</p>
-	<blockquote>
-		<strong>Status:</strong> <shibmlp statusCode/><br>
-		<shibmlpif statusCode2>
-			<strong>Sub-Status:</strong> <shibmlp statusCode2/><br>
-		</shibmlpif>
-		<shibmlpif statusMessage>
-			<strong>Message:</strong> <shibmlp statusMessage/><br>
-		</shibmlpif>
-	</blockquote>
-</shibmlpif>
-
 <p>If the message above indicates success, you have been logged out of all
 the applications and systems that support the logout mechanism.</p>
 
-<p>It is still strongly advised that you close your browser to complete the
-logout process.</p>
+<p>Regardless of the outcome, it is strongly advised that you close your browser
+to ensure that you complete the logout process.</p>
 
 </body>
 </html>

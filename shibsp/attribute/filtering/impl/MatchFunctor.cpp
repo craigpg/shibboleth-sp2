@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
  */
 
 #include "internal.h"
+#include "attribute/filtering/FilterPolicyContext.h"
 #include "attribute/filtering/MatchFunctor.h"
 #include "util/SPConstants.h"
 
@@ -124,4 +125,25 @@ void SHIBSP_API shibsp::registerMatchFunctors()
     REGISTER_FACTORY(AttributeIssuerInEntityGroup);
     REGISTER_FACTORY(AttributeRequesterInEntityGroup);
     REGISTER_FACTORY(AttributeScopeMatchesShibMDScope);
+}
+
+MatchFunctor::MatchFunctor()
+{
+}
+
+MatchFunctor::~MatchFunctor()
+{
+}
+
+FilterPolicyContext::FilterPolicyContext(multimap<string,MatchFunctor*>& functors) : m_functors(functors)
+{
+}
+
+FilterPolicyContext::~FilterPolicyContext()
+{
+}
+
+multimap<string,MatchFunctor*>& FilterPolicyContext::getMatchFunctors() const
+{
+    return m_functors;
 }

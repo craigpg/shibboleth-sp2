@@ -24,6 +24,7 @@
 #include "Application.h"
 #include "exceptions.h"
 #include "ServiceProvider.h"
+#include "SPRequest.h"
 #include "handler/RemotedHandler.h"
 
 #include <algorithm>
@@ -225,6 +226,10 @@ void RemotedHandler::setAddress(const char* address)
         else
             Category::getInstance(SHIBSP_LOGCAT".Handler").info("no ListenerService available, handler remoting disabled");
     }
+}
+
+RemotedHandler::RemotedHandler()
+{
 }
 
 RemotedHandler::~RemotedHandler()

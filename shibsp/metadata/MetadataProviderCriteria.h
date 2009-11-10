@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2008 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,13 @@
 #ifndef __shibsp_metaprovcrit_h__
 #define __shibsp_metaprovcrit_h__
 
-#include <shibsp/Application.h>
+#include <shibsp/base.h>
+
 #include <saml/saml2/metadata/MetadataProvider.h>
 
 namespace shibsp {
+
+    class SHIBSP_API Application;
 
     /**
      * Extended criteria for metadata lookup for Shibboleth-aware metadata providers.
@@ -38,8 +41,7 @@ namespace shibsp {
          *
          * @param app   application performing the lookup
          */
-        MetadataProviderCriteria(const Application& app) : application(app) {
-        }
+        MetadataProviderCriteria(const Application& app);
 
         /**
          * Constructor.
@@ -50,9 +52,9 @@ namespace shibsp {
          * @param prot  protocol support constant, if any
          * @param valid true iff stale metadata should be ignored
          */
-        MetadataProviderCriteria(const Application& app, const XMLCh* id, const xmltooling::QName* q=NULL, const XMLCh* prot=NULL, bool valid=true)
-            : opensaml::saml2md::MetadataProvider::Criteria(id, q, prot, valid), application(app) {
-        }
+        MetadataProviderCriteria(
+            const Application& app, const XMLCh* id, const xmltooling::QName* q=NULL, const XMLCh* prot=NULL, bool valid=true
+            );
 
         /**
          * Constructor.
@@ -63,9 +65,9 @@ namespace shibsp {
          * @param prot  protocol support constant, if any
          * @param valid true iff stale metadata should be ignored
          */
-        MetadataProviderCriteria(const Application& app, const char* id, const xmltooling::QName* q=NULL, const XMLCh* prot=NULL, bool valid=true)
-            : opensaml::saml2md::MetadataProvider::Criteria(id, q, prot, valid), application(app) {
-        }
+        MetadataProviderCriteria(
+            const Application& app, const char* id, const xmltooling::QName* q=NULL, const XMLCh* prot=NULL, bool valid=true
+            );
 
         /**
          * Constructor.
@@ -76,11 +78,13 @@ namespace shibsp {
          * @param prot  protocol support constant, if any
          * @param valid true iff stale metadata should be ignored
          */
-        MetadataProviderCriteria(const Application& app, const opensaml::SAMLArtifact* a, const xmltooling::QName* q=NULL, const XMLCh* prot=NULL, bool valid=true)
-            : opensaml::saml2md::MetadataProvider::Criteria(a, q, prot, valid), application(app) {
-        }
+        MetadataProviderCriteria(
+            const Application& app, const opensaml::SAMLArtifact* a, const xmltooling::QName* q=NULL, const XMLCh* prot=NULL, bool valid=true
+            );
 
-        /** Controls whether stale metadata is ignored. */
+        ~MetadataProviderCriteria();
+
+        /** The application performing the lookup. */
         const Application& application;
     };
 };

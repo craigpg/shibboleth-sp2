@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,35 @@
 /**
  * @file shibsp/SessionCache.h
  *
- * Caches and manages user sessions
+ * Caches and manages user sessions.
  */
 
 #ifndef __shibsp_sessioncache_h__
 #define __shibsp_sessioncache_h__
 
 #include <shibsp/base.h>
-#ifndef SHIBSP_LITE
-# include <saml/saml1/core/Assertions.h>
-# include <saml/saml2/metadata/Metadata.h>
-#endif
+
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
+#include <ctime>
 #include <xmltooling/Lockable.h>
-#include <xmltooling/io/HTTPRequest.h>
-#include <xmltooling/io/HTTPResponse.h>
+
+namespace xmltooling {
+    class XMLTOOL_API HTTPRequest;
+    class XMLTOOL_API HTTPResponse;
+};
+
+#ifndef SHIBSP_LITE
+# include <set>
+namespace opensaml {
+    class SAML_API Assertion;
+    namespace saml2 {
+        class SAML_API NameID;
+    };
+};
+#endif
 
 namespace shibsp {
 
@@ -49,8 +64,8 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(Session);
     protected:
-        Session() {}
-        virtual ~Session() {}
+        Session();
+        virtual ~Session();
     public:
         /**
          * Returns the session key.
@@ -203,9 +218,9 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(SessionCache);
     protected:
-        SessionCache() {}
+        SessionCache();
     public:
-        virtual ~SessionCache() {}
+        virtual ~SessionCache();
 
 #ifndef SHIBSP_LITE
         /**

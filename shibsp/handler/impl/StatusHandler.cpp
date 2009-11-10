@@ -24,6 +24,7 @@
 #include "Application.h"
 #include "exceptions.h"
 #include "ServiceProvider.h"
+#include "SPRequest.h"
 #include "handler/AbstractHandler.h"
 #include "handler/RemotedHandler.h"
 #include "util/CGIParser.h"
@@ -33,6 +34,9 @@ using namespace shibsp;
 # include "SessionCache.h"
 # include "metadata/MetadataProviderCriteria.h"
 # include <saml/version.h>
+# include <saml/saml2/metadata/Metadata.h>
+# include <xmltooling/security/Credential.h>
+# include <xmltooling/security/CredentialCriteria.h>
 using namespace opensaml::saml2md;
 using namespace opensaml;
 using namespace xmlsignature;

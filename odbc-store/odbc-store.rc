@@ -53,8 +53,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,1,0
- PRODUCTVERSION 2,2,1,0
+ FILEVERSION 2,3,0,0
+ PRODUCTVERSION 2,3,0,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -71,12 +71,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Internet2\0"
             VALUE "FileDescription", "Shibboleth ODBC Storage Service Plugin\0"
-            VALUE "FileVersion", "2, 2, 1, 0\0"
+            VALUE "FileVersion", "2, 3, 0, 0\0"
             VALUE "InternalName", "odbc-store\0"
             VALUE "LegalCopyright", "Copyright © 2009 Internet2\0"
             VALUE "OriginalFilename", "odbc-store.so\0"
-            VALUE "ProductName", "Shibboleth 2.2.1\0"
-            VALUE "ProductVersion", "2, 2, 1, 0\0"
+            VALUE "ProductName", "Shibboleth 2.3\0"
+            VALUE "ProductVersion", "2, 3, 0, 0\0"
         END
     END
     BLOCK "VarFileInfo"

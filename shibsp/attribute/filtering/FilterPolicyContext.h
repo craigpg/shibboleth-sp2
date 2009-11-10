@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,12 +23,14 @@
 #ifndef __shibsp_filtpolctx_h__
 #define __shibsp_filtpolctx_h__
 
-#include <shibsp/attribute/filtering/MatchFunctor.h>
+#include <shibsp/base.h>
 
 #include <map>
 #include <string>
 
 namespace shibsp {
+
+    class SHIBSP_API MatchFunctor;
 
     /**
      * Context for lookup of instantiated MatchFunctor objects.
@@ -42,10 +44,9 @@ namespace shibsp {
          * 
          * @param functors  reference to a map of id/functor pairs
          */
-        FilterPolicyContext(std::multimap<std::string,MatchFunctor*>& functors) : m_functors(functors) {
-        }
+        FilterPolicyContext(std::multimap<std::string,MatchFunctor*>& functors);
 
-        virtual ~FilterPolicyContext() {}
+        virtual ~FilterPolicyContext();
 
         /**
          * Gets a mutable map to store id/functor pairs.
@@ -54,9 +55,7 @@ namespace shibsp {
          *
          * @return  reference to a mutable map containing available MatchFunctors 
          */
-        std::multimap<std::string,MatchFunctor*>& getMatchFunctors() const {
-            return m_functors;
-        }
+        std::multimap<std::string,MatchFunctor*>& getMatchFunctors() const;
     
     private:
         std::multimap<std::string,MatchFunctor*>& m_functors;

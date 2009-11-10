@@ -29,6 +29,61 @@ using namespace shibsp;
 using namespace xmltooling;
 using namespace std;
 
+namespace shibsp {
+    SHIBSP_DLLLOCAL Attribute* ExtensibleAttributeFactory(DDF& in) {
+        return new ExtensibleAttribute(in);
+    }
+};
+
+ExtensibleAttribute::ExtensibleAttribute(const vector<string>& ids, const char* formatter) : Attribute(ids)
+{
+    m_obj = Attribute::marshall();
+    m_obj.name("Extensible");
+    m_obj.addmember("_formatter").string(formatter);
+}
+
+ExtensibleAttribute::ExtensibleAttribute(DDF& in) : Attribute(in), m_obj(in.copy())
+{
+}
+
+ExtensibleAttribute::~ExtensibleAttribute()
+{
+    m_obj.destroy();
+}
+
+DDF ExtensibleAttribute::getValues()
+{
+    return m_obj.first();
+}
+
+size_t ExtensibleAttribute::valueCount() const
+{
+    return m_obj.first().integer();
+}
+
+void ExtensibleAttribute::clearSerializedValues()
+{
+    m_serialized.clear();
+}
+
+const char* ExtensibleAttribute::getString(size_t index) const
+{
+    return m_obj.first()[static_cast<unsigned long>(index)].string();
+}
+
+const char* ExtensibleAttribute::getScope(size_t index) const
+{
+    return NULL;
+}
+
+void ExtensibleAttribute::removeValue(size_t index)
+{
+    Attribute::removeValue(index);
+    DDF vals = m_obj.first();
+    if (index < static_cast<size_t>(vals.integer()))
+        vals[static_cast<unsigned long>(index)].remove().destroy();
+}
+
 const vector<string>& ExtensibleAttribute::getSerializedValues() const
 {
     if (m_serialized.empty()) {
@@ -76,4 +131,13 @@ const vector<string>& ExtensibleAttribute::getSerializedValues() const
         }
     }
     return Attribute::getSerializedValues();
+}
+
+DDF ExtensibleAttribute::marshall() const
+{
+    if (!isCaseSensitive())
+        m_obj.addmember("case_insensitive");
+    if (isInternal())
+        m_obj.addmember("internal");
+    return m_obj.copy();
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,8 @@ namespace shibsp {
     SHIBSP_DLLLOCAL PluginManager< SessionInitiator,string,pair<const DOMElement*,const char*> >::Factory CookieSessionInitiatorFactory;
 };
 
+map<string,string> SessionInitiator::m_remapper;
+
 void SHIBSP_API shibsp::registerSessionInitiators()
 {
     SPConfig& conf=SPConfig::getConfig();
@@ -50,7 +52,24 @@ void SHIBSP_API shibsp::registerSessionInitiators()
     conf.SessionInitiatorManager.registerFactory(TRANSFORM_SESSION_INITIATOR, TransformSessionInitiatorFactory);
     conf.SessionInitiatorManager.registerFactory(FORM_SESSION_INITIATOR, FormSessionInitiatorFactory);
     conf.SessionInitiatorManager.registerFactory(COOKIE_SESSION_INITIATOR, CookieSessionInitiatorFactory);
+
+    SessionInitiator::m_remapper["defaultACSIndex"] = "acsIndex";
 }
+
+SessionInitiator::SessionInitiator()
+{
+}
+
+SessionInitiator::~SessionInitiator()
+{
+}
+
+#ifndef SHIBSP_LITE
+const char* SessionInitiator::getType() const
+{
+    return "SessionInitiator";
+}
+#endif
 
 pair<bool,long> SessionInitiator::run(SPRequest& request, bool isHandler) const
 {

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,10 @@
 
 #include <shibsp/base.h>
 #include <xmltooling/Lockable.h>
-#include <xmltooling/io/HTTPRequest.h>
+
+namespace xmltooling {
+    class XMLTOOL_API HTTPRequest;
+};
 
 namespace shibsp {
 
@@ -42,9 +45,9 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(RequestMapper);
     protected:
-        RequestMapper() {}
+        RequestMapper();
     public:
-        virtual ~RequestMapper() {}
+        virtual ~RequestMapper();
 
         /** Combination of configuration settings and effective access control. */
         typedef std::pair<const PropertySet*,AccessControl*> Settings;

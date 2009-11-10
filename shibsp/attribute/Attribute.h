@@ -23,7 +23,6 @@
 #ifndef __shibsp_attribute_h__
 #define __shibsp_attribute_h__
 
-#include <shibsp/exceptions.h>
 #include <shibsp/remoting/ddf.h>
 
 #include <map>
@@ -59,8 +58,7 @@ namespace shibsp {
          *
          * @param ids   array with primary identifier in first position, followed by any aliases
          */
-        Attribute(const std::vector<std::string>& ids) : m_id(ids), m_caseSensitive(true), m_internal(false) {
-        }
+        Attribute(const std::vector<std::string>& ids);
 
         /**
          * Constructs based on a remoted Attribute.
@@ -81,88 +79,70 @@ namespace shibsp {
         mutable std::vector<std::string> m_serialized;
 
     public:
-        virtual ~Attribute() {}
+        virtual ~Attribute();
 
         /**
          * Returns the Attribute identifier.
          *
          * @return the Attribute identifier
          */
-        const char* getId() const {
-            return m_id.front().c_str();
-        }
+        const char* getId() const;
 
         /**
          * Returns all of the effective names for the Attribute.
          *
          * @return immutable array of identifiers, with the primary ID in the first position
          */
-        const std::vector<std::string>& getAliases() const {
-            return m_id;
-        }
+        const std::vector<std::string>& getAliases() const;
 
         /**
          * Returns all of the effective names for the Attribute.
          *
          * @return mutable array of identifiers, with the primary ID in the first position
          */
-        std::vector<std::string>& getAliases() {
-            return m_id;
-        }
+        std::vector<std::string>& getAliases();
 
         /**
          * Sets whether case sensitivity should apply to basic value comparisons.
          *
          * @param caseSensitive  true iff value comparisons should be case sensitive
          */
-        void setCaseSensitive(bool caseSensitive) {
-            m_caseSensitive = caseSensitive;
-        }
+        void setCaseSensitive(bool caseSensitive);
 
         /**
          * Sets whether the attribute should be exported for CGI use.
          *
          * @param export  true iff the attribute should <strong>NOT</strong> be exported
          */
-        void setInternal(bool internal) {
-            m_internal = internal;
-        }
+        void setInternal(bool internal);
 
         /**
          * Indicates whether case sensitivity should apply to basic value comparisons.
          *
          * @return  true iff value comparisons should be case sensitive
          */
-        bool isCaseSensitive() const {
-            return m_caseSensitive;
-        }
+        bool isCaseSensitive() const;
 
         /**
          * Indicates whether the attribute should be exported for CGI use.
          *
          * @return  true iff the attribute should <strong>NOT</strong> be exported
          */
-        bool isInternal() const {
-            return m_internal;
-        }
+        bool isInternal() const;
 
         /**
          * Returns the number of values.
          *
          * @return  number of values
          */
-        virtual size_t valueCount() const {
-            return m_serialized.size();
-        }
+        virtual size_t valueCount() const;
 
         /**
          * Returns serialized Attribute values encoded as UTF-8 strings.
          *
          * @return  an immutable vector of values
          */
-        virtual const std::vector<std::string>& getSerializedValues() const {
-            return m_serialized;
-        }
+        virtual const std::vector<std::string>& getSerializedValues() const;
 
         /**
          * Informs the Attribute that values have changed and any serializations
@@ -176,9 +156,7 @@ namespace shibsp {
          * @param index position of value
          * @return the specified value in its "string" form, or NULL if undefined
          */
-        virtual const char* getString(size_t index) const {
-            return m_serialized[index].c_str();
-        }
+        virtual const char* getString(size_t index) const;
 
         /**
          * Gets the "scope" of the value at the specified position (starting from zero).
@@ -186,19 +164,14 @@ namespace shibsp {
          * @param index position of value
          * @return the specified value's "scope", or NULL if attribute is unscoped
          */
-        virtual const char* getScope(size_t index) const {
-            return NULL;
-        }
+        virtual const char* getScope(size_t index) const;
 
         /**
          * Removes the value at the specified position (starting from zero).
          *
          * @param index position of value to remove
          */
-        virtual void removeValue(size_t index) {
-            if (index < m_serialized.size())
-                m_serialized.erase(m_serialized.begin() + index);
-        }
+        virtual void removeValue(size_t index);
 
         /**
          * Marshalls an Attribute for remoting.
@@ -227,25 +200,19 @@ namespace shibsp {
          * @param type      string used at the root of remoted Attribute structures
          * @param factory   factory function
          */
-        static void registerFactory(const char* type, AttributeFactory* factory) {
-            m_factoryMap[type] = factory;
-        }
+        static void registerFactory(const char* type, AttributeFactory* factory);
 
         /**
          * Deregisters an AttributeFactory function for a given attribute "type".
          *
          * @param type      string used at the root of remoted Attribute structures
          */
-        static void deregisterFactory(const char* type) {
-            m_factoryMap.erase(type);
-        }
+        static void deregisterFactory(const char* type);
 
         /**
          * Clears the map of factories.
          */
-        static void deregisterFactories() {
-            m_factoryMap.clear();
-        }
+        static void deregisterFactories();
 
     private:
         static std::map<std::string,AttributeFactory*> m_factoryMap;

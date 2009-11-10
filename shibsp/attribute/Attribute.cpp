@@ -21,6 +21,7 @@
  */
 
 #include "internal.h"
+#include "exceptions.h"
 #include "SPConfig.h"
 #ifndef SHIBSP_LITE
 # include "attribute/AttributeDecoder.h"
@@ -32,34 +33,19 @@
 #include "attribute/XMLAttribute.h"
 #include "util/SPConstants.h"
 
-#include <xercesc/util/Base64.hpp>
 #include <xercesc/util/XMLUniDefs.hpp>
+#include <xmltooling/security/SecurityHelper.h>
 
 using namespace shibsp;
 using namespace xmltooling;
 using namespace std;
 
 namespace shibsp {
-
-    SHIBSP_DLLLOCAL Attribute* SimpleAttributeFactory(DDF& in) {
-        return new SimpleAttribute(in);
-    }
-
-    SHIBSP_DLLLOCAL Attribute* ScopedAttributeFactory(DDF& in) {
-        return new ScopedAttribute(in);
-    }
-
-    SHIBSP_DLLLOCAL Attribute* NameIDAttributeFactory(DDF& in) {
-        return new NameIDAttribute(in);
-    }
-
-    SHIBSP_DLLLOCAL Attribute* ExtensibleAttributeFactory(DDF& in) {
-        return new ExtensibleAttribute(in);
-    }
-
-    SHIBSP_DLLLOCAL Attribute* XMLAttributeFactory(DDF& in) {
-        return new XMLAttribute(in);
-    }
+    SHIBSP_DLLLOCAL Attribute* SimpleAttributeFactory(DDF& in);
+    SHIBSP_DLLLOCAL Attribute* ScopedAttributeFactory(DDF& in);
+    SHIBSP_DLLLOCAL Attribute* NameIDAttributeFactory(DDF& in);
+    SHIBSP_DLLLOCAL Attribute* ExtensibleAttributeFactory(DDF& in);
+    SHIBSP_DLLLOCAL Attribute* XMLAttributeFactory(DDF& in);
 
 #ifndef SHIBSP_LITE
     SHIBSP_DLLLOCAL PluginManager<AttributeDecoder,xmltooling::QName,const DOMElement*>::Factory StringAttributeDecoderFactory;
@@ -79,6 +65,7 @@ namespace shibsp {
     static const XMLCh _XMLAttributeDecoder[] =    UNICODE_LITERAL_19(X,M,L,A,t,t,r,i,b,u,t,e,D,e,c,o,d,e,r);
 
     static const XMLCh caseSensitive[] =           UNICODE_LITERAL_13(c,a,s,e,S,e,n,s,i,t,i,v,e);
+    static const XMLCh hashAlg[] =                 UNICODE_LITERAL_7(h,a,s,h,A,l,g);
     static const XMLCh internal[] =                UNICODE_LITERAL_8(i,n,t,e,r,n,a,l);
 #endif
 };
@@ -104,7 +91,8 @@ void shibsp::registerAttributeDecoders()
     conf.AttributeDecoderManager.registerFactory(XMLAttributeDecoderType, XMLAttributeDecoderFactory);
 }
 
-AttributeDecoder::AttributeDecoder(const DOMElement *e) : m_caseSensitive(true), m_internal(false)
+AttributeDecoder::AttributeDecoder(const DOMElement *e)
+    : m_caseSensitive(true), m_internal(false), m_hashAlg(e ? e->getAttributeNS(NULL, hashAlg) : NULL)
 {
     if (e) {
         const XMLCh* flag = e->getAttributeNS(NULL, caseSensitive);
@@ -115,6 +103,36 @@ AttributeDecoder::AttributeDecoder(const DOMElement *e) : m_caseSensitive(true),
         if (flag && (*flag == chLatin_t || *flag == chDigit_1))
             m_internal = true;
     }
+}
+
+AttributeDecoder::~AttributeDecoder()
+{
+}
+
+Attribute* AttributeDecoder::_decode(Attribute* attr) const
+{
+    if (attr) {
+        attr->setCaseSensitive(m_caseSensitive);
+        attr->setInternal(m_internal);
+
+        if (m_hashAlg.get() && *m_hashAlg.get()) {
+            // We turn the values into strings using the supplied hash algorithm and return a SimpleAttribute instead.
+            auto_ptr<SimpleAttribute> simple(new SimpleAttribute(attr->getAliases()));
+            simple->setCaseSensitive(false);
+            simple->setInternal(m_internal);
+            vector<string>& newdest = simple->getValues();
+            const vector<string>& serialized = attr->getSerializedValues();
+            for (vector<string>::const_iterator ser = serialized.begin(); ser != serialized.end(); ++ser) {
+                newdest.push_back(SecurityHelper::doHash(m_hashAlg.get(), ser->data(), ser->length()));
+                if (newdest.back().empty())
+                    newdest.pop_back();
+            }
+            delete attr;
+            return newdest.empty() ? NULL : simple.release();
+        }
+
+    }
+    return attr;
 }
 #endif
 
@@ -129,6 +147,25 @@ void shibsp::registerAttributeFactories()
 }
 
 map<string,Attribute::AttributeFactory*> Attribute::m_factoryMap;
+
+void Attribute::registerFactory(const char* type, AttributeFactory* factory)
+{
+    m_factoryMap[type] = factory;
+}
+
+void Attribute::deregisterFactory(const char* type)
+{
+    m_factoryMap.erase(type);
+}
+
+void Attribute::deregisterFactories()
+{
+    m_factoryMap.clear();
+}
+
+Attribute::Attribute(const vector<string>& ids) : m_id(ids), m_caseSensitive(true), m_internal(false)
+{
+}
 
 Attribute::Attribute(DDF& in) : m_caseSensitive(in["case_insensitive"].isnull()), m_internal(!in["internal"].isnull())
 {
@@ -145,6 +182,71 @@ Attribute::Attribute(DDF& in) : m_caseSensitive(in["case_insensitive"].isnull())
             alias = aliases.next();
         }
     }
+}
+
+Attribute::~Attribute()
+{
+}
+
+const char* Attribute::getId() const
+{
+    return m_id.front().c_str();
+}
+
+const vector<string>& Attribute::getAliases() const
+{
+    return m_id;
+}
+
+vector<string>& Attribute::getAliases()
+{
+    return m_id;
+}
+
+void Attribute::setCaseSensitive(bool caseSensitive)
+{
+    m_caseSensitive = caseSensitive;
+}
+
+void Attribute::setInternal(bool internal)
+{
+    m_internal = internal;
+}
+
+bool Attribute::isCaseSensitive() const
+{
+    return m_caseSensitive;
+}
+
+bool Attribute::isInternal() const
+{
+    return m_internal;
+}
+
+size_t Attribute::valueCount() const
+{
+    return m_serialized.size();
+}
+
+const vector<string>& Attribute::getSerializedValues() const
+{
+    return m_serialized;
+}
+
+const char* Attribute::getString(size_t index) const
+{
+    return m_serialized[index].c_str();
+}
+
+const char* Attribute::getScope(size_t index) const
+{
+    return NULL;
+}
+
+void Attribute::removeValue(size_t index)
+{
+    if (index < m_serialized.size())
+        m_serialized.erase(m_serialized.begin() + index);
 }
 
 DDF Attribute::marshall() const
@@ -172,28 +274,4 @@ Attribute* Attribute::unmarshall(DDF& in)
     if (i == m_factoryMap.end())
         throw AttributeException("No registered factory for Attribute of type ($1).", params(1,in.name()));
     return (i->second)(in);
-}
-
-const vector<string>& XMLAttribute::getSerializedValues() const
-{
-    xsecsize_t len;
-    XMLByte *pos, *pos2;
-    if (m_serialized.empty()) {
-        for (vector<string>::const_iterator i=m_values.begin(); i!=m_values.end(); ++i) {
-            XMLByte* enc = Base64::encode(reinterpret_cast<const XMLByte*>(i->data()), i->size(), &len);
-            if (enc) {
-                for (pos=enc, pos2=enc; *pos2; pos2++)
-                    if (isgraph(*pos2))
-                        *pos++=*pos2;
-                *pos=0;
-                m_serialized.push_back(reinterpret_cast<char*>(enc));
-#ifdef SHIBSP_XERCESC_HAS_XMLBYTE_RELEASE
-                XMLString::release(&enc);
-#else
-                XMLString::release((char**)&enc);
-#endif
-            }
-        }
-    }
-    return Attribute::getSerializedValues();
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@
 #ifndef __shibsp_logout_h__
 #define __shibsp_logout_h__
 
-#include <shibsp/SPRequest.h>
 #include <shibsp/handler/RemotedHandler.h>
 
 namespace shibsp {
@@ -39,7 +38,7 @@ namespace shibsp {
     class SHIBSP_API LogoutHandler : public RemotedHandler
     {
     public:
-        virtual ~LogoutHandler() {}
+        virtual ~LogoutHandler();
 
         /**
          * The base method will iteratively attempt front-channel notification
@@ -69,7 +68,7 @@ namespace shibsp {
         void receive(DDF& in, std::ostream& out);
 
     protected:
-        LogoutHandler() : m_initiator(true) {}
+        LogoutHandler();
         
         /** Flag indicating whether the subclass is acting as a LogoutInitiator. */
         bool m_initiator;
@@ -107,6 +106,7 @@ namespace shibsp {
             ) const;
 
         /**
+         * @deprecated
          * Sends a response template to the user agent informing it of the results of a logout attempt.
          *
          * @param application   the Application to use in determining the logout template
@@ -121,6 +121,21 @@ namespace shibsp {
             xmltooling::HTTPResponse& response,
             bool local=true,
             const char* status=NULL
+            ) const;
+
+        /**
+         * Sends a response template to the user agent informing it of the results of a logout attempt.
+         *
+         * @param application   the Application to use in determining the logout template
+         * @param request       the HTTP client request to supply to the template
+         * @param response      the HTTP response to use
+         * @param type          designates the prefix of logout template name to use
+         */
+        std::pair<bool,long> sendLogoutPage(
+            const Application& application,
+            const xmltooling::HTTPRequest& request,
+            xmltooling::HTTPResponse& response,
+            const char* type
             ) const;
     };
 

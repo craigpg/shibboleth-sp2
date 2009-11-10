@@ -24,6 +24,7 @@
 #include "util/CGIParser.h"
 
 #include <xmltooling/XMLToolingConfig.h>
+#include <xmltooling/io/HTTPRequest.h>
 #include <xmltooling/util/URLEncoder.h>
 
 using namespace shibsp;

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,17 @@
 
 #include "internal.h"
 #include "Application.h"
-#include "exceptions.h"
 #include "binding/ArtifactResolver.h"
 #include "binding/SOAPClient.h"
 #include "security/SecurityPolicy.h"
 
+#include <saml/exceptions.h>
 #include <saml/saml1/core/Protocols.h>
 #include <saml/saml1/binding/SAML1SOAPClient.h>
 #include <saml/saml2/core/Protocols.h>
 #include <saml/saml2/binding/SAML2Artifact.h>
 #include <saml/saml2/binding/SAML2SOAPClient.h>
+#include <saml/saml2/metadata/Metadata.h>
 #include <saml/saml2/metadata/MetadataCredentialCriteria.h>
 #include <saml/util/SAMLConstants.h>
 
@@ -43,6 +44,14 @@ using namespace opensaml::saml2md;
 using namespace opensaml;
 using namespace xmltooling;
 using namespace std;
+
+ArtifactResolver::ArtifactResolver()
+{
+}
+
+ArtifactResolver::~ArtifactResolver()
+{
+}
 
 saml1p::Response* ArtifactResolver::resolve(
     const vector<SAMLArtifact*>& artifacts,
