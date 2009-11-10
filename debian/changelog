@@ -6,6 +6,18 @@ shibboleth-sp2 (2.3+dfsg-1) UNRELEASED; urgency=low
       abused for script injection and other cross-site scripting attacks.
       The complete fix also requires newer xmltooling and opensaml2
       packages.  (Closes: #555608, CVE-2009-3300)
+    - Avoid shibd crash on dead memcache server.
+    - Pass the affiliation name to the session initiator.
+    - Correctly handle a bogus ACS.
+    - Allow overriding the URL that's passed to the DS.
+    - Add schema types for new attribute decoders introduced in 2.2.
+    - Handle success with partial logout in the logout UI code.
+    - Fix POST data preservation with empty parameters and empty forms.
+    - Fix SAML 1 specification of attributes in the query plugin.
+    - Shorten ePTId-type persistent identifiers.
+    - Use an ID rather than a whole doc reference for generated metadata.
+    - Fix spelling of scopeDelimiter in the configuration parser, making
+      the code and documentation match the schema.
   * Fix watch file for the new version mangling.
 
   [ Ferenc Wagner ]
