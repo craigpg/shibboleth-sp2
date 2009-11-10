@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2008 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,14 +36,17 @@
 
 #include <xmltooling/base.h>
 
+#include <list>
 #include <iostream> 
 #include <libmemcached/memcached.h>
 #include <xercesc/util/XMLUniDefs.hpp>
 
 #include <xmltooling/logging.h>
+#include <xmltooling/unicode.h>
 #include <xmltooling/XMLToolingConfig.h>
 #include <xmltooling/util/NDC.h>
 #include <xmltooling/util/StorageService.h>
+#include <xmltooling/util/Threads.h>
 #include <xmltooling/util/XMLHelper.h>
 
 using namespace xmltooling::logging;
@@ -55,6 +58,11 @@ namespace xmltooling {
   static const XMLCh Hosts[] = UNICODE_LITERAL_5(H,o,s,t,s);
   static const XMLCh prefix[] = UNICODE_LITERAL_6(p,r,e,f,i,x);
   static const XMLCh buildMap[] = UNICODE_LITERAL_8(b,u,i,l,d,M,a,p);
+  static const XMLCh sendTimeout[] = UNICODE_LITERAL_11(s,e,n,d,T,i,m,e,o,u,t);
+  static const XMLCh recvTimeout[] = UNICODE_LITERAL_11(r,e,c,v,T,i,m,e,o,u,t);
+  static const XMLCh pollTimeout[] = UNICODE_LITERAL_11(p,o,l,l,T,i,m,e,o,u,t);
+  static const XMLCh failLimit[] = UNICODE_LITERAL_9(f,a,i,l,L,i,m,i,t);
+  static const XMLCh retryTimeout[] = UNICODE_LITERAL_12(r,e,t,r,y,T,i,m,e,o,u,t);
   
   class mc_record {
   public:
@@ -107,7 +115,6 @@ namespace xmltooling {
     const DOMElement* m_root; // can only use this during initialization
     Category& log;
     memcached_st *memc;
-    string m_memcacheHosts;
     string m_prefix;
     Mutex* m_lock;
   };
@@ -296,12 +303,13 @@ bool MemcacheBase::deleteMemcache(const char *key,
     success = false;
   } else if (rv == MEMCACHED_ERRNO) {
     // System error
-    log.error(string("Memcache::deleteMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno)));
-    success = false;
+    string error = string("Memcache::deleteMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno));
+    log.error(error);
+    throw IOException(error);
   } else {
-    log.error(string("Memcache::deleteMemcache() Problems: ") + memcached_strerror(memc, rv));
-    // shouldn't be here
-    success = false;
+    string error = string("Memcache::deleteMemcache() Problems: ") + memcached_strerror(memc, rv);
+    log.error(error);
+    throw IOException(error);
   }
 
   return success;
@@ -336,11 +344,13 @@ bool MemcacheBase::getMemcache(const char *key,
     success = false;
   } else if (rv == MEMCACHED_ERRNO) {
     // System error
-    log.error(string("Memcache::getMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno)));
-    success = false;
+    string error = string("Memcache::getMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno));
+    log.error(error);
+    throw IOException(error);
   } else {
-    log.error(string("Memcache::getMemcache() Problems: ") + memcached_strerror(memc, rv));
-    success = false;
+    string error = string("Memcache::getMemcache() Problems: ") + memcached_strerror(memc, rv);
+    log.error(error);
+    throw IOException(error);
   }
 
   return success;
@@ -373,12 +383,13 @@ bool MemcacheBase::addMemcache(const char *key,
     success = false;
   } else if (rv == MEMCACHED_ERRNO) {
     // System error
-    log.error(string("Memcache::addMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno)));
-    success = false;
+    string error = string("Memcache::addMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno));
+    log.error(error);
+    throw IOException(error);
   } else {
-    // shouldn't be here
-    log.error(string("Memcache::addMemcache() Problems: ") + memcached_strerror(memc, rv));
-    success = false;
+    string error = string("Memcache::addMemcache() Problems: ") + memcached_strerror(memc, rv);
+    log.error(error);
+    throw IOException(error);
   }
 
   return success;
@@ -408,12 +419,13 @@ bool MemcacheBase::setMemcache(const char *key,
     success = true;
   } else if (rv == MEMCACHED_ERRNO) {
     // System error
-    log.error(string("Memcache::setMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno)));
-    success = false;
+    string error = string("Memcache::setMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno));
+    log.error(error);
+    throw IOException(error);
   } else {
-    // shouldn't be here
-    log.error(string("Memcache::setMemcache() Problems: ") + memcached_strerror(memc, rv));
-    success = false;
+    string error = string("Memcache::setMemcache() Problems: ") + memcached_strerror(memc, rv);
+    log.error(error);
+    throw IOException(error);
   }
 
   return success;
@@ -446,33 +458,25 @@ bool MemcacheBase::replaceMemcache(const char *key,
     success = false;
   } else if (rv == MEMCACHED_ERRNO) {
     // System error
-    log.error(string("Memcache::replaceMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno)));
-    success = false;
+    string error = string("Memcache::replaceMemcache() SYSTEM ERROR: ") + string(strerror(memc->cached_errno));
+    log.error(error);
+    throw IOException(error);
   } else {
-    // shouldn't be here
-    log.error(string("Memcache::replaceMemcache() Problems: ") + memcached_strerror(memc, rv));
-    success = false;
+    string error = string("Memcache::replaceMemcache() Problems: ") + memcached_strerror(memc, rv);
+    log.error(error);
+    throw IOException(error);
   }
 
   return success;
 }
 
-MemcacheBase::MemcacheBase(const DOMElement* e) : m_root(e), log(Category::getInstance("XMLTooling.MemcacheBase")), m_memcacheHosts(""), m_prefix("") {
+MemcacheBase::MemcacheBase(const DOMElement* e) : m_root(e), log(Category::getInstance("XMLTooling.MemcacheBase")), m_prefix("") {
 
   auto_ptr_char p(e ? e->getAttributeNS(NULL,prefix) : NULL);
   if (p.get() && *p.get()) {
     log.debug("INIT: GOT key prefix: %s", p.get());
     m_prefix = p.get();
   }
-
-  // Grab hosts from the configuration.
-  e = e ? XMLHelper::getFirstChildElement(e,Hosts) : NULL;
-  if (!e || !e->hasChildNodes()) {
-    throw XMLToolingException("Memcache StorageService requires Hosts element in configuration.");
-  }
-  auto_ptr_char h(e->getFirstChild()->getNodeValue());
-  log.debug("INIT: GOT Hosts: %s", h.get());
-  m_memcacheHosts = h.get();
 
   m_lock = Mutex::create();
   log.debug("Lock created");
@@ -488,21 +492,55 @@ MemcacheBase::MemcacheBase(const DOMElement* e) : m_root(e), log(Category::getIn
   memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_HASH, hash);
   log.debug("CRC hash set");
 
-  int32_t timeout = 1000000;
-  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_SND_TIMEOUT, timeout);
-  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_RCV_TIMEOUT, timeout);
+  int32_t send_timeout = 1000000;
+  const XMLCh* tag = e ? e->getAttributeNS(NULL, sendTimeout) : NULL;
+  if (tag && *tag) {
+    send_timeout = XMLString::parseInt(tag);
+  }
+  log.debug("MEMCACHED_BEHAVIOR_SND_TIMEOUT will be set to %d", send_timeout);
+  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_SND_TIMEOUT, send_timeout);
+
+  int32_t recv_timeout = 1000000;
+  tag = e ? e->getAttributeNS(NULL, sendTimeout) : NULL;
+  if (tag && *tag) {
+    recv_timeout = XMLString::parseInt(tag);
+  }
+  log.debug("MEMCACHED_BEHAVIOR_RCV_TIMEOUT will be set to %d", recv_timeout);
+  memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_RCV_TIMEOUT, recv_timeout);
 
   int32_t poll_timeout = 1000;
+  tag = e ? e->getAttributeNS(NULL, pollTimeout) : NULL;
+  if (tag && *tag) {
+    poll_timeout = XMLString::parseInt(tag);
+  }
+  log.debug("MEMCACHED_BEHAVIOR_POLL_TIMEOUT will be set to %d", poll_timeout);
   memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_POLL_TIMEOUT, poll_timeout);
 
   int32_t fail_limit = 5;
+  tag = e ? e->getAttributeNS(NULL, failLimit) : NULL;
+  if (tag && *tag) {
+    fail_limit = XMLString::parseInt(tag);
+  }
+  log.debug("MEMCACHED_BEHAVIOR_SERVER_FAILURE_LIMIT will be set to %d", fail_limit);
   memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_SERVER_FAILURE_LIMIT, fail_limit);
 
   int32_t retry_timeout = 30;
+  tag = e ? e->getAttributeNS(NULL, retryTimeout) : NULL;
+  if (tag && *tag) {
+    retry_timeout = XMLString::parseInt(tag);
+  }
+  log.debug("MEMCACHED_BEHAVIOR_RETRY_TIMEOUT will be set to %d", retry_timeout);
   memcached_behavior_set(memc, MEMCACHED_BEHAVIOR_RETRY_TIMEOUT, retry_timeout);
 
+  // Grab hosts from the configuration.
+  e = e ? XMLHelper::getFirstChildElement(e,Hosts) : NULL;
+  if (!e || !e->hasChildNodes()) {
+    throw XMLToolingException("Memcache StorageService requires Hosts element in configuration.");
+  }
+  auto_ptr_char h(e->getFirstChild()->getNodeValue());
+  log.debug("INIT: GOT Hosts: %s", h.get());
   memcached_server_st *servers;
-  servers = memcached_servers_parse((char *)m_memcacheHosts.c_str());
+  servers = memcached_servers_parse(const_cast<char*>(h.get()));
   log.debug("Got %u hosts.",  memcached_server_list_count(servers));
   if (memcached_server_push(memc, servers) != MEMCACHED_SUCCESS) {
     throw IOException("MemcacheBase::Memcache(): memcached_server_push() failed");    

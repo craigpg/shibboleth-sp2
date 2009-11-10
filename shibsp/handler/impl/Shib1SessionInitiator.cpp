@@ -34,6 +34,9 @@
 # include "metadata/MetadataProviderCriteria.h"
 # include <saml/saml2/metadata/Metadata.h>
 # include <saml/saml2/metadata/EndpointManager.h>
+# include <saml/util/SAMLConstants.h>
+#else
+# include "lite/SAMLConstants.h"
 #endif
 #include <xmltooling/XMLToolingConfig.h>
 #include <xmltooling/util/URLEncoder.h>
@@ -55,7 +58,7 @@ namespace shibsp {
     {
     public:
         Shib1SessionInitiator(const DOMElement* e, const char* appId)
-                : AbstractHandler(e, Category::getInstance(SHIBSP_LOGCAT".SessionInitiator.Shib1")), m_appId(appId) {
+                : AbstractHandler(e, Category::getInstance(SHIBSP_LOGCAT".SessionInitiator.Shib1"), NULL, &m_remapper), m_appId(appId) {
             // If Location isn't set, defer address registration until the setParent call.
             pair<bool,const char*> loc = getString("Location");
             if (loc.first) {
@@ -124,7 +127,7 @@ pair<bool,long> Shib1SessionInitiator::run(SPRequest& request, string& entityID,
         if (option) {
             ACS = app.getAssertionConsumerServiceByIndex(atoi(option));
             if (!ACS)
-                request.log(SPRequest::SPWarn, "invalid acsIndex specified in request, using default ACS location");
+                request.log(SPRequest::SPWarn, "invalid acsIndex specified in request, using acsIndex property");
         }
 
         option = request.getParameter("target");
@@ -143,11 +146,11 @@ pair<bool,long> Shib1SessionInitiator::run(SPRequest& request, string& entityID,
 
     // Since we're not passing by index, we need to fully compute the return URL.
     if (!ACS) {
-        pair<bool,unsigned int> index = getUnsignedInt("defaultACSIndex");
+        pair<bool,unsigned int> index = getUnsignedInt("acsIndex");
         if (index.first) {
             ACS = app.getAssertionConsumerServiceByIndex(index.second);
             if (!ACS)
-                request.log(SPRequest::SPWarn, "invalid defaultACSIndex, using default ACS location");
+                request.log(SPRequest::SPWarn, "invalid acsIndex property, using default ACS location");
         }
         if (!ACS)
             ACS = app.getDefaultAssertionConsumerService();
@@ -158,13 +161,13 @@ pair<bool,long> Shib1SessionInitiator::run(SPRequest& request, string& entityID,
     if (ACSbinding.first) {
         pair<bool,const char*> compatibleBindings = getString("compatibleBindings");
         if (compatibleBindings.first && strstr(compatibleBindings.second, ACSbinding.second) == NULL) {
-            m_log.info("configured or requested ACS has non-SAML 1.x binding");
-            return make_pair(false,0L);
+            m_log.error("configured or requested ACS has non-SAML 1.x binding");
+            throw ConfigurationException("Configured or requested ACS has non-SAML 1.x binding ($1).", params(1, ACSbinding.second));
         }
         else if (strcmp(ACSbinding.second, samlconstants::SAML1_PROFILE_BROWSER_POST) &&
                  strcmp(ACSbinding.second, samlconstants::SAML1_PROFILE_BROWSER_ARTIFACT)) {
-            m_log.info("configured or requested ACS has non-SAML 1.x binding");
-            return make_pair(false,0L);
+            m_log.error("configured or requested ACS has non-SAML 1.x binding");
+            throw ConfigurationException("Configured or requested ACS has non-SAML 1.x binding ($1).", params(1, ACSbinding.second));
         }
     }
 

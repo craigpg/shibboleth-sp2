@@ -24,15 +24,19 @@
 #include "handler/AssertionConsumerService.h"
 
 #ifndef SHIBSP_LITE
-# include "exceptions.h"
 # include "Application.h"
 # include "ServiceProvider.h"
 # include "SessionCache.h"
 # include "attribute/resolver/ResolutionContext.h"
+# include <saml/exceptions.h>
 # include <saml/SAMLConfig.h>
+# include <saml/binding/SecurityPolicy.h>
+# include <saml/binding/SecurityPolicyRule.h>
 # include <saml/saml1/core/Assertions.h>
 # include <saml/saml1/core/Protocols.h>
 # include <saml/saml2/metadata/Metadata.h>
+# include <xmltooling/io/HTTPRequest.h>
+# include <xmltooling/util/DateTime.h>
 using namespace opensaml::saml1;
 using namespace opensaml::saml1p;
 using namespace opensaml;

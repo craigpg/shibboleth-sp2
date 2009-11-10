@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@
 
 namespace shibsp {
 
+    class SHIBSP_API Attribute;
+
     class SHIBSP_API BasicFilteringContext : public FilteringContext
     {
     public:
@@ -45,39 +47,19 @@ namespace shibsp {
             const opensaml::saml2md::RoleDescriptor* role=NULL,
             const XMLCh* authncontext_class=NULL,
             const XMLCh* authncontext_decl=NULL
-            ) : m_app(app), m_role(role), m_issuer(NULL), m_class(authncontext_class), m_decl(authncontext_decl) {
-            if (role)
-                m_issuer = dynamic_cast<opensaml::saml2md::EntityDescriptor*>(role->getParent())->getEntityID();
-            for (std::vector<Attribute*>::const_iterator a = attributes.begin(); a != attributes.end(); ++a)
-                m_attributes.insert(std::multimap<std::string,Attribute*>::value_type((*a)->getId(), *a));
-        }
+            );
 
-        virtual ~BasicFilteringContext() {}
+        virtual ~BasicFilteringContext();
 
-        const Application& getApplication() const {
-            return m_app;
-        }
-        const XMLCh* getAuthnContextClassRef() const {
-            return m_class;
-        }
-        const XMLCh* getAuthnContextDeclRef() const {
-            return m_decl;
-        }
-        const XMLCh* getAttributeRequester() const {
-            return m_app.getXMLString("entityID").second;
-        }
-        const XMLCh* getAttributeIssuer() const {
-            return m_issuer;
-        }
-        const opensaml::saml2md::RoleDescriptor* getAttributeRequesterMetadata() const {
-            return NULL;
-        }
-        const opensaml::saml2md::RoleDescriptor* getAttributeIssuerMetadata() const {
-            return m_role;
-        }
-        const std::multimap<std::string,Attribute*>& getAttributes() const {
-            return m_attributes;
-        }
+        // Virtual function overrides.
+        const Application& getApplication() const;
+        const XMLCh* getAuthnContextClassRef() const;
+        const XMLCh* getAuthnContextDeclRef() const;
+        const XMLCh* getAttributeRequester() const;
+        const XMLCh* getAttributeIssuer() const;
+        const opensaml::saml2md::RoleDescriptor* getAttributeRequesterMetadata() const;
+        const opensaml::saml2md::RoleDescriptor* getAttributeIssuerMetadata() const;
+        const std::multimap<std::string,Attribute*>& getAttributes() const;
 
     private:
         const Application& m_app;

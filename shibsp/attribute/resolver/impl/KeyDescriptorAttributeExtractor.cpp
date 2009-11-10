@@ -21,6 +21,7 @@
  */
 
 #include "internal.h"
+#include "exceptions.h"
 #include "Application.h"
 #include "attribute/AttributeDecoder.h"
 #include "attribute/SimpleAttribute.h"
@@ -28,6 +29,8 @@
 
 #include <saml/saml2/metadata/Metadata.h>
 #include <saml/saml2/metadata/MetadataCredentialCriteria.h>
+#include <saml/saml2/metadata/MetadataProvider.h>
+#include <xmltooling/security/Credential.h>
 #include <xmltooling/security/SecurityHelper.h>
 #include <xmltooling/util/XMLHelper.h>
 #include <xercesc/util/XMLUniDefs.hpp>
@@ -72,6 +75,7 @@ namespace shibsp {
         }
 
     private:
+        auto_ptr_char m_hashAlg;
         vector<string> m_hashId;
         vector<string> m_signingId;
         vector<string> m_encryptionId;
@@ -88,10 +92,11 @@ namespace shibsp {
 
     static const XMLCh encryptionId[] = UNICODE_LITERAL_12(e,n,c,r,y,p,t,i,o,n,I,d);
     static const XMLCh hashId[] =       UNICODE_LITERAL_6(h,a,s,h,I,d);
+    static const XMLCh hashAlg[] =      UNICODE_LITERAL_7(h,a,s,h,A,l,g);
     static const XMLCh signingId[] =    UNICODE_LITERAL_9(s,i,g,n,i,n,g,I,d);
 };
 
-KeyDescriptorExtractor::KeyDescriptorExtractor(const DOMElement* e)
+KeyDescriptorExtractor::KeyDescriptorExtractor(const DOMElement* e) : m_hashAlg(e ? e->getAttributeNS(NULL, hashAlg) : NULL)
 {
     if (e) {
         const XMLCh* a = e->getAttributeNS(NULL, hashId);
@@ -129,12 +134,15 @@ void KeyDescriptorExtractor::extractAttributes(
         mcc.setUsage(Credential::SIGNING_CREDENTIAL);
         if (application.getMetadataProvider()->resolve(creds, &mcc)) {
             if (!m_hashId.empty()) {
+                const char* alg = m_hashAlg.get();
+                if (!alg || !*alg)
+                    alg = "SHA1";
                 auto_ptr<SimpleAttribute> attr(new SimpleAttribute(m_hashId));
                 vector<string>& vals = attr->getValues();
                 for (vector<const Credential*>::const_iterator c = creds.begin(); c != creds.end(); ++c) {
                     if (vals.empty() || !vals.back().empty())
                         vals.push_back(string());
-                    vals.back() = SecurityHelper::getDEREncoding(*(*c), true);
+                    vals.back() = SecurityHelper::getDEREncoding(*(*c), alg);
                 }
                 if (vals.back().empty())
                     vals.pop_back();

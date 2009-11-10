@@ -69,6 +69,15 @@ CommonDomainCookie::CommonDomainCookie(const char* cookie)
     }
 }
 
+CommonDomainCookie::~CommonDomainCookie()
+{
+}
+
+const vector<string>& CommonDomainCookie::get() const
+{
+    return m_list;
+}
+
 const char* CommonDomainCookie::set(const char* entityID)
 {
     // First scan the list for this IdP.

@@ -15,6 +15,7 @@ CONFIGFILES=" \
     discoveryTemplate.html \
     localLogout.html \
     globalLogout.html \
+    partialLogout.html \
     attribute-map.xml \
     attribute-policy.xml \
     example-metadata.xml \

@@ -65,6 +65,8 @@ AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
 APR1_CONFIG = @APR1_CONFIG@
 APR_CONFIG = @APR_CONFIG@
+APU1_CONFIG = @APU1_CONFIG@
+APU_CONFIG = @APU_CONFIG@
 APXS = @APXS@
 APXS2 = @APXS2@
 APXS22 = @APXS22@
@@ -302,6 +304,7 @@ CONFIGFILES = \
     postTemplate.html \
 	localLogout.html \
 	globalLogout.html \
+	partialLogout.html \
 	sslError.html
 
 CLEANFILES = \

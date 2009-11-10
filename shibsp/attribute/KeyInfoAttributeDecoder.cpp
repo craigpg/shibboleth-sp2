@@ -26,6 +26,9 @@
 
 #include <saml/saml1/core/Assertions.h>
 #include <saml/saml2/core/Assertions.h>
+#include <xmltooling/XMLToolingConfig.h>
+#include <xmltooling/security/Credential.h>
+#include <xmltooling/security/KeyInfoResolver.h>
 #include <xmltooling/security/SecurityHelper.h>
 #include <xmltooling/signature/KeyInfo.h>
 
@@ -52,8 +55,11 @@ namespace shibsp {
         void extract(const KeyInfo* k, vector<string>& dest) const {
             auto_ptr<Credential> cred (getKeyInfoResolver()->resolve(k, Credential::RESOLVE_KEYS));
             if (cred.get()) {
+                const char* alg = m_keyInfoHashAlg.get();
+                if (!alg || !*alg)
+                    alg = "SHA1";
                 dest.push_back(string());
-                dest.back() = SecurityHelper::getDEREncoding(*cred.get(), m_hash);
+                dest.back() = SecurityHelper::getDEREncoding(*cred.get(), m_hash ? alg : NULL);
                 if (dest.back().empty())
                     dest.pop_back();
             }
@@ -64,6 +70,7 @@ namespace shibsp {
         }
 
         bool m_hash;
+        auto_ptr_char m_keyInfoHashAlg;
         KeyInfoResolver* m_keyInfoResolver;
     };
 
@@ -74,10 +81,15 @@ namespace shibsp {
 
     static const XMLCh _KeyInfoResolver[] = UNICODE_LITERAL_15(K,e,y,I,n,f,o,R,e,s,o,l,v,e,r);
     static const XMLCh _hash[] =            UNICODE_LITERAL_4(h,a,s,h);
+    static const XMLCh keyInfoHashAlg[] =   UNICODE_LITERAL_14(k,e,y,I,n,f,o,H,a,s,h,A,l,g);
     static const XMLCh _type[] =            UNICODE_LITERAL_4(t,y,p,e);
 };
 
-KeyInfoAttributeDecoder::KeyInfoAttributeDecoder(const DOMElement* e) : AttributeDecoder(e), m_hash(false), m_keyInfoResolver(NULL) {
+KeyInfoAttributeDecoder::KeyInfoAttributeDecoder(const DOMElement* e)
+        : AttributeDecoder(e),
+          m_hash(false),
+          m_keyInfoHashAlg(e ? e->getAttributeNS(NULL, keyInfoHashAlg) : NULL),
+          m_keyInfoResolver(NULL) {
     const XMLCh* flag = e ? e->getAttributeNS(NULL, _hash) : NULL;
     m_hash = (flag && (*flag == chLatin_t || *flag == chDigit_1));
     e = e ? XMLHelper::getFirstChildElement(e,_KeyInfoResolver) : NULL;

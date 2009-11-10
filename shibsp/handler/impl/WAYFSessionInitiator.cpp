@@ -27,6 +27,12 @@
 #include "handler/AbstractHandler.h"
 #include "handler/SessionInitiator.h"
 
+#ifndef SHIBSP_LITE
+# include <saml/util/SAMLConstants.h>
+#else
+# include "lite/SAMLConstants.h"
+#endif
+
 #include <ctime>
 #include <xmltooling/XMLToolingConfig.h>
 #include <xmltooling/util/URLEncoder.h>
@@ -47,7 +53,7 @@ namespace shibsp {
     {
     public:
         WAYFSessionInitiator(const DOMElement* e, const char* appId)
-                : AbstractHandler(e, Category::getInstance(SHIBSP_LOGCAT".SessionInitiator.WAYF")), m_url(NULL) {
+                : AbstractHandler(e, Category::getInstance(SHIBSP_LOGCAT".SessionInitiator.WAYF"), NULL, &m_remapper), m_url(NULL) {
             pair<bool,const char*> url = getString("URL");
             if (!url.first)
                 throw ConfigurationException("WAYF SessionInitiator requires a URL property.");
@@ -84,33 +90,39 @@ pair<bool,long> WAYFSessionInitiator::run(SPRequest& request, string& entityID, 
     const char* option;
     const Handler* ACS=NULL;
     const Application& app=request.getApplication();
+    pair<bool,const char*> discoveryURL = pair<bool,const char*>(true, m_url);
 
     if (isHandler) {
         option=request.getParameter("acsIndex");
         if (option) {
             ACS=app.getAssertionConsumerServiceByIndex(atoi(option));
             if (!ACS)
-                request.log(SPRequest::SPWarn, "invalid acsIndex specified in request, using default ACS location");
+                request.log(SPRequest::SPWarn, "invalid acsIndex specified in request, using acsIndex property");
         }
 
         option = request.getParameter("target");
         if (option)
             target = option;
         recoverRelayState(request.getApplication(), request, request, target, false);
+
+        option = request.getParameter("discoveryURL");
+        if (option)
+            discoveryURL.second = option;
     }
     else {
         // We're running as a "virtual handler" from within the filter.
         // The target resource is the current one and everything else is defaulted.
         target=request.getRequestURL();
+        discoveryURL = request.getRequestSettings().first->getString("discoveryURL");
     }
     
     // Since we're not passing by index, we need to fully compute the return URL.
     if (!ACS) {
-        pair<bool,unsigned int> index = getUnsignedInt("defaultACSIndex");
+        pair<bool,unsigned int> index = getUnsignedInt("acsIndex");
         if (index.first) {
             ACS = app.getAssertionConsumerServiceByIndex(index.second);
             if (!ACS)
-                request.log(SPRequest::SPWarn, "invalid defaultACSIndex, using default ACS location");
+                request.log(SPRequest::SPWarn, "invalid acsIndex property, using default ACS location");
         }
         if (!ACS)
             ACS = app.getDefaultAssertionConsumerService();
@@ -121,17 +133,19 @@ pair<bool,long> WAYFSessionInitiator::run(SPRequest& request, string& entityID, 
     if (ACSbinding.first) {
         pair<bool,const char*> compatibleBindings = getString("compatibleBindings");
         if (compatibleBindings.first && strstr(compatibleBindings.second, ACSbinding.second) == NULL) {
-            m_log.info("configured or requested ACS has non-SAML 1.x binding");
-            return make_pair(false,0L);
+            m_log.error("configured or requested ACS has non-SAML 1.x binding");
+            throw ConfigurationException("Configured or requested ACS has non-SAML 1.x binding ($1).", params(1, ACSbinding.second));
         }
         else if (strcmp(ACSbinding.second, samlconstants::SAML1_PROFILE_BROWSER_POST) &&
                  strcmp(ACSbinding.second, samlconstants::SAML1_PROFILE_BROWSER_ARTIFACT)) {
-            m_log.info("configured or requested ACS has non-SAML 1.x binding");
-            return make_pair(false,0L);
+            m_log.error("configured or requested ACS has non-SAML 1.x binding");
+            throw ConfigurationException("Configured or requested ACS has non-SAML 1.x binding ($1).", params(1, ACSbinding.second));
         }
     }
 
-    m_log.debug("sending request to WAYF (%s)", m_url);
+    if (!discoveryURL.first)
+        discoveryURL.second = m_url;
+    m_log.debug("sending request to WAYF (%s)", discoveryURL.second);
 
     // Compute the ACS URL. We add the ACS location to the base handlerURL.
     string ACSloc=request.getHandlerURL(target.c_str());
@@ -156,7 +170,7 @@ pair<bool,long> WAYFSessionInitiator::run(SPRequest& request, string& entityID, 
     char timebuf[16];
     sprintf(timebuf,"%lu",time(NULL));
     const URLEncoder* urlenc = XMLToolingConfig::getConfig().getURLEncoder();
-    string req=string(m_url) + (strchr(m_url,'?') ? '&' : '?') + "shire=" + urlenc->encode(ACSloc.c_str()) +
+    string req=string(discoveryURL.second) + (strchr(discoveryURL.second,'?') ? '&' : '?') + "shire=" + urlenc->encode(ACSloc.c_str()) +
         "&time=" + timebuf + "&target=" + urlenc->encode(target.c_str()) +
         "&providerId=" + urlenc->encode(app.getString("entityID").second);
 

@@ -42,9 +42,9 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(AccessControl);
     protected:
-        AccessControl() {}
+        AccessControl();
     public:
-        virtual ~AccessControl() {}
+        virtual ~AccessControl();
 
         /**
          * Possible results from an access control decision.

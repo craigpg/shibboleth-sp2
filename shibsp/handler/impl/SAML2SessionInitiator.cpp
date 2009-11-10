@@ -37,10 +37,12 @@
 # include <saml/saml2/metadata/EndpointManager.h>
 # include <saml/saml2/metadata/Metadata.h>
 # include <saml/saml2/metadata/MetadataCredentialCriteria.h>
+# include <saml/util/SAMLConstants.h>
 using namespace opensaml::saml2;
 using namespace opensaml::saml2p;
 using namespace opensaml::saml2md;
 #else
+# include "lite/SAMLConstants.h"
 #include <xercesc/util/XMLUniDefs.hpp>
 #endif
 
@@ -90,6 +92,8 @@ namespace shibsp {
             bool forceAuthn,
             const char* authnContextClassRef,
             const char* authnContextComparison,
+            const char* NameIDFormat,
+            const char* SPNameQualifier,
             string& relayState
             ) const;
 
@@ -119,7 +123,7 @@ namespace shibsp {
 };
 
 SAML2SessionInitiator::SAML2SessionInitiator(const DOMElement* e, const char* appId)
-    : AbstractHandler(e, Category::getInstance(SHIBSP_LOGCAT".SessionInitiator.SAML2")), m_appId(appId),
+    : AbstractHandler(e, Category::getInstance(SHIBSP_LOGCAT".SessionInitiator.SAML2"), NULL, &m_remapper), m_appId(appId),
         m_paosNS(samlconstants::PAOS_NS), m_ecpNS(samlconstants::SAML20ECP_NS), m_paosBinding(samlconstants::SAML20_BINDING_PAOS)
 {
     static const XMLCh ECP[] = UNICODE_LITERAL_3(E,C,P);
@@ -233,8 +237,7 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
     string postData;
     const Handler* ACS=NULL;
     const char* option;
-    pair<bool,const char*> acClass;
-    pair<bool,const char*> acComp;
+    pair<bool,const char*> acClass, acComp, nidFormat, spQual;
     bool isPassive=false,forceAuthn=false;
     const Application& app=request.getApplication();
 
@@ -246,7 +249,7 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         if (option) {
             ACS = app.getAssertionConsumerServiceByIndex(atoi(option));
             if (!ACS)
-                request.log(SPRequest::SPWarn, "invalid acsIndex specified in request, using default ACS location");
+                request.log(SPRequest::SPWarn, "invalid acsIndex specified in request, using acsIndex property");
             else if (ECP && !XMLString::equals(ACS->getString("Binding").second, samlconstants::SAML20_BINDING_PAOS)) {
                 request.log(SPRequest::SPWarn, "acsIndex in request referenced a non-PAOS ACS, using default ACS location");
                 ACS = NULL;
@@ -289,6 +292,16 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
             acComp.first = true;
         else
             acComp = getString("authnContextComparison");
+
+        if (nidFormat.second = request.getParameter("NameIDFormat"))
+            nidFormat.first = true;
+        else
+            nidFormat = getString("NameIDFormat");
+
+        if (spQual.second = request.getParameter("SPNameQualifier"))
+            spQual.first = true;
+        else
+            spQual = getString("SPNameQualifier");
     }
     else {
         // We're running as a "virtual handler" from within the filter.
@@ -313,6 +326,12 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         acComp = settings->getString("authnContextComparison");
         if (!acComp.first)
             acComp = getString("authnContextComparison");
+        nidFormat = settings->getString("NameIDFormat");
+        if (!nidFormat.first)
+            nidFormat = getString("NameIDFormat");
+        spQual = settings->getString("SPNameQualifier");
+        if (!spQual.first)
+            spQual = getString("SPNameQualifier");
     }
 
     if (ECP)
@@ -328,11 +347,11 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
             ACS = handlers.front();
         }
         else {
-            pair<bool,unsigned int> index = getUnsignedInt("defaultACSIndex");
+            pair<bool,unsigned int> index = getUnsignedInt("acsIndex");
             if (index.first) {
                 ACS = app.getAssertionConsumerServiceByIndex(index.second);
                 if (!ACS)
-                    request.log(SPRequest::SPWarn, "invalid defaultACSIndex, using default ACS location");
+                    request.log(SPRequest::SPWarn, "invalid acsIndex property, using default ACS location");
             }
             if (!ACS)
                 ACS = app.getDefaultAssertionConsumerService();
@@ -345,14 +364,14 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         if (ACSbinding.first) {
             pair<bool,const char*> compatibleBindings = getString("compatibleBindings");
             if (compatibleBindings.first && strstr(compatibleBindings.second, ACSbinding.second) == NULL) {
-                m_log.info("configured or requested ACS has non-SAML 2.0 binding");
-                return make_pair(false,0L);
+                m_log.error("configured or requested ACS has non-SAML 2.0 binding");
+                throw ConfigurationException("Configured or requested ACS has non-SAML 2.0 binding ($1).", params(1, ACSbinding.second));
             }
             else if (strcmp(ACSbinding.second, samlconstants::SAML20_BINDING_HTTP_POST) &&
                      strcmp(ACSbinding.second, samlconstants::SAML20_BINDING_HTTP_ARTIFACT) &&
                      strcmp(ACSbinding.second, samlconstants::SAML20_BINDING_HTTP_POST_SIMPLESIGN)) {
-                m_log.info("configured or requested ACS has non-SAML 2.0 binding");
-                return make_pair(false,0L);
+                m_log.error("configured or requested ACS has non-SAML 2.0 binding");
+                throw ConfigurationException("Configured or requested ACS has non-SAML 2.0 binding ($1).", params(1, ACSbinding.second));
             }
         }
     }
@@ -397,6 +416,8 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
                 isPassive, forceAuthn,
                 acClass.first ? acClass.second : NULL,
                 acComp.first ? acComp.second : NULL,
+                nidFormat.first ? nidFormat.second : NULL,
+                spQual.first ? spQual.second : NULL,
                 target
                 );
         }
@@ -423,6 +444,8 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
             isPassive, forceAuthn,
             acClass.first ? acClass.second : NULL,
             acComp.first ? acComp.second : NULL,
+            nidFormat.first ? nidFormat.second : NULL,
+            spQual.first ? spQual.second : NULL,
             target
             );
     }
@@ -441,6 +464,10 @@ pair<bool,long> SAML2SessionInitiator::run(SPRequest& request, string& entityID,
         in.addmember("authnContextClassRef").string(acClass.second);
     if (acComp.first)
         in.addmember("authnContextComparison").string(acComp.second);
+    if (nidFormat.first)
+        in.addmember("NameIDFormat").string(nidFormat.second);
+    if (spQual.first)
+        in.addmember("SPNameQualifier").string(spQual.second);
     if (acsByIndex.first && acsByIndex.second) {
         if (ACS) {
             // Determine index to use.
@@ -531,6 +558,7 @@ void SAML2SessionInitiator::receive(DDF& in, ostream& out)
         in["acsLocation"].string(), bind.get(),
         in["isPassive"].integer()==1, in["forceAuthn"].integer()==1,
         in["authnContextClassRef"].string(), in["authnContextComparison"].string(),
+        in["NameIDFormat"].string(), in["SPNameQualifier"].string(),
         relayState
         );
     if (!ret.isstruct())
@@ -564,6 +592,8 @@ pair<bool,long> SAML2SessionInitiator::doRequest(
     bool forceAuthn,
     const char* authnContextClassRef,
     const char* authnContextComparison,
+    const char* NameIDFormat,
+    const char* SPNameQualifier,
     string& relayState
     ) const
 {
@@ -658,6 +688,14 @@ pair<bool,long> SAML2SessionInitiator::doRequest(
         NameIDPolicy* namepol = NameIDPolicyBuilder::buildNameIDPolicy();
         req->setNameIDPolicy(namepol);
         namepol->AllowCreate(true);
+    }
+    if (NameIDFormat && *NameIDFormat) {
+        auto_ptr_XMLCh wideform(NameIDFormat);
+        req->getNameIDPolicy()->setFormat(wideform.get());
+    }
+    if (SPNameQualifier && *SPNameQualifier) {
+        auto_ptr_XMLCh widequal(SPNameQualifier);
+        req->getNameIDPolicy()->setSPNameQualifier(widequal.get());
     }
     if (authnContextClassRef || authnContextComparison) {
         RequestedAuthnContext* reqContext = req->getRequestedAuthnContext();

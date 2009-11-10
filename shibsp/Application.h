@@ -25,15 +25,28 @@
 
 #include <shibsp/util/PropertySet.h>
 
-#include <set>
+#include <string>
+#include <vector>
 #ifndef SHIBSP_LITE
 # include <saml/binding/MessageEncoder.h>
-# include <saml/saml2/metadata/MetadataProvider.h>
-# include <xmltooling/security/CredentialResolver.h>
-# include <xmltooling/security/TrustEngine.h>
 #endif
-#include <xmltooling/io/HTTPRequest.h>
-#include <xmltooling/util/Threads.h>
+
+namespace xmltooling {
+    class XMLTOOL_API CredentialResolver;
+    class XMLTOOL_API RWLock;
+    class XMLTOOL_API SOAPTransport;
+    class XMLTOOL_API StorageService;
+    class XMLTOOL_API TrustEngine;
+};
+
+#ifndef SHIBSP_LITE
+namespace opensaml {
+    class SAML_API SecurityPolicyRule;
+    namespace saml2md {
+        class SAML_API MetadataProvider;
+    };
+};
+#endif
 
 namespace shibsp {
 
@@ -90,18 +103,14 @@ namespace shibsp {
          *
          * @return a locked ServiceProvider
          */
-        const ServiceProvider& getServiceProvider() const {
-            return *m_sp;
-        }
+        const ServiceProvider& getServiceProvider() const;
 
         /**
          * Returns the Application's ID.
          *
          * @return  the ID
          */
-        virtual const char* getId() const {
-            return getString("id").second;
-        }
+        virtual const char* getId() const;
 
         /**
          * Returns a unique hash for the Application.

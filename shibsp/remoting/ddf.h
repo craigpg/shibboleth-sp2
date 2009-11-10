@@ -42,7 +42,7 @@ namespace shibsp {
     public:
         /// @cond OFF
         // constructors
-        DDF() : m_handle(NULL) {}
+        DDF();
         DDF(const char* n);
         DDF(const char* n, const char* val, bool safe=true);
         DDF(const char* n, long val);
@@ -77,13 +77,9 @@ namespace shibsp {
     
         // destructive node conversion methods
         DDF& empty();
-        DDF& string(const char* val) {
-            return string(const_cast<char*>(val), true);
-        }
-        DDF& unsafe_string(const char* val) {
-            return string(const_cast<char*>(val), true, false);
-        }
         DDF& string(char* val, bool copyit=true, bool safe=true);
+        DDF& string(const char* val);
+        DDF& unsafe_string(const char* val);
         DDF& string(long val);
         DDF& string(double val);
         DDF& integer(long val);
@@ -110,7 +106,7 @@ namespace shibsp {
         
         // indexed operators
         DDF operator[](unsigned long index) const;
-        DDF operator[](const char* path) const { return getmember(path); }
+        DDF operator[](const char* path) const;
     
         // named member access/creation
         DDF addmember(const char* path);

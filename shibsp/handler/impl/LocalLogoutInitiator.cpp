@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include "Application.h"
 #include "ServiceProvider.h"
 #include "SessionCache.h"
+#include "SPRequest.h"
 #include "handler/AbstractHandler.h"
 #include "handler/LogoutHandler.h"
 
@@ -102,16 +103,15 @@ pair<bool,long> LocalLogoutInitiator::run(SPRequest& request, bool isHandler) co
     if (!session_id.empty()) {
         // Do back channel notification.
         vector<string> sessions(1, session_id);
-        if (!notifyBackChannel(app, request.getRequestURL(), sessions, true)) {
-            app.getServiceProvider().getSessionCache()->remove(app, request, &request);
-            return sendLogoutPage(app, request, request, true, "Partial logout failure.");
-        }
-        request.getServiceProvider().getSessionCache()->remove(app, request, &request);
+        bool result = notifyBackChannel(app, request.getRequestURL(), sessions, true);
+        app.getServiceProvider().getSessionCache()->remove(app, request, &request);
+        if (!result)
+            return sendLogoutPage(app, request, request, "partial");
     }
 
     // Route back to return location specified, or use the local template.
     const char* dest = request.getParameter("return");
     if (dest)
         return make_pair(true, request.sendRedirect(dest));
-    return sendLogoutPage(app, request, request, true, "Logout was successful.");
+    return sendLogoutPage(app, request, request, "local");
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,15 @@
 #ifndef __shibsp_attrfilt_h__
 #define __shibsp_attrfilt_h__
 
-#include <shibsp/attribute/filtering/FilteringContext.h>
+#include <shibsp/base.h>
 
+#include <vector>
 #include <xmltooling/Lockable.h>
 
 namespace shibsp {
+
+    class SHIBSP_API Attribute;
+    class SHIBSP_API FilteringContext;
 
     /**
      * Engine for filtering attribute values.
@@ -36,9 +40,9 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(AttributeFilter);
     protected:
-        AttributeFilter() {}
+        AttributeFilter();
     public:
-        virtual ~AttributeFilter() {}
+        virtual ~AttributeFilter();
 
         /**
          * Filters values out of a set of attributes.

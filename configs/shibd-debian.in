@@ -39,6 +39,9 @@ DAEMON_OPTS="$DAEMON_OPTS -c $SHIBSP_CONFIG"
 # Specify pid file to use
 DAEMON_OPTS="$DAEMON_OPTS -p $PIDFILE"
 
+# Specify wait time to use
+DAEMON_OPTS="$DAEMON_OPTS -w 30"
+
 # Exit if the package is not installed.
 [ -x "$DAEMON" ] || exit 0
 

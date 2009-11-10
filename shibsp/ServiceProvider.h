@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,19 @@
 #define __shibsp_sp_h__
 
 #include <shibsp/util/PropertySet.h>
-#ifndef SHIBSP_LITE
-# include <saml/binding/SecurityPolicyRule.h>
-# include <xmltooling/soap/SOAPTransport.h>
-# include <xmltooling/util/StorageService.h>
-#endif
+
 #include <xmltooling/Lockable.h>
+
+namespace xmltooling {
+    class XMLTOOL_API SOAPTransport;
+    class XMLTOOL_API StorageService;
+};
+
+#ifndef SHIBSP_LITE
+namespace opensaml {
+    class SAML_API SecurityPolicyRule;
+};
+#endif
 
 namespace shibsp {
 
@@ -54,9 +61,9 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(ServiceProvider);
     protected:
-        ServiceProvider() {}
+        ServiceProvider();
     public:
-        virtual ~ServiceProvider() {}
+        virtual ~ServiceProvider();
         
         /**
          * Loads a configuration and prepares the instance for use.

@@ -88,6 +88,14 @@ void SHIBSP_API shibsp::registerAttributeExtractors()
     SPConfig::getConfig().AttributeExtractorManager.registerFactory(CHAINING_ATTRIBUTE_EXTRACTOR, ChainingExtractorFactory);
 }
 
+AttributeExtractor::AttributeExtractor()
+{
+}
+
+AttributeExtractor::~AttributeExtractor()
+{
+}
+
 ChainingAttributeExtractor::ChainingAttributeExtractor(const DOMElement* e)
 {
     SPConfig& conf = SPConfig::getConfig();

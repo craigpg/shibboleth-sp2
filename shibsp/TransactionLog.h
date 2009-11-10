@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,12 @@
 #include <shibsp/base.h>
 #include <xmltooling/logging.h>
 #include <xmltooling/Lockable.h>
-#include <xmltooling/util/Threads.h>
+
+namespace xmltooling {
+    class XMLTOOL_API Mutex;
+};
 
 namespace shibsp {
-
     /**
      * Interface to a synchronized logging object.
      * 
@@ -39,22 +41,13 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(TransactionLog);
     public:
-        TransactionLog()
-            : log(xmltooling::logging::Category::getInstance(SHIBSP_TX_LOGCAT)), m_lock(xmltooling::Mutex::create()) {
-        }
+        TransactionLog();
 
-        virtual ~TransactionLog() {
-            delete m_lock;
-        }
+        virtual ~TransactionLog();
         
-        xmltooling::Lockable* lock() {
-            m_lock->lock();
-            return this;
-        }
+        xmltooling::Lockable* lock();
 
-        void unlock() {
-            m_lock->unlock();
-        }
+        void unlock();
 
         /** Logging object. */
         xmltooling::logging::Category& log;

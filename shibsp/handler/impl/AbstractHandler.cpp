@@ -21,8 +21,8 @@
  */
 
 #include "internal.h"
-#include "Application.h"
 #include "exceptions.h"
+#include "Application.h"
 #include "ServiceProvider.h"
 #include "SPRequest.h"
 #include "handler/AbstractHandler.h"
@@ -40,15 +40,19 @@
 
 
 #ifndef SHIBSP_LITE
+# include <saml/exceptions.h>
+# include <saml/SAMLConfig.h>
+# include <saml/binding/SAMLArtifact.h>
 # include <saml/saml1/core/Protocols.h>
 # include <saml/saml2/core/Protocols.h>
 # include <saml/saml2/metadata/Metadata.h>
 # include <saml/saml2/metadata/MetadataCredentialCriteria.h>
 # include <saml/util/SAMLConstants.h>
-# include <saml/SAMLConfig.h>
-# include <saml/binding/SAMLArtifact.h>
+# include <xmltooling/security/Credential.h>
+# include <xmltooling/security/CredentialResolver.h>
 # include <xmltooling/util/StorageService.h>
 using namespace opensaml::saml2md;
+using namespace opensaml;
 #else
 # include "lite/SAMLConstants.h"
 #endif
@@ -58,7 +62,6 @@ using namespace opensaml::saml2md;
 
 using namespace shibsp;
 using namespace samlconstants;
-using namespace opensaml;
 using namespace xmltooling;
 using namespace xercesc;
 using namespace std;
@@ -128,13 +131,30 @@ void SHIBSP_API shibsp::registerHandlers()
     conf.ManageNameIDServiceManager.registerFactory(SAML20_BINDING_HTTP_ARTIFACT, SAML2NameIDMgmtFactory);
 }
 
+Handler::Handler()
+{
+}
+
+Handler::~Handler()
+{
+}
+
 AbstractHandler::AbstractHandler(
     const DOMElement* e, Category& log, DOMNodeFilter* filter, const map<string,string>* remapper
     ) : m_log(log), m_configNS(shibspconstants::SHIB2SPCONFIG_NS) {
     load(e,NULL,filter,remapper);
 }
 
+AbstractHandler::~AbstractHandler()
+{
+}
+
 #ifndef SHIBSP_LITE
+
+const char* Handler::getType() const
+{
+    return getString("type").second;
+}
 
 void AbstractHandler::checkError(const XMLObject* response, const saml2md::RoleDescriptor* role) const
 {
@@ -569,6 +589,8 @@ long AbstractHandler::sendPostResponse(
     const Application& application, HTTPResponse& httpResponse, const char* url, DDF& postData
     ) const
 {
+    HTTPResponse::sanitizeURL(url);
+
     const PropertySet* props=application.getPropertySet("Sessions");
     pair<bool,const char*> postTemplate = props->getString("postTemplate");
     if (!postTemplate.first)
@@ -584,7 +606,7 @@ long AbstractHandler::sendPostResponse(
     // Load the parameters into objects for the template.
     multimap<string,string>& collection = respParam.m_collectionMap["PostedData"];
     DDF param = postData.first();
-    while (param.isstring()) {
+    while (!param.isnull()) {
         collection.insert(pair<const string,string>(param.name(), (param.string() ? param.string() : "")));
         param = postData.next();
     }
@@ -632,7 +654,7 @@ DDF AbstractHandler::getPostData(const Application& application, const HTTPReque
             CGIParser cgi(request);
             pair<CGIParser::walker,CGIParser::walker> params = cgi.getParameters(NULL);
             if (params.first == params.second)
-                return DDF();
+                return DDF("parameters").list();
             DDF child;
             DDF ret = DDF("parameters").list();
             for (; params.first != params.second; ++params.first) {

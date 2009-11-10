@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
 #include "Application.h"
 #include "ServiceProvider.h"
 #include "SessionCache.h"
+#include "SPRequest.h"
 #include "handler/LogoutHandler.h"
 #include "util/TemplateParameters.h"
 
@@ -37,33 +38,46 @@ using namespace shibsp;
 using namespace xmltooling;
 using namespace std;
 
+LogoutHandler::LogoutHandler() : m_initiator(true)
+{
+}
+
+LogoutHandler::~LogoutHandler()
+{
+}
+
 pair<bool,long> LogoutHandler::sendLogoutPage(
     const Application& application, const HTTPRequest& request, HTTPResponse& response, bool local, const char* status
     ) const
 {
+    return sendLogoutPage(application, request, response, local ? "local" : "global");
+}
+
+pair<bool,long> LogoutHandler::sendLogoutPage(
+    const Application& application, const HTTPRequest& request, HTTPResponse& response, const char* type
+    ) const
+{
+    string tname = string(type) + "Logout";
     const PropertySet* props = application.getPropertySet("Errors");
-    pair<bool,const char*> prop = props ? props->getString(local ? "localLogout" : "globalLogout") : pair<bool,const char*>(false,NULL);
-    if (prop.first) {
-        response.setContentType("text/html");
-        response.setResponseHeader("Expires","01-Jan-1997 12:00:00 GMT");
-        response.setResponseHeader("Cache-Control","private,no-store,no-cache");
-        string fname(prop.second);
-        ifstream infile(XMLToolingConfig::getConfig().getPathResolver()->resolve(fname, PathResolver::XMLTOOLING_CFG_FILE).c_str());
-        if (!infile)
-            throw ConfigurationException("Unable to access $1 HTML template.", params(1,local ? "localLogout" : "globalLogout"));
-        TemplateParameters tp;
-        tp.m_request = &request;
-        tp.setPropertySet(props);
-        if (status)
-            tp.m_map["logoutStatus"] = status;
-        stringstream str;
-        XMLToolingConfig::getConfig().getTemplateEngine()->run(infile, str, tp);
-        return make_pair(true,response.sendResponse(str));
+    pair<bool,const char*> prop = props ? props->getString(tname.c_str()) : pair<bool,const char*>(false,NULL);
+    if (!prop.first) {
+        tname += ".html";
+        prop.second = tname.c_str();
     }
-    prop = application.getString("homeURL");
-    if (!prop.first)
-        prop.second = "/";
-    return make_pair(true,response.sendRedirect(prop.second));
+    response.setContentType("text/html");
+    response.setResponseHeader("Expires","01-Jan-1997 12:00:00 GMT");
+    response.setResponseHeader("Cache-Control","private,no-store,no-cache");
+    string fname(prop.second);
+    ifstream infile(XMLToolingConfig::getConfig().getPathResolver()->resolve(fname, PathResolver::XMLTOOLING_CFG_FILE).c_str());
+    if (!infile)
+        throw ConfigurationException("Unable to access $1 HTML template.", params(1,prop.second));
+    TemplateParameters tp;
+    tp.m_request = &request;
+    tp.setPropertySet(props);
+    tp.m_map["logoutStatus"] = "Logout completed successfully.";  // Backward compatibility.
+    stringstream str;
+    XMLToolingConfig::getConfig().getTemplateEngine()->run(infile, str, tp);
+    return make_pair(true,response.sendResponse(str));
 }
 
 pair<bool,long> LogoutHandler::run(SPRequest& request, bool isHandler) const

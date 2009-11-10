@@ -23,7 +23,8 @@
 #ifndef __shibsp_xmlconstants_h__
 #define __shibsp_xmlconstants_h__
 
-#include <xmltooling/util/XMLConstants.h>
+#include <shibsp/base.h>
+#include <xercesc/util/XercesDefs.hpp>
 
 /**
  * SAML related constants.
