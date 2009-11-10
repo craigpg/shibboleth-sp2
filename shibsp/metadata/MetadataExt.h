@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,24 @@
 /**
  * @file shibsp/metadata/MetadataExt.h
  * 
- * XMLObjects representing Shibboleth metadata extensions
+ * XMLObjects representing Shibboleth metadata extensions.
  */
 
 #ifndef __shibsp_metaext_h__
 #define __shibsp_metaext_h__
 
 #include <shibsp/util/SPConstants.h>
-#include <xmltooling/XMLObjectBuilder.h>
-#include <xmltooling/signature/KeyInfo.h>
-#include <xercesc/util/XMLUniDefs.hpp>
+
+#include <xmltooling/AttributeExtensibleXMLObject.h>
+#include <xmltooling/ConcreteXMLObjectBuilder.h>
+#include <xmltooling/util/XMLObjectChildrenList.h>
 
 #define DECL_SHIBOBJECTBUILDER(cname) \
     DECL_XMLOBJECTBUILDER(SHIBSP_API,cname,shibspconstants::SHIBMD_NS,shibspconstants::SHIBMD_PREFIX)
+
+namespace xmlsignature {
+    class XMLTOOL_API KeyInfo;
+};
 
 namespace shibsp {
 

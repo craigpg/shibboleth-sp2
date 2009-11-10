@@ -51,27 +51,16 @@ namespace shibsp {
          * @param ids   array with primary identifier in first position, followed by any aliases
          * @param delimeter value/scope delimeter when serializing
          */
-        ScopedAttribute(const std::vector<std::string>& ids, char delimeter='@')
-            : Attribute(ids), m_delimeter(delimeter) {
-        }
+        ScopedAttribute(const std::vector<std::string>& ids, char delimeter='@');
 
         /**
          * Constructs based on a remoted ScopedAttribute.
          * 
          * @param in    input object containing marshalled ScopedAttribute
          */
-        ScopedAttribute(DDF& in) : Attribute(in), m_delimeter('@') {
-            DDF val = in["_delimeter"];
-            if (val.isint())
-                m_delimeter = static_cast<char>(val.integer());
-            val = in.first().first();
-            while (val.name() && val.string()) {
-                m_values.push_back(std::make_pair(std::string(val.name()), std::string(val.string())));
-                val = in.first().next();
-            }
-        }
+        ScopedAttribute(DDF& in);
         
-        virtual ~ScopedAttribute() {}
+        virtual ~ScopedAttribute();
 
         /**
          * Returns the set of values encoded as UTF-8 strings.
@@ -80,9 +69,7 @@ namespace shibsp {
          * 
          * @return  a mutable vector of the values
          */
-        std::vector< std::pair<std::string,std::string> >& getValues() {
-            return m_values;
-        }
+        std::vector< std::pair<std::string,std::string> >& getValues();
 
         /**
          * Returns the set of values encoded as UTF-8 strings.
@@ -91,52 +78,16 @@ namespace shibsp {
          * 
          * @return  an immutable vector of the values
          */
-        const std::vector< std::pair<std::string,std::string> >& getValues() const {
-            return m_values;
-        }
+        const std::vector< std::pair<std::string,std::string> >& getValues() const;
 
-        size_t valueCount() const {
-            return m_values.size();
-        }
-        
-        void clearSerializedValues() {
-            m_serialized.clear();
-        }
-        
-        const char* getString(size_t index) const {
-            return m_values[index].first.c_str();
-        }
-
-        const char* getScope(size_t index) const {
-            return m_values[index].second.c_str();
-        }
-
-        void removeValue(size_t index) {
-            Attribute::removeValue(index);
-            if (index < m_values.size())
-                m_values.erase(m_values.begin() + index);
-        }
-
-        const std::vector<std::string>& getSerializedValues() const {
-            if (m_serialized.empty()) {
-                for (std::vector< std::pair<std::string,std::string> >::const_iterator i=m_values.begin(); i!=m_values.end(); ++i)
-                    m_serialized.push_back(i->first + m_delimeter + i->second);
-            }
-            return Attribute::getSerializedValues();
-        }
-
-        DDF marshall() const {
-            DDF ddf = Attribute::marshall();
-            ddf.name("Scoped");
-            if (m_delimeter != '@')
-                ddf.addmember("_delimeter").integer(m_delimeter);
-            DDF vlist = ddf.first();
-            for (std::vector< std::pair<std::string,std::string> >::const_iterator i=m_values.begin(); i!=m_values.end(); ++i) {
-                DDF val = DDF(i->first.c_str()).string(i->second.c_str());
-                vlist.add(val);
-            }
-            return ddf;
-        }
+        // Virtual function overrides.
+        size_t valueCount() const;
+        void clearSerializedValues();
+        const char* getString(size_t index) const;
+        const char* getScope(size_t index) const;
+        void removeValue(size_t index);
+        const std::vector<std::string>& getSerializedValues() const;
+        DDF marshall() const;
     
     private:
         char m_delimeter;

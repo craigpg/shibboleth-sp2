@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,20 @@
 /**
  * @file shibsp/handler/Handler.h
  * 
- * Pluggable runtime functionality that implement protocols and services 
+ * Pluggable runtime functionality that implement protocols and services.
  */
 
 #ifndef __shibsp_handler_h__
 #define __shibsp_handler_h__
 
 #include <shibsp/util/PropertySet.h>
+
 #ifndef SHIBSP_LITE
-# include <saml/saml2/metadata/Metadata.h>
+namespace opensaml {
+    namespace saml2md {
+        class SAML_API SPSSODescriptor;
+    };
+};
 #endif
 
 namespace shibsp {
@@ -39,9 +44,9 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(Handler);
     protected:
-        Handler() {}
+        Handler();
     public:
-        virtual ~Handler() {}
+        virtual ~Handler();
 
         /**
          * Executes handler functionality as an incoming request.
@@ -72,9 +77,7 @@ namespace shibsp {
          *
          * @return  a Handler type
          */
-        virtual const char* getType() const {
-            return getString("type").second;
-        }
+        virtual const char* getType() const;
 #endif
     };
     

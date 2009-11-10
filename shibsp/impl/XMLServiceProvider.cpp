@@ -17,7 +17,7 @@
 /**
  * XMLServiceProvider.cpp
  *
- * XML-based SP configuration and mgmt
+ * XML-based SP configuration and mgmt.
  */
 
 #include "internal.h"
@@ -42,6 +42,7 @@
 #else
 # error "Supported logging library not available."
 #endif
+#include <algorithm>
 #include <xercesc/util/XMLUniDefs.hpp>
 #include <xmltooling/XMLToolingConfig.h>
 #include <xmltooling/version.h>
@@ -60,13 +61,24 @@
 # include <saml/version.h>
 # include <saml/binding/ArtifactMap.h>
 # include <saml/binding/SAMLArtifact.h>
+# include <saml/binding/SecurityPolicyRule.h>
 # include <saml/saml1/core/Assertions.h>
+# include <saml/saml2/core/Assertions.h>
 # include <saml/saml2/binding/SAML2ArtifactType0004.h>
+# include <saml/saml2/metadata/Metadata.h>
+# include <saml/saml2/metadata/MetadataProvider.h>
+# include <saml/util/SAMLConstants.h>
+# include <xmltooling/security/CredentialResolver.h>
+# include <xmltooling/security/SecurityHelper.h>
+# include <xmltooling/security/TrustEngine.h>
 # include <xmltooling/util/ReplayCache.h>
+# include <xmltooling/util/StorageService.h>
 using namespace opensaml::saml2;
 using namespace opensaml::saml2p;
 using namespace opensaml::saml2md;
 using namespace opensaml;
+#else
+# include "lite/SAMLConstants.h"
 #endif
 
 using namespace shibsp;
@@ -105,7 +117,11 @@ namespace {
             index = props->getInt("artifactEndpointIndex");
             if (!index.first)
                 index = getArtifactEndpointIndex();
-            return new SAML2ArtifactType0004(SAMLConfig::getConfig().hashSHA1(props->getString("entityID").second),index.first ? index.second : 1);
+            pair<bool,const char*> entityID = props->getString("entityID");
+            return new SAML2ArtifactType0004(
+                SecurityHelper::doHash("SHA1", entityID.second, strlen(entityID.second), false),
+                index.first ? index.second : 1
+                );
         }
 
         MetadataProvider* getMetadataProvider(bool required=true) const {
@@ -1306,6 +1322,20 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
             pair<bool,const char*> unsafe = getString("unsafeChars");
             if (unsafe.first)
                 TemplateEngine::unsafe_chars = unsafe.second;
+
+            unsafe = getString("allowedSchemes");
+            if (unsafe.first) {
+                HTTPResponse::getAllowedSchemes().clear();
+                string schemes=unsafe.second;
+                unsigned int j_sch=0;
+                for (unsigned int i_sch=0;  i_sch < schemes.length();  i_sch++) {
+                    if (schemes.at(i_sch)==' ') {
+                        HTTPResponse::getAllowedSchemes().push_back(schemes.substr(j_sch, i_sch-j_sch));
+                        j_sch = i_sch + 1;
+                    }
+                }
+                HTTPResponse::getAllowedSchemes().push_back(schemes.substr(j_sch, schemes.length()-j_sch));
+            }
 
             // Extensions
             doExtensions(e, "global", log);

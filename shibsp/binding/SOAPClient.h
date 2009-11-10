@@ -23,13 +23,14 @@
 #ifndef __shibsp_soap11client_h__
 #define __shibsp_soap11client_h__
 
-#include <shibsp/security/SecurityPolicy.h>
+#include <shibsp/base.h>
+
 #include <saml/binding/SOAPClient.h>
-#include <xmltooling/security/CredentialResolver.h>
 
 namespace shibsp {
 
     class SHIBSP_API PropertySet;
+    class SHIBSP_API SecurityPolicy;
 
     /**
      * Specialized SOAPClient for SP environment.
@@ -44,10 +45,7 @@ namespace shibsp {
          */
         SOAPClient(SecurityPolicy& policy);
         
-        virtual ~SOAPClient() {
-            if (m_credResolver)
-                m_credResolver->unlock();
-        }
+        virtual ~SOAPClient();
 
         /**
          * Override handles message signing for SAML payloads.

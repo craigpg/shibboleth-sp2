@@ -119,6 +119,10 @@ struct shibsp::ddf_body_t {
 
 // library implementation
 
+DDF::DDF() : m_handle(NULL)
+{
+}
+
 DDF::DDF(const char* n)
 {
     m_handle=new(nothrow) ddf_body_t;
@@ -365,6 +369,16 @@ DDF& DDF::string(char* val, bool copyit, bool safe)
     return *this;
 }
 
+DDF& DDF::string(const char* val)
+{
+    return string(const_cast<char*>(val), true);
+}
+
+DDF& DDF::unsafe_string(const char* val)
+{
+    return string(const_cast<char*>(val), true, false);
+}
+
 DDF& DDF::string(long val)
 {
     char buf[20];
@@ -598,6 +612,11 @@ DDF DDF::previous()
             m_handle->value.children.current=m_handle->value.children.current->prev;
     }
     return p;
+}
+
+DDF DDF::operator[](const char* path) const
+{
+    return getmember(path);
 }
 
 DDF DDF::operator[](unsigned long index) const
@@ -997,8 +1016,7 @@ DDF deserialize(DOMElement* root, bool lowercase)
             }
             else {
                 char* val = toUTF8(child->getNodeValue(), true);    // use malloc
-                if (val)
-                    obj.string(val, false); // don't re-copy the string
+                obj.string(val, false); // don't re-copy the string
             }
         }
     }

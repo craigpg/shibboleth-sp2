@@ -79,6 +79,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define if xmltooling library was found */
+#undef HAVE_XMLTOOLING
+
 /* Name of package */
 #undef PACKAGE
 

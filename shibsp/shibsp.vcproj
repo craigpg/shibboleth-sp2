@@ -67,7 +67,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="log4shib1D.lib xerces-c_3D.lib xsec_1D.lib saml2D.lib xmltooling1D.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_2D.dll"
+				OutputFile="$(OutDir)\$(ProjectName)1_3D.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\cpp-opensaml2\$(ConfigurationName);..\..\cpp-xmltooling\$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -148,7 +148,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="log4shib1D.lib xerces-c_3D.lib xsec_1D.lib saml2D.lib xmltooling1D.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_2D.dll"
+				OutputFile="$(OutDir)\$(ProjectName)1_3D.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\cpp-opensaml2\$(PlatformName)\$(ConfigurationName);..\..\cpp-xmltooling\$(PlatformName)\$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -224,7 +224,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="log4shib1.lib xerces-c_3.lib xsec_1.lib saml2.lib xmltooling1.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_2.dll"
+				OutputFile="$(OutDir)\$(ProjectName)1_3.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\cpp-opensaml2\$(ConfigurationName);..\..\cpp-xmltooling\$(ConfigurationName)"
 				SubSystem="2"
@@ -302,7 +302,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="log4shib1.lib xerces-c_3.lib xsec_1.lib saml2.lib xmltooling1.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_2.dll"
+				OutputFile="$(OutDir)\$(ProjectName)1_3.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\cpp-opensaml2\$(PlatformName)\$(ConfigurationName);..\..\cpp-xmltooling\$(PlatformName)\$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -408,6 +408,10 @@
 					RelativePath=".\metadata\MetadataExtSchemaValidators.cpp"
 					>
 				</File>
+				<File
+					RelativePath=".\metadata\MetadataProviderCriteria.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="remoting"
@@ -481,6 +485,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\attribute\NameIDAttribute.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\attribute\NameIDAttributeDecoder.cpp"
 					>
 				</File>
@@ -489,11 +497,23 @@
 					>
 				</File>
 				<File
+					RelativePath=".\attribute\ScopedAttribute.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\attribute\ScopedAttributeDecoder.cpp"
 					>
 				</File>
 				<File
+					RelativePath=".\attribute\SimpleAttribute.cpp"
+					>
+				</File>
+				<File
 					RelativePath=".\attribute\StringAttributeDecoder.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\attribute\XMLAttribute.cpp"
 					>
 				</File>
 				<File
@@ -604,6 +624,10 @@
 						</File>
 						<File
 							RelativePath=".\attribute\filtering\impl\AuthenticationMethodStringFunctor.cpp"
+							>
+						</File>
+						<File
+							RelativePath=".\attribute\filtering\impl\BasicFilteringContext.cpp"
 							>
 						</File>
 						<File

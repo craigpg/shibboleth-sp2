@@ -48,6 +48,22 @@ void SHIBSP_API shibsp::registerListenerServices()
 #endif
 }
 
+Remoted::Remoted()
+{
+}
+
+Remoted::~Remoted()
+{
+}
+
+ListenerService::ListenerService()
+{
+}
+
+ListenerService::~ListenerService()
+{
+}
+
 Remoted* ListenerService::regListener(const char* address, Remoted* listener)
 {
     Remoted* ret=NULL;
@@ -95,4 +111,13 @@ void ListenerService::receive(DDF &in, ostream& out)
         throw ListenerException("No destination registered for incoming message addressed to ($1).",params(1,in.name()));
 
     dest->receive(in, out);
+}
+
+bool ListenerService::init(bool force)
+{
+    return true;
+}
+
+void ListenerService::term()
+{
 }

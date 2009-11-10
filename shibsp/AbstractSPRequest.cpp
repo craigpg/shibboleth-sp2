@@ -17,19 +17,38 @@
 /**
  * AbstractSPRequest.cpp
  *
- * Abstract base for SPRequest implementations
+ * Abstract base for SPRequest implementations.
  */
 
 #include "internal.h"
+#include "exceptions.h"
 #include "AbstractSPRequest.h"
 #include "Application.h"
 #include "ServiceProvider.h"
 #include "SessionCache.h"
+#include "util/CGIParser.h"
 
 using namespace shibsp;
 using namespace opensaml;
 using namespace xmltooling;
 using namespace std;
+
+SPRequest::SPRequest()
+{
+}
+
+SPRequest::~SPRequest()
+{
+}
+
+string SPRequest::getSecureHeader(const char* name) const
+{
+    return getHeader(name);
+}
+
+void SPRequest::setAuthType(const char* authtype)
+{
+}
 
 AbstractSPRequest::AbstractSPRequest(const char* category)
     : m_sp(NULL), m_mapper(NULL), m_app(NULL), m_sessionTried(false), m_session(NULL),
@@ -48,6 +67,11 @@ AbstractSPRequest::~AbstractSPRequest()
     if (m_sp)
         m_sp->unlock();
     delete m_parser;
+}
+
+const ServiceProvider& AbstractSPRequest::getServiceProvider() const
+{
+    return *m_sp;
 }
 
 RequestMapper::Settings AbstractSPRequest::getRequestSettings() const
@@ -145,6 +169,11 @@ void AbstractSPRequest::setRequestURI(const char* uri)
             ++uri;
         }
     }
+}
+
+const char* AbstractSPRequest::getRequestURI() const
+{
+    return m_uri.c_str();
 }
 
 const char* AbstractSPRequest::getRequestURL() const

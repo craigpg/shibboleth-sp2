@@ -27,9 +27,16 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #define _CRT_RAND_S
 
+#include <shibsp/exceptions.h>
 #include <shibsp/AbstractSPRequest.h>
 #include <shibsp/SPConfig.h>
 #include <shibsp/ServiceProvider.h>
+
+#include <set>
+#include <sstream>
+#include <fstream>
+#include <stdexcept>
+#include <process.h>
 #include <xmltooling/unicode.h>
 #include <xmltooling/XMLToolingConfig.h>
 #include <xmltooling/util/NDC.h>
@@ -37,12 +44,6 @@
 #include <xmltooling/util/XMLHelper.h>
 #include <xercesc/util/Base64.hpp>
 #include <xercesc/util/XMLUniDefs.hpp>
-
-#include <set>
-#include <sstream>
-#include <fstream>
-#include <stdexcept>
-#include <process.h>
 
 #include <windows.h>
 #include <httpfilt.h>
@@ -202,32 +203,6 @@ extern "C" BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
         flag=props->getBool("catchAll");
         g_catchAll = flag.first && flag.second;
 
-<<<<<<< .mine
-        pair<bool,const char*> unsetValue=props->getString("unsetHeaderValue");
-        if (unsetValue.first)
-            g_unsetHeaderValue = unsetValue.second;
-        if (g_checkSpoofing) {
-            unsetValue = props->getString("spoofKey");
-            if (unsetValue.first)
-                g_spoofKey = unsetValue.second;
-            else {
-                unsigned int randkey=0,randkey2=0,randkey3=0,randkey4=0;
-                if (rand_s(&randkey) == 0 && rand_s(&randkey2) == 0 && rand_s(&randkey3) == 0 && rand_s(&randkey4) == 0) {
-                    ostringstream keystr;
-                    keystr << randkey << randkey2 << randkey3 << randkey4;
-                    g_spoofKey = keystr.str();
-                }
-                else {
-                    LogEvent(NULL, EVENTLOG_ERROR_TYPE, 2100, NULL,
-                            "Filter failed to generate a random anti-spoofing key (if this is Windows 2000 set one manually).");
-                    g_Config->term();
-                    g_Config=NULL;
-                    return FALSE;
-                }
-            }
-        }
-
-=======
         pair<bool,const char*> unsetValue=props->getString("unsetHeaderValue");
         if (unsetValue.first)
             g_unsetHeaderValue = unsetValue.second;
@@ -256,7 +231,6 @@ extern "C" BOOL WINAPI GetFilterVersion(PHTTP_FILTER_VERSION pVer)
             }
         }
 
->>>>>>> .r3097
         props = props->getPropertySet("ISAPI");
         if (props) {
             flag = props->getBool("normalizeRequest");
@@ -560,6 +534,7 @@ public:
     return getSecureHeader("remote-user");
   }
   void setResponseHeader(const char* name, const char* value) {
+    HTTPResponse::setResponseHeader(name, value);
     // Set for later.
     if (value)
         m_headers.insert(make_pair(name,value));
@@ -588,7 +563,7 @@ public:
     return SF_STATUS_REQ_FINISHED;
   }
   long sendRedirect(const char* url) {
-    // XXX: Don't support the httpRedirect option, yet.
+    HTTPResponse::sendRedirect(url);
     string hdr=string("Location: ") + url + "\r\n"
       "Content-Type: text/html\r\n"
       "Content-Length: 40\r\n"
@@ -869,6 +844,7 @@ public:
     return buf.empty() ? "" : buf;
   }
   void setResponseHeader(const char* name, const char* value) {
+    HTTPResponse::setResponseHeader(name, value);
     // Set for later.
     if (value)
         m_headers.insert(make_pair(name,value));
@@ -930,6 +906,7 @@ public:
     return HSE_STATUS_SUCCESS;
   }
   long sendRedirect(const char* url) {
+    HTTPResponse::sendRedirect(url);
     string hdr=string("Location: ") + url + "\r\n"
       "Content-Type: text/html\r\n"
       "Content-Length: 40\r\n"

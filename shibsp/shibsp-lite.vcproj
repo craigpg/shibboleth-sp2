@@ -67,7 +67,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="log4shib1D.lib xerces-c_3D.lib xmltooling-lite1D.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_2D.dll"
+				OutputFile="$(OutDir)\$(ProjectName)1_3D.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\cpp-xmltooling\$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -148,7 +148,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="log4shib1D.lib xerces-c_3D.lib xmltooling-lite1D.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_2D.dll"
+				OutputFile="$(OutDir)\$(ProjectName)1_3D.dll"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="..\..\cpp-xmltooling\$(PlatformName)\$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -225,7 +225,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="log4shib1.lib xerces-c_3.lib xmltooling-lite1.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_2.dll"
+				OutputFile="$(OutDir)\$(ProjectName)1_3.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\cpp-xmltooling\$(ConfigurationName)"
 				SubSystem="2"
@@ -304,7 +304,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="log4shib1.lib xerces-c_3.lib xmltooling-lite1.lib wsock32.lib"
-				OutputFile="$(OutDir)\$(ProjectName)1_2.dll"
+				OutputFile="$(OutDir)\$(ProjectName)1_3.dll"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="..\..\cpp-xmltooling\$(PlatformName)\$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -444,6 +444,22 @@
 				</File>
 				<File
 					RelativePath=".\attribute\ExtensibleAttribute.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\attribute\NameIDAttribute.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\attribute\ScopedAttribute.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\attribute\SimpleAttribute.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\attribute\XMLAttribute.cpp"
 					>
 				</File>
 			</Filter>

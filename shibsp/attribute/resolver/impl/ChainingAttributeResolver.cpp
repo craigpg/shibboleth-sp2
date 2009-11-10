@@ -27,6 +27,7 @@
 #include "attribute/resolver/AttributeResolver.h"
 #include "attribute/resolver/ResolutionContext.h"
 
+#include <saml/Assertion.h>
 #include <xercesc/util/XMLUniDefs.hpp>
 #include <xmltooling/util/XMLHelper.h>
 
@@ -147,6 +148,22 @@ void SHIBSP_API shibsp::registerAttributeResolvers()
     SPConfig::getConfig().AttributeResolverManager.registerFactory(QUERY_ATTRIBUTE_RESOLVER, QueryResolverFactory);
     SPConfig::getConfig().AttributeResolverManager.registerFactory(SIMPLEAGGREGATION_ATTRIBUTE_RESOLVER, SimpleAggregationResolverFactory);
     SPConfig::getConfig().AttributeResolverManager.registerFactory(CHAINING_ATTRIBUTE_RESOLVER, ChainingResolverFactory);
+}
+
+ResolutionContext::ResolutionContext()
+{
+}
+
+ResolutionContext::~ResolutionContext()
+{
+}
+
+AttributeResolver::AttributeResolver()
+{
+}
+
+AttributeResolver::~AttributeResolver()
+{
 }
 
 ChainingAttributeResolver::ChainingAttributeResolver(const DOMElement* e)

@@ -25,9 +25,19 @@
 
 #include <shibsp/base.h>
 
-#include <saml/Assertion.h>
-#include <saml/saml2/metadata/Metadata.h>
+#include <string>
+#include <vector>
 #include <xmltooling/Lockable.h>
+
+namespace opensaml {
+    class SAML_API Assertion;
+    namespace saml2 {
+        class SAML_API NameID;
+    };
+    namespace saml2md {
+        class SAML_API EntityDescriptor;
+    };
+};
 
 namespace shibsp {
 
@@ -48,9 +58,9 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(AttributeResolver);
     protected:
-        AttributeResolver() {}
+        AttributeResolver();
     public:
-        virtual ~AttributeResolver() {}
+        virtual ~AttributeResolver();
 
         /**
          * Creates a ResolutionContext based on session bootstrap material.

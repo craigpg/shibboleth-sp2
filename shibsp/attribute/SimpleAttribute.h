@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,22 +38,16 @@ namespace shibsp {
          * 
          * @param ids   array with primary identifier in first position, followed by any aliases
          */
-        SimpleAttribute(const std::vector<std::string>& ids) : Attribute(ids) {}
+        SimpleAttribute(const std::vector<std::string>& ids);
 
         /**
          * Constructs based on a remoted SimpleAttribute.
          * 
          * @param in    input object containing marshalled SimpleAttribute
          */
-        SimpleAttribute(DDF& in) : Attribute(in) {
-            DDF val = in.first().first();
-            while (val.string()) {
-                m_serialized.push_back(val.string());
-                val = in.first().next();
-            }
-        }
+        SimpleAttribute(DDF& in);
         
-        virtual ~SimpleAttribute() {}
+        virtual ~SimpleAttribute();
 
         /**
          * Returns the set of values encoded as UTF-8 strings.
@@ -63,21 +57,11 @@ namespace shibsp {
          * 
          * @return  a mutable vector of the values
          */
-        std::vector<std::string>& getValues() {
-            return m_serialized;
-        }
+        std::vector<std::string>& getValues();
         
-        void clearSerializedValues() {
-            // Do nothing, since our values are already serialized.
-        }
-        
-        DDF marshall() const {
-            DDF ddf = Attribute::marshall();
-            DDF vlist = ddf.first();
-            for (std::vector<std::string>::const_iterator i=m_serialized.begin(); i!=m_serialized.end(); ++i)
-                vlist.add(DDF(NULL).string(i->c_str()));
-            return ddf;
-        }
+        // Virtual function overrides.
+        void clearSerializedValues();
+        DDF marshall() const;
     };
 
 };

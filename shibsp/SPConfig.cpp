@@ -18,7 +18,7 @@
 /**
  * SPConfig.cpp
  *
- * Library configuration
+ * Library configuration.
  */
 
 #include "internal.h"
@@ -41,6 +41,7 @@
 #include "ServiceProvider.h"
 #include "SessionCache.h"
 #include "SPConfig.h"
+#include "TransactionLog.h"
 #include "attribute/Attribute.h"
 #include "handler/SessionInitiator.h"
 #include "remoting/ListenerService.h"
@@ -55,15 +56,16 @@
 # include "metadata/MetadataExt.h"
 # include "security/PKIXTrustEngine.h"
 # include <saml/SAMLConfig.h>
-#else
-# include <xmltooling/XMLToolingConfig.h>
 #endif
 
 #include <ctime>
 #include <xercesc/util/XMLUniDefs.hpp>
+#include <xmltooling/XMLToolingConfig.h>
 #include <xmltooling/util/NDC.h>
+#include <xmltooling/util/ParserPool.h>
 #include <xmltooling/util/PathResolver.h>
 #include <xmltooling/util/TemplateEngine.h>
+#include <xmltooling/util/Threads.h>
 #include <xmltooling/util/XMLHelper.h>
 
 using namespace shibsp;
@@ -96,11 +98,51 @@ SPConfig& SPConfig::getConfig()
     return g_config;
 }
 
+SPConfig::SPConfig() : attribute_value_delimeter(';'), m_serviceProvider(NULL),
+#ifndef SHIBSP_LITE
+    m_artifactResolver(NULL),
+#endif
+    m_features(0), m_configDoc(NULL)
+{
+}
+
+SPConfig::~SPConfig()
+{
+}
+
+void SPConfig::setFeatures(unsigned long enabled)
+{
+    m_features = enabled;
+}
+
+bool SPConfig::isEnabled(components_t feature)
+{
+    return (m_features & feature)>0;
+}
+
+ServiceProvider* SPConfig::getServiceProvider() const
+{
+    return m_serviceProvider;
+}
+
 void SPConfig::setServiceProvider(ServiceProvider* serviceProvider)
 {
     delete m_serviceProvider;
     m_serviceProvider = serviceProvider;
 }
+
+#ifndef SHIBSP_LITE
+void SPConfig::setArtifactResolver(MessageDecoder::ArtifactResolver* artifactResolver)
+{
+    delete m_artifactResolver;
+    m_artifactResolver = artifactResolver;
+}
+
+const MessageDecoder::ArtifactResolver* SPConfig::getArtifactResolver() const
+{
+    return m_artifactResolver;
+}
+#endif
 
 bool SPConfig::init(const char* catalog_path, const char* inst_prefix)
 {
@@ -341,4 +383,24 @@ bool SPConfig::instantiate(const char* config, bool rethrow)
         Category::getInstance(SHIBSP_LOGCAT".Config").fatal("caught exception while loading configuration: %s", ex.what());
     }
     return false;
+}
+
+TransactionLog::TransactionLog() : log(logging::Category::getInstance(SHIBSP_TX_LOGCAT)), m_lock(Mutex::create())
+{
+}
+
+TransactionLog::~TransactionLog()
+{
+    delete m_lock;
+}
+
+Lockable* TransactionLog::lock()
+{
+    m_lock->lock();
+    return this;
+}
+
+void TransactionLog::unlock()
+{
+    m_lock->unlock();
 }

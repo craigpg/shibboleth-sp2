@@ -32,16 +32,17 @@
 #include "attribute/resolver/ResolutionContext.h"
 #include "binding/SOAPClient.h"
 #include "metadata/MetadataProviderCriteria.h"
+#include "security/SecurityPolicy.h"
 #include "util/SPConstants.h"
 
 #include <saml/exceptions.h>
-#include <saml/binding/SecurityPolicy.h>
 #include <saml/saml1/binding/SAML1SOAPClient.h>
 #include <saml/saml1/core/Assertions.h>
 #include <saml/saml1/core/Protocols.h>
 #include <saml/saml2/binding/SAML2SOAPClient.h>
 #include <saml/saml2/core/Protocols.h>
 #include <saml/saml2/metadata/Metadata.h>
+#include <saml/saml2/metadata/MetadataCredentialCriteria.h>
 #include <saml/saml2/metadata/MetadataProvider.h>
 #include <xmltooling/util/NDC.h>
 #include <xmltooling/util/XMLHelper.h>
@@ -239,7 +240,7 @@ QueryResolver::QueryResolver(const DOMElement* e) : m_log(Category::getInstance(
                     obj.release();
                 }
             }
-            else if (XMLHelper::isNodeNamed(child, samlconstants::SAML1P_NS, AttributeDesignator::LOCAL_NAME)) {
+            else if (XMLHelper::isNodeNamed(child, samlconstants::SAML1_NS, AttributeDesignator::LOCAL_NAME)) {
                 auto_ptr<XMLObject> obj(AttributeDesignatorBuilder::buildOneFromElement(child));
                 AttributeDesignator* down = dynamic_cast<AttributeDesignator*>(obj.get());
                 if (down) {

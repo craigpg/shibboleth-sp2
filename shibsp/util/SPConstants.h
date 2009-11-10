@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,7 @@
 #define __shibsp_constants_h__
 
 #include <shibsp/base.h>
-#ifndef SHIBSP_LITE
-# include <saml/util/SAMLConstants.h>
-#else
-# include <shibsp/lite/SAMLConstants.h>
-#endif
+#include <xercesc/util/XercesDefs.hpp>
 
 /**
  * Shibboleth SP XML constants.

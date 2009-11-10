@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,18 @@
 /**
  * @file shibsp/AbstractSPRequest.h
  * 
- * Abstract base for SPRequest implementations  
+ * Abstract base for SPRequest implementations.
  */
 
 #ifndef __shibsp_abstreq_h__
 #define __shibsp_abstreq_h__
 
-#include <shibsp/exceptions.h>
 #include <shibsp/SPRequest.h>
-#include <shibsp/util/CGIParser.h>
 
 namespace shibsp {
     
+    class SHIBSP_API CGIParser;
+
 #if defined (_MSC_VER)
     #pragma warning( push )
     #pragma warning( disable : 4251 )
@@ -49,7 +49,7 @@ namespace shibsp {
         
         /**
          * Stores a normalized request URI to ensure it contains no %-encoded characters
-         * or other undesirable artifacts, such as ;jsessionid appendage.
+         * or other undesirable artifacts.
          *
          * @param uri   the request URI as obtained from the client
          */
@@ -58,32 +58,18 @@ namespace shibsp {
     public:
         virtual ~AbstractSPRequest();
 
-        const ServiceProvider& getServiceProvider() const {
-            return *m_sp;
-        }
-
+        // Virtual function overrides.
+        const ServiceProvider& getServiceProvider() const;
         RequestMapper::Settings getRequestSettings() const;
-
         const Application& getApplication() const;
-        
         Session* getSession(bool checkTimeout=true, bool ignoreAddress=false, bool cache=true);
-
-        const char* getRequestURI() const {
-            return m_uri.c_str();
-        }
-
+        const char* getRequestURI() const;
         const char* getRequestURL() const;
-        
         std::string getRemoteAddr() const;
-        
         const char* getParameter(const char* name) const;
-
         std::vector<const char*>::size_type getParameters(const char* name, std::vector<const char*>& values) const;
-
         const char* getHandlerURL(const char* resource=NULL) const;
-
         void log(SPLogLevel level, const std::string& msg) const;
-
         bool isPriorityEnabled(SPLogLevel level) const;
 
     private:

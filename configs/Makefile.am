@@ -1,4 +1,4 @@
-## $Id: Makefile.am 3088 2009-08-10 16:43:09Z cantor $ 
+## $Id: Makefile.am 3168 2009-10-31 20:34:11Z cantor $ 
 
 AUTOMAKE_OPTIONS = foreign
 
@@ -46,6 +46,7 @@ CONFIGFILES = \
     postTemplate.html \
 	localLogout.html \
 	globalLogout.html \
+	partialLogout.html \
 	sslError.html
 
 #

@@ -31,6 +31,7 @@
 #include <xmltooling/security/AbstractPKIXTrustEngine.h>
 #include <xmltooling/security/KeyInfoResolver.h>
 #include <xmltooling/security/X509Credential.h>
+#include <xmltooling/util/Threads.h>
 
 using namespace shibsp;
 using namespace opensaml::saml2md;

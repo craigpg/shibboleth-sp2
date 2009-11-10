@@ -24,7 +24,13 @@
 #define __shibsp_cgi_h__
 
 #include <shibsp/base.h>
-#include <xmltooling/io/HTTPRequest.h>
+
+#include <map>
+#include <string>
+
+namespace xmltooling {
+    class XMLTOOL_API HTTPRequest;
+};
 
 namespace shibsp {
 

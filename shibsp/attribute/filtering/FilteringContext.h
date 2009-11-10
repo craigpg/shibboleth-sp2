@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,14 @@
 
 #include <shibsp/base.h>
 
-#include <saml/saml2/metadata/Metadata.h>
+#include <map>
+#include <string>
+
+namespace opensaml {
+    namespace saml2md {
+        class SAML_API RoleDescriptor;
+    };
+};
 
 namespace shibsp {
 
@@ -39,9 +46,9 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(FilteringContext);
     protected:
-        FilteringContext() {}
+        FilteringContext();
     public:
-        virtual ~FilteringContext() {}
+        virtual ~FilteringContext();
 
         /**
          * Gets the Application doing the filtering.

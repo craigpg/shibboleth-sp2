@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,17 @@
  */
 
 #include "internal.h"
-#include "Application.h"
 #include "exceptions.h"
+#include "Application.h"
 #include "ServiceProvider.h"
+#include "SPRequest.h"
 #include "handler/AbstractHandler.h"
 #include "handler/RemotedHandler.h"
 #include "util/SPConstants.h"
 
 #ifndef SHIBSP_LITE
 # include "security/SecurityPolicy.h"
+# include <saml/exceptions.h>
 # include <saml/SAMLConfig.h>
 # include <saml/binding/ArtifactMap.h>
 # include <saml/binding/MessageEncoder.h>
@@ -41,6 +43,7 @@
 using namespace opensaml::saml2md;
 using namespace opensaml::saml2p;
 using namespace opensaml::saml2;
+using namespace opensaml;
 using namespace samlconstants;
 #endif
 
@@ -48,7 +51,6 @@ using namespace samlconstants;
 
 using namespace shibspconstants;
 using namespace shibsp;
-using namespace opensaml;
 using namespace soap11;
 using namespace xmltooling;
 using namespace std;

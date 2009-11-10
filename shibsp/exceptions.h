@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,14 @@
 /**
  * @file shibsp/exceptions.h
  * 
- * Exception classes
+ * Exception classes.
  */
  
 #ifndef __shibsp_exceptions_h__
 #define __shibsp_exceptions_h__
 
 #include <shibsp/base.h>
-#ifndef SHIBSP_LITE
-# include <saml/exceptions.h>
-#else
-# include <xmltooling/exceptions.h>
-#endif
+#include <xmltooling/exceptions.h>
 
 namespace shibsp {
     

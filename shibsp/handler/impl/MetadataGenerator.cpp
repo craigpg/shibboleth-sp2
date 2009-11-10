@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,16 +24,27 @@
 #include "Application.h"
 #include "exceptions.h"
 #include "ServiceProvider.h"
+#include "SPRequest.h"
 #include "handler/AbstractHandler.h"
 #include "handler/RemotedHandler.h"
 
 #ifndef SHIBSP_LITE
 # include "metadata/MetadataProviderCriteria.h"
+# include <saml/exceptions.h>
+# include <saml/SAMLConfig.h>
+# include <saml/signature/ContentReference.h>
+# include <saml/saml2/metadata/Metadata.h>
+# include <saml/saml2/metadata/MetadataProvider.h>
+# include <xmltooling/XMLToolingConfig.h>
+# include <xmltooling/security/Credential.h>
+# include <xmltooling/security/CredentialCriteria.h>
+# include <xmltooling/signature/Signature.h>
+# include <xmltooling/util/ParserPool.h>
 # include <xmltooling/util/PathResolver.h>
+# include <xercesc/framework/LocalFileInputSource.hpp>
+# include <xercesc/framework/Wrapper4InputSource.hpp>
 #endif
 
-#include <xercesc/framework/LocalFileInputSource.hpp>
-#include <xercesc/framework/Wrapper4InputSource.hpp>
 
 using namespace shibsp;
 #ifndef SHIBSP_LITE
@@ -249,6 +260,9 @@ pair<bool,long> MetadataGenerator::processMessage(
     else {
         entity = EntityDescriptorBuilder::buildEntityDescriptor();
     }
+
+    if (!entity->getID())
+        entity->setID(SAMLConfig::getConfig().generateIdentifier());
 
     auto_ptr<EntityDescriptor> wrapper(entity);
     pair<bool,unsigned int> cache = getUnsignedInt("cacheDuration");

@@ -34,21 +34,23 @@
 # define _CRT_RAND_S
 #endif
 
+#include <shibsp/exceptions.h>
 #include <shibsp/AbstractSPRequest.h>
 #include <shibsp/RequestMapper.h>
 #include <shibsp/SPConfig.h>
 #include <shibsp/ServiceProvider.h>
+
+#include <set>
+#include <memory>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
 #include <xmltooling/XMLToolingConfig.h>
 #include <xmltooling/util/NDC.h>
 #include <xmltooling/util/Threads.h>
 #include <xmltooling/util/XMLConstants.h>
 #include <xmltooling/util/XMLHelper.h>
 #include <xercesc/util/XMLUniDefs.hpp>
-
-#include <memory>
-#include <fstream>
-#include <sstream>
-#include <stdexcept>
 
 #ifdef WIN32
 # include <process.h>
@@ -420,6 +422,7 @@ public:
       setResponseHeader("Content-Type", type);
   }
   void setResponseHeader(const char* name, const char* value) {
+    HTTPResponse::setResponseHeader(name, value);
     pblock_nvinsert(name, value, m_rq->srvhdrs);
   }
 
@@ -438,6 +441,7 @@ public:
     return REQ_EXIT;
   }
   long sendRedirect(const char* url) {
+    HTTPResponse::sendRedirect(url);
     param_free(pblock_remove("content-type", m_rq->srvhdrs));
     pblock_nninsert("content-length", 0, m_rq->srvhdrs);
     pblock_nvinsert("expires", "01-Jan-1997 12:00:00 GMT", m_rq->srvhdrs);
