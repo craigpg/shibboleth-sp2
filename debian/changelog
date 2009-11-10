@@ -6,6 +6,7 @@ shibboleth-sp2 (2.3+dfsg-1) UNRELEASED; urgency=low
       abused for script injection and other cross-site scripting attacks.
       The complete fix also requires newer xmltooling and opensaml2
       packages.  (Closes: #555608, CVE-2009-3300)
+  * Fix watch file for the new version mangling.
 
   [ Ferenc Wagner ]
   * Run shibd as non-root.
