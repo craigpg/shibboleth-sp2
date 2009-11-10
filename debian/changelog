@@ -18,6 +18,8 @@ shibboleth-sp2 (2.3+dfsg-1) UNRELEASED; urgency=low
     - Use an ID rather than a whole doc reference for generated metadata.
     - Fix spelling of scopeDelimiter in the configuration parser, making
       the code and documentation match the schema.
+  * Tighten build and package dependencies on xmltooling and opensaml2 to
+    require the versions with the security fix.
   * Fix watch file for the new version mangling.
 
   [ Ferenc Wagner ]
