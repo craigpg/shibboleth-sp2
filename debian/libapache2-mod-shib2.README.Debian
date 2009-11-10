@@ -54,7 +54,7 @@ Installation and Configuration
 
     <Location /secure>
         AuthType shibboleth
-        ShibRequireSession On
+        ShibRequestSetting requireSession 1
         require valid-user
     </Location>
 
@@ -146,4 +146,4 @@ Further Information
 
   and in particular the "Configuration" link.
 
- -- Russ Allbery <rra@debian.org>, Fri, 24 Jul 2009 15:21:41 -0700
+ -- Russ Allbery <rra@debian.org>, Tue, 10 Nov 2009 15:06:57 -0800
