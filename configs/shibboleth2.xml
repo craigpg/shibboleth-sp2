@@ -108,21 +108,21 @@
             <!-- Default example directs to a specific IdP's SSO service (favoring SAML 2 over Shib 1). -->
             <SessionInitiator type="Chaining" Location="/Login" isDefault="true" id="Intranet"
                     relayState="cookie" entityID="https://idp.example.org/shibboleth">
-                <SessionInitiator type="SAML2" defaultACSIndex="1" template="bindingTemplate.html"/>
-                <SessionInitiator type="Shib1" defaultACSIndex="5"/>
+                <SessionInitiator type="SAML2" acsIndex="1" template="bindingTemplate.html"/>
+                <SessionInitiator type="Shib1" acsIndex="5"/>
             </SessionInitiator>
             
             <!-- An example using an old-style WAYF, which means Shib 1 only unless an entityID is provided. -->
             <SessionInitiator type="Chaining" Location="/WAYF" id="WAYF" relayState="cookie">
-                <SessionInitiator type="SAML2" defaultACSIndex="1" template="bindingTemplate.html"/>
-                <SessionInitiator type="Shib1" defaultACSIndex="5"/>
-                <SessionInitiator type="WAYF" defaultACSIndex="5" URL="https://wayf.example.org/WAYF"/>
+                <SessionInitiator type="SAML2" acsIndex="1" template="bindingTemplate.html"/>
+                <SessionInitiator type="Shib1" acsIndex="5"/>
+                <SessionInitiator type="WAYF" acsIndex="5" URL="https://wayf.example.org/WAYF"/>
             </SessionInitiator>
 
             <!-- An example supporting the new-style of discovery service. -->
             <SessionInitiator type="Chaining" Location="/DS" id="DS" relayState="cookie">
-                <SessionInitiator type="SAML2" defaultACSIndex="1" template="bindingTemplate.html"/>
-                <SessionInitiator type="Shib1" defaultACSIndex="5"/>
+                <SessionInitiator type="SAML2" acsIndex="1" template="bindingTemplate.html"/>
+                <SessionInitiator type="Shib1" acsIndex="5"/>
                 <SessionInitiator type="SAMLDS" URL="https://ds.example.org/DS/WAYF"/>
             </SessionInitiator>
             
@@ -190,18 +190,10 @@
         </Sessions>
 
         <!--
-        You should customize these pages! You can add attributes with values that can be plugged
-        into your templates. You can remove the access attribute to cause the module to return a
-        standard 403 Forbidden error code if authorization fails, and then customize that condition
-        using your web server.
+        Allows overriding of error template filenames. You can also add attributes with values
+        that can be plugged into the templates.
         -->
-        <Errors session="sessionError.html"
-            metadata="metadataError.html"
-            access="accessError.html"
-            ssl="sslError.html"
-            localLogout="localLogout.html"
-            globalLogout="globalLogout.html"
-            supportContact="root@localhost"
+        <Errors supportContact="root@localhost"
             logoLocation="/shibboleth-sp/logo.jpg"
             styleSheet="/shibboleth-sp/main.css"/>
         
@@ -232,13 +224,13 @@
         </TrustEngine>
 
         <!-- Map to extract attributes from SAML assertions. -->
-        <AttributeExtractor type="XML" path="attribute-map.xml"/>
+        <AttributeExtractor type="XML" validate="true" path="attribute-map.xml"/>
         
         <!-- Use a SAML query if no attributes are supplied during SSO. -->
         <AttributeResolver type="Query"/>
 
         <!-- Default filtering policy for recognized attributes, lets other data pass. -->
-        <AttributeFilter type="XML" path="attribute-policy.xml"/>
+        <AttributeFilter type="XML" validate="true" path="attribute-policy.xml"/>
 
         <!-- Simple file-based resolver for using a single keypair. -->
         <CredentialResolver type="File" key="sp-key.pem" certificate="sp-cert.pem"/>

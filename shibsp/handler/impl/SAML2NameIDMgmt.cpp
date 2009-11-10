@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include "exceptions.h"
 #include "Application.h"
 #include "ServiceProvider.h"
+#include "SPRequest.h"
 #include "handler/AbstractHandler.h"
 #include "handler/RemotedHandler.h"
 #include "util/SPConstants.h"
@@ -33,9 +34,11 @@
 # include "security/SecurityPolicy.h"
 # include "util/TemplateParameters.h"
 # include <fstream>
+# include <saml/exceptions.h>
 # include <saml/SAMLConfig.h>
 # include <saml/saml2/core/Protocols.h>
 # include <saml/saml2/metadata/EndpointManager.h>
+# include <saml/saml2/metadata/Metadata.h>
 # include <saml/saml2/metadata/MetadataCredentialCriteria.h>
 # include <xmltooling/util/URLEncoder.h>
 using namespace opensaml::saml2;

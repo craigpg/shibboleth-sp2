@@ -21,6 +21,7 @@
  */
 
 #include "internal.h"
+#include "exceptions.h"
 #include "Application.h"
 #include "ServiceProvider.h"
 #include "SessionCache.h"
@@ -32,14 +33,18 @@
 #include "attribute/resolver/ResolutionContext.h"
 #include "binding/SOAPClient.h"
 #include "metadata/MetadataProviderCriteria.h"
+#include "security/SecurityPolicy.h"
 #include "util/SPConstants.h"
 
 #include <saml/exceptions.h>
 #include <saml/SAMLConfig.h>
-#include <saml/binding/SecurityPolicy.h>
 #include <saml/saml2/binding/SAML2SOAPClient.h>
 #include <saml/saml2/core/Protocols.h>
+#include <saml/saml2/metadata/Metadata.h>
+#include <saml/saml2/metadata/MetadataCredentialCriteria.h>
 #include <saml/saml2/metadata/MetadataProvider.h>
+#include <xmltooling/XMLToolingConfig.h>
+#include <xmltooling/security/TrustEngine.h>
 #include <xmltooling/util/NDC.h>
 #include <xmltooling/util/XMLHelper.h>
 #include <xercesc/util/XMLUniDefs.hpp>

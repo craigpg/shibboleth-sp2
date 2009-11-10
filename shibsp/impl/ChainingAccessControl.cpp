@@ -26,6 +26,8 @@
 #include "SessionCache.h"
 #include "SPRequest.h"
 
+#include <algorithm>
+#include <xmltooling/unicode.h>
 #include <xmltooling/util/XMLHelper.h>
 #include <xercesc/util/XMLUniDefs.hpp>
 
@@ -79,6 +81,14 @@ void SHIBSP_API shibsp::registerAccessControls()
     conf.AccessControlManager.registerFactory(CHAINING_ACCESS_CONTROL, ChainingAccessControlFactory);
     conf.AccessControlManager.registerFactory(XML_ACCESS_CONTROL, XMLAccessControlFactory);
     conf.AccessControlManager.registerFactory("edu.internet2.middleware.shibboleth.sp.provider.XMLAccessControl", XMLAccessControlFactory);
+}
+
+AccessControl::AccessControl()
+{
+}
+
+AccessControl::~AccessControl()
+{
 }
 
 ChainingAccessControl::ChainingAccessControl(const DOMElement* e)

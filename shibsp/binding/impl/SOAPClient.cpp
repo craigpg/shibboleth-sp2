@@ -22,11 +22,16 @@
 
 #include "internal.h"
 #include "Application.h"
-#include "exceptions.h"
 #include "ServiceProvider.h"
 #include "binding/SOAPClient.h"
+#include "security/SecurityPolicy.h"
 
+#include <saml/exceptions.h>
 #include <saml/saml2/metadata/Metadata.h>
+#include <saml/saml2/metadata/MetadataCredentialCriteria.h>
+#include <saml/signature/ContentReference.h>
+#include <xmltooling/security/Credential.h>
+#include <xmltooling/signature/Signature.h>
 #include <xmltooling/soap/SOAP.h>
 #include <xmltooling/soap/HTTPSOAPTransport.h>
 #include <xmltooling/util/NDC.h>
@@ -40,6 +45,12 @@ using namespace std;
 SOAPClient::SOAPClient(SecurityPolicy& policy)
     : opensaml::SOAPClient(policy), m_app(policy.getApplication()), m_relyingParty(NULL), m_credResolver(NULL)
 {
+}
+
+SOAPClient::~SOAPClient()
+{
+    if (m_credResolver)
+        m_credResolver->unlock();
 }
 
 void SOAPClient::send(const soap11::Envelope& env, const char* from, MetadataCredentialCriteria& to, const char* endpoint)

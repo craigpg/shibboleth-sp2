@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,17 +25,24 @@
 #include "Application.h"
 #include "ServiceProvider.h"
 #include "SessionCache.h"
+#include "SPRequest.h"
 #include "handler/AbstractHandler.h"
 #include "handler/LogoutHandler.h"
 
 #ifndef SHIBSP_LITE
 # include "binding/SOAPClient.h"
 # include "metadata/MetadataProviderCriteria.h"
+# include "security/SecurityPolicy.h"
+# include <saml/exceptions.h>
 # include <saml/SAMLConfig.h>
 # include <saml/saml2/core/Protocols.h>
 # include <saml/saml2/binding/SAML2SOAPClient.h>
 # include <saml/saml2/metadata/EndpointManager.h>
+# include <saml/saml2/metadata/Metadata.h>
 # include <saml/saml2/metadata/MetadataCredentialCriteria.h>
+# include <saml/signature/ContentReference.h>
+# include <xmltooling/security/Credential.h>
+# include <xmltooling/signature/Signature.h>
 using namespace opensaml::saml2;
 using namespace opensaml::saml2p;
 using namespace opensaml::saml2md;
@@ -282,7 +289,7 @@ pair<bool,long> SAML2LogoutInitiator::doRequest(
     if (!notifyBackChannel(application, httpRequest.getRequestURL(), sessions, false)) {
         session->unlock();
         application.getServiceProvider().getSessionCache()->remove(application, httpRequest, &httpResponse);
-        return sendLogoutPage(application, httpRequest, httpResponse, true, "Partial logout failure.");
+        return sendLogoutPage(application, httpRequest, httpResponse, "partial");
     }
 
 #ifndef SHIBSP_LITE
@@ -317,7 +324,7 @@ pair<bool,long> SAML2LogoutInitiator::doRequest(
             }
         }
         if (!ep || !encoder) {
-            m_log.warn("no compatible front channel SingleLogoutService, trying back channel...");
+            m_log.debug("no compatible front channel SingleLogoutService, trying back channel...");
             shibsp::SecurityPolicy policy(application);
             shibsp::SOAPClient soaper(policy);
             MetadataCredentialCriteria mcc(*role);
@@ -346,27 +353,32 @@ pair<bool,long> SAML2LogoutInitiator::doRequest(
                 }
             }
 
+            // No answer at all?
             if (!logoutResponse) {
-                ret = sendLogoutPage(
-                    application, httpRequest, httpResponse, false,
-                    endpoints.empty() ?
-                        "Identity provider does not support SAML 2 Single Logout protocol." :
-                            "Identity provider did not respond to logout request."
-                    );
+                if (endpoints.empty())
+                    m_log.info("IdP doesn't support single logout protocol over a compatible binding");
+                else
+                    m_log.warn("IdP didn't respond to logout request");
+                ret = sendLogoutPage(application, httpRequest, httpResponse, "partial");
             }
-            else if (!logoutResponse->getStatus() || !logoutResponse->getStatus()->getStatusCode() ||
-                   !XMLString::equals(logoutResponse->getStatus()->getStatusCode()->getValue(), saml2p::StatusCode::SUCCESS)) {
-                delete logoutResponse;
-                ret = sendLogoutPage(application, httpRequest, httpResponse, false, "Identity provider returned a SAML error in response to logout request.");
+
+            // Check the status, looking for non-success or a partial logout code.
+            const StatusCode* sc = logoutResponse->getStatus() ? logoutResponse->getStatus()->getStatusCode() : NULL;
+            bool partial = (!sc || !XMLString::equals(sc->getValue(), StatusCode::SUCCESS));
+            if (!partial) {
+                // Success, but still need to check for partial.
+                partial = XMLString::equals(sc->getStatusCode()->getValue(), StatusCode::PARTIAL_LOGOUT);
             }
+            delete logoutResponse;
+            if (partial)
+                ret = sendLogoutPage(application, httpRequest, httpResponse, "partial");
             else {
-                delete logoutResponse;
                 const char* returnloc = httpRequest.getParameter("return");
                 if (returnloc) {
                     ret.second = httpResponse.sendRedirect(returnloc);
                     ret.first = true;
                 }
-                ret = sendLogoutPage(application, httpRequest, httpResponse, false, "Logout completed successfully.");
+                ret = sendLogoutPage(application, httpRequest, httpResponse, "global");
             }
 
             if (session) {

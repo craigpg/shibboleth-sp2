@@ -24,6 +24,7 @@
 #include "exceptions.h"
 #include "Application.h"
 #include "ServiceProvider.h"
+#include "SPRequest.h"
 #include "handler/AbstractHandler.h"
 #include "handler/LogoutHandler.h"
 #include "util/SPConstants.h"
@@ -34,9 +35,11 @@
 # include "metadata/MetadataProviderCriteria.h"
 # include "util/TemplateParameters.h"
 # include <fstream>
+# include <saml/exceptions.h>
 # include <saml/SAMLConfig.h>
 # include <saml/saml2/core/Protocols.h>
 # include <saml/saml2/metadata/EndpointManager.h>
+# include <saml/saml2/metadata/Metadata.h>
 # include <saml/saml2/metadata/MetadataCredentialCriteria.h>
 # include <xmltooling/util/URLEncoder.h>
 using namespace opensaml::saml2;
@@ -531,11 +534,18 @@ pair<bool,long> SAML2Logout::doRequest(const Application& application, const HTT
         // If relay state is set, recover the original return URL.
         if (!relayState.empty())
             recoverRelayState(application, request, response, relayState);
+
+        // Check for partial logout.
+        const StatusCode* sc = logoutResponse->getStatus() ? logoutResponse->getStatus()->getStatusCode() : NULL;
+        sc = sc ? sc->getStatusCode() : NULL;
+        if (sc && XMLString::equals(sc->getValue(), StatusCode::PARTIAL_LOGOUT))
+            return sendLogoutPage(application, request, response, "partial");
+
         if (!relayState.empty())
             return make_pair(true, response.sendRedirect(relayState.c_str()));
 
-        // Return template for completion of global logout, or redirect to homeURL.
-        return sendLogoutPage(application, request, response, false, "Global logout completed.");
+        // Return template for completion of logout.
+        return sendLogoutPage(application, request, response, "global");
     }
 
     FatalProfileException ex("Incoming message was not a samlp:LogoutRequest or samlp:LogoutResponse.");

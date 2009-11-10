@@ -43,6 +43,10 @@ SecurityPolicy::SecurityPolicy(const Application& application, const xmltooling:
     }
 }
 
+SecurityPolicy::~SecurityPolicy()
+{
+}
+
 opensaml::saml2md::MetadataProvider::Criteria& SecurityPolicy::getMetadataProviderCriteria() const
 {
     if (!m_metadataCriteria)
@@ -50,4 +54,9 @@ opensaml::saml2md::MetadataProvider::Criteria& SecurityPolicy::getMetadataProvid
     else
         m_metadataCriteria->reset();
     return *m_metadataCriteria;
+}
+
+const Application& SecurityPolicy::getApplication() const
+{
+    return m_application;
 }

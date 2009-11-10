@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -145,6 +145,7 @@ public:
     }
 
     void setResponseHeader(const char* name, const char* value) {
+        HTTPResponse::setResponseHeader(name, value);
         // Set for later.
         if (value)
             m_headers.insert(make_pair(name,value));
@@ -182,6 +183,7 @@ public:
     }
 
     long sendRedirect(const char* url) {
+        HTTPResponse::sendRedirect(url);
         string hdr=string("Status: 302 Please Wait\r\nLocation: ") + url + "\r\n"
           "Content-Type: text/html\r\n"
           "Content-Length: 40\r\n"

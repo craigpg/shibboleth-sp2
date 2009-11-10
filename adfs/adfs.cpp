@@ -34,34 +34,36 @@
 # define ADFS_EXPORTS
 #endif
 
-#include <memory>
-
 #include <shibsp/base.h>
 #include <shibsp/exceptions.h>
 #include <shibsp/Application.h>
 #include <shibsp/ServiceProvider.h>
 #include <shibsp/SessionCache.h>
 #include <shibsp/SPConfig.h>
+#include <shibsp/SPRequest.h>
 #include <shibsp/handler/AssertionConsumerService.h>
 #include <shibsp/handler/LogoutHandler.h>
 #include <shibsp/handler/SessionInitiator.h>
 #include <xmltooling/logging.h>
+#include <xmltooling/util/DateTime.h>
 #include <xmltooling/util/NDC.h>
 #include <xmltooling/util/URLEncoder.h>
 #include <xmltooling/util/XMLHelper.h>
-#include <xercesc/util/XMLUniDefs.hpp>
+#include <memory>
 
 #ifndef SHIBSP_LITE
 # include <shibsp/attribute/resolver/ResolutionContext.h>
 # include <shibsp/metadata/MetadataProviderCriteria.h>
 # include <saml/SAMLConfig.h>
+# include <saml/exceptions.h>
+# include <saml/binding/SecurityPolicy.h>
 # include <saml/saml1/core/Assertions.h>
-# include <saml/saml1/profile/AssertionValidator.h>
 # include <saml/saml2/core/Assertions.h>
 # include <saml/saml2/metadata/Metadata.h>
 # include <saml/saml2/metadata/EndpointManager.h>
-# include <saml/saml2/profile/AssertionValidator.h>
+# include <xmltooling/XMLToolingConfig.h>
 # include <xmltooling/impl/AnyElement.h>
+# include <xmltooling/util/ParserPool.h>
 # include <xmltooling/validation/ValidatorSuite.h>
 using namespace opensaml::saml2md;
 # ifndef min
@@ -112,7 +114,7 @@ namespace {
     {
     public:
         ADFSSessionInitiator(const DOMElement* e, const char* appId)
-                : AbstractHandler(e, Category::getInstance(SHIBSP_LOGCAT".SessionInitiator.ADFS")), m_appId(appId), m_binding(WSFED_NS) {
+                : AbstractHandler(e, Category::getInstance(SHIBSP_LOGCAT".SessionInitiator.ADFS"), NULL, &m_remapper), m_appId(appId), m_binding(WSFED_NS) {
             // If Location isn't set, defer address registration until the setParent call.
             pair<bool,const char*> loc = getString("Location");
             if (loc.first) {
@@ -334,7 +336,7 @@ pair<bool,long> ADFSSessionInitiator::run(SPRequest& request, string& entityID, 
         if (option) {
             ACS = app.getAssertionConsumerServiceByIndex(atoi(option));
             if (!ACS)
-                request.log(SPRequest::SPWarn, "invalid acsIndex specified in request, using default ACS location");
+                request.log(SPRequest::SPWarn, "invalid acsIndex specified in request, using acsIndex property");
         }
 
         option = request.getParameter("target");
@@ -361,30 +363,36 @@ pair<bool,long> ADFSSessionInitiator::run(SPRequest& request, string& entityID, 
             acClass = getString("authnContextClassRef");
     }
 
-    // Since we're not passing by index, we need to fully compute the return URL.
     if (!ACS) {
-        pair<bool,unsigned int> index = getUnsignedInt("defaultACSIndex");
+        pair<bool,unsigned int> index = getUnsignedInt("acsIndex");
         if (index.first) {
             ACS = app.getAssertionConsumerServiceByIndex(index.second);
             if (!ACS)
-                request.log(SPRequest::SPWarn, "invalid defaultACSIndex, using default ACS location");
+                request.log(SPRequest::SPWarn, "invalid acsIndex property, using default ACS location");
         }
-        if (!ACS)
-            ACS = app.getDefaultAssertionConsumerService();
+        if (!ACS) {
+            const vector<const Handler*>& endpoints = app.getAssertionConsumerServicesByBinding(m_binding.get());
+            if (endpoints.empty()) {
+                m_log.error("unable to locate a compatible ACS");
+                throw ConfigurationException("Unable to locate an ADFS-compatible ACS in the configuration.");
+            }
+            ACS = endpoints.front();
+        }
     }
 
     // Validate the ACS for use with this protocol.
-    pair<bool,const XMLCh*> ACSbinding = ACS ? ACS->getXMLString("Binding") : pair<bool,const XMLCh*>(false,NULL);
+    pair<bool,const XMLCh*> ACSbinding = ACS->getXMLString("Binding");
     if (ACSbinding.first) {
         if (!XMLString::equals(ACSbinding.second, m_binding.get())) {
-            m_log.info("configured or requested ACS has non-ADFS binding");
-            return make_pair(false,0L);
+            m_log.error("configured or requested ACS has non-ADFS binding");
+            throw ConfigurationException("Configured or requested ACS has non-ADFS binding ($1).", params(1, ACSbinding.second));
         }
     }
 
+    // Since we're not passing by index, we need to fully compute the return URL.
     // Compute the ACS URL. We add the ACS location to the base handlerURL.
     string ACSloc=request.getHandlerURL(target.c_str());
-    pair<bool,const char*> loc=ACS ? ACS->getString("Location") : pair<bool,const char*>(false,NULL);
+    pair<bool,const char*> loc=ACS->getString("Location");
     if (loc.first) ACSloc+=loc.second;
 
     if (isHandler) {
@@ -619,30 +627,29 @@ void ADFSConsumer::implementProtocol(
     // Extract message and issuer details from assertion.
     extractMessageDetails(*token, m_protocol.get(), policy);
 
+    // Populate recipient as audience.
+    const EntityDescriptor* entity = policy.getIssuerMetadata() ? dynamic_cast<const EntityDescriptor*>(policy.getIssuerMetadata()->getParent()) : NULL;
+    policy.getAudiences().push_back(application.getRelyingParty(entity)->getXMLString("entityID").second);
+
     // Run the policy over the assertion. Handles replay, freshness, and
-    // signature verification, assuming the relevant rules are configured.
+    // signature verification, assuming the relevant rules are configured,
+    // along with condition enforcement.
     policy.evaluate(*token, &httpRequest);
 
     // If no security is in place now, we kick it.
     if (!policy.isAuthenticated())
         throw SecurityPolicyException("Unable to establish security of incoming assertion.");
 
-    time_t now = time(NULL);
-
-    const PropertySet* sessionProps = application.getPropertySet("Sessions");
-    const EntityDescriptor* entity = policy.getIssuerMetadata() ? dynamic_cast<const EntityDescriptor*>(policy.getIssuerMetadata()->getParent()) : NULL;
-
     saml1::NameIdentifier* saml1name=NULL;
     saml2::NameID* saml2name=NULL;
     const XMLCh* authMethod=NULL;
     const XMLCh* authInstant=NULL;
-    time_t sessionExp = 0;
+    time_t now = time(NULL), sessionExp = 0;
+    const PropertySet* sessionProps = application.getPropertySet("Sessions");
 
     const saml1::Assertion* saml1token = dynamic_cast<const saml1::Assertion*>(token);
     if (saml1token) {
-        // Now do profile and core semantic validation to ensure we can use it for SSO.
-        saml1::AssertionValidator ssoValidator(application.getRelyingParty(entity)->getXMLString("entityID").second, application.getAudiences(), now);
-        ssoValidator.validateAssertion(*saml1token);
+        // Now do profile validation to ensure we can use it for SSO.
         if (!saml1token->getConditions() || !saml1token->getConditions()->getNotBefore() || !saml1token->getConditions()->getNotOnOrAfter())
             throw FatalProfileException("Assertion did not contain time conditions.");
         else if (saml1token->getAuthenticationStatements().empty())
@@ -679,9 +686,7 @@ void ADFSConsumer::implementProtocol(
         if (!saml2token)
             throw FatalProfileException("Incoming message did not contain a recognized type of SAML assertion.");
 
-        // Now do profile and core semantic validation to ensure we can use it for SSO.
-        saml2::AssertionValidator ssoValidator(application.getRelyingParty(entity)->getXMLString("entityID").second, application.getAudiences(), now);
-        ssoValidator.validateAssertion(*saml2token);
+        // Now do profile validation to ensure we can use it for SSO.
         if (!saml2token->getConditions() || !saml2token->getConditions()->getNotBefore() || !saml2token->getConditions()->getNotOnOrAfter())
             throw FatalProfileException("Assertion did not contain time conditions.");
         else if (saml2token->getAuthnStatements().empty())
@@ -875,7 +880,7 @@ pair<bool,long> ADFSLogoutInitiator::doRequest(
     if (!notifyBackChannel(application, httpRequest.getRequestURL(), sessions, false)) {
         session->unlock();
         application.getServiceProvider().getSessionCache()->remove(application, httpRequest, &httpResponse);
-        return sendLogoutPage(application, httpRequest, httpResponse, true, "Partial logout failure.");
+        return sendLogoutPage(application, httpRequest, httpResponse, "partial");
     }
 
 #ifndef SHIBSP_LITE
@@ -903,7 +908,8 @@ pair<bool,long> ADFSLogoutInitiator::doRequest(
             ).getByBinding(m_binding.get());
         if (!ep) {
             throw MetadataException(
-                "Unable to locate ADFS single logout service for identity provider ($entityID).", namedparams(1, "entityID", session->getEntityID())
+                "Unable to locate ADFS single logout service for identity provider ($entityID).",
+                namedparams(1, "entityID", session->getEntityID())
                 );
         }
 
@@ -982,5 +988,5 @@ pair<bool,long> ADFSLogout::run(SPRequest& request, bool isHandler) const
 
     if (param)
         return make_pair(true, request.sendRedirect(param));
-    return sendLogoutPage(app, request, request, false, "Logout complete.");
+    return sendLogoutPage(app, request, request, "global");
 }

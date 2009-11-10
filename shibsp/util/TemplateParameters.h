@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,13 @@
 #ifndef __shibsp_tempparams_h__
 #define __shibsp_tempparams_h__
 
-#include <shibsp/util/PropertySet.h>
+#include <shibsp/base.h>
+
 #include <xmltooling/util/TemplateEngine.h>
 
 namespace shibsp {
+
+    class SHIBSP_API PropertySet;
 
     /**
      * Supplies xmltooling TemplateEngine with additional parameters from a PropertySet.
@@ -40,12 +43,9 @@ namespace shibsp {
          * @param e     an exception to supply additional parameters
          * @param props a PropertySet to supply additional parameters
          */
-        TemplateParameters(const std::exception* e=NULL, const PropertySet* props=NULL)
-            : m_exception(e), m_toolingException(dynamic_cast<const xmltooling::XMLToolingException*>(e)) {
-            setPropertySet(props);
-        }
+        TemplateParameters(const std::exception* e=NULL, const PropertySet* props=NULL);
 
-        virtual ~TemplateParameters() {}
+        virtual ~TemplateParameters();
         
         /**
          * Sets a PropertySet to supply additional parameters.
@@ -59,9 +59,7 @@ namespace shibsp {
          *
          * @return  an exception, or NULL
          */
-        const xmltooling::XMLToolingException* getRichException() const {
-            return m_toolingException;
-        }
+        const xmltooling::XMLToolingException* getRichException() const;
 
         const char* getParameter(const char* name) const;
         

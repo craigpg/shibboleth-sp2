@@ -25,12 +25,22 @@
 
 #include <shibsp/handler/AbstractHandler.h>
 #include <shibsp/handler/RemotedHandler.h>
+
 #ifndef SHIBSP_LITE
-# include <saml/binding/MessageDecoder.h>
-# include <saml/saml1/core/Assertions.h>
-# include <saml/saml2/metadata/Metadata.h>
+namespace opensaml {
+    class SAML_API Assertion;
+    class SAML_API MessageDecoder;
+    namespace saml1 {
+        class SAML_API NameIdentifier;
+    };
+    namespace saml2 {
+        class SAML_API NameID;
+    };
+    namespace saml2md {
+        class SAML_API SPSSODescriptor;
+    };
+};
 #endif
-#include <xmltooling/unicode.h>
 
 namespace shibsp {
 
@@ -57,11 +67,19 @@ namespace shibsp {
         /**
          * Constructor
          * 
-         * @param e     root of DOM configuration
-         * @param appId ID of application that "owns" the handler
-         * @param log   a logging object to use
+         * @param e         root of DOM configuration
+         * @param appId     ID of application that "owns" the handler
+         * @param log       a logging object to use
+         * @param filter    optional filter controls what child elements to include as nested PropertySets
+         * @param remapper  optional map of property rename rules for legacy property support
          */
-        AssertionConsumerService(const xercesc::DOMElement* e, const char* appId, xmltooling::logging::Category& log);
+        AssertionConsumerService(
+            const xercesc::DOMElement* e,
+            const char* appId,
+            xmltooling::logging::Category& log,
+            xercesc::DOMNodeFilter* filter=NULL,
+            const std::map<std::string,std::string>* remapper=NULL
+            );
 
         /**
          * Enforce address checking requirements.
@@ -154,9 +172,7 @@ namespace shibsp {
             ) const;
 
     public:
-        const char* getType() const {
-            return "AssertionConsumerService";
-        }
+        const char* getType() const;
 
 #endif
     private:
@@ -185,7 +201,6 @@ namespace shibsp {
 #if defined (_MSC_VER)
     #pragma warning( pop )
 #endif
-
 };
 
 #endif /* __shibsp_acshandler_h__ */

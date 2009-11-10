@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,11 @@
 
 #include <shibsp/base.h>
 
-#include <saml/Assertion.h>
+#include <vector>
+
+namespace opensaml {
+    class SAML_API Assertion;
+};
 
 namespace shibsp {
 
@@ -38,9 +42,9 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(ResolutionContext);
     protected:
-        ResolutionContext() {}
+        ResolutionContext();
     public:
-        virtual ~ResolutionContext() {}
+        virtual ~ResolutionContext();
         
         /**
          * Returns the set of Attributes resolved and added to the context.

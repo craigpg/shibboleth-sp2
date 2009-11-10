@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,38 @@ using namespace xmltooling;
 using namespace xercesc;
 using namespace std;
 
+PropertySet::PropertySet()
+{
+}
+
+PropertySet::~PropertySet()
+{
+}
+
+DOMPropertySet::DOMPropertySet() : m_parent(NULL), m_root(NULL)
+{
+}
+
 DOMPropertySet::~DOMPropertySet()
 {
     for (map<string,pair<char*,const XMLCh*> >::iterator i=m_map.begin(); i!=m_map.end(); i++)
         XMLString::release(&(i->second.first));
     for_each(m_nested.begin(),m_nested.end(),cleanup_pair<string,DOMPropertySet>());
+}
+
+const PropertySet* DOMPropertySet::getParent() const
+{
+    return m_parent;
+}
+
+void DOMPropertySet::setParent(const PropertySet* parent)
+{
+    m_parent = parent;
+}
+
+const DOMElement* DOMPropertySet::getElement() const
+{
+    return m_root;
 }
 
 void DOMPropertySet::load(
@@ -70,7 +97,7 @@ void DOMPropertySet::load(
             if (remapper) {
                 remap=remapper->find(realname);
                 if (remap!=remapper->end()) {
-                    log->warn("remapping property (%s) to (%s)",realname,remap->second.c_str());
+                    log->warn("deprecation - remapping property (%s) to (%s)",realname,remap->second.c_str());
                     realname=remap->second.c_str();
                 }
             }
@@ -102,7 +129,7 @@ void DOMPropertySet::load(
         if (remapper) {
             remap=remapper->find(realname);
             if (remap!=remapper->end()) {
-                log->warn("remapping property set (%s) to (%s)",realname,remap->second.c_str());
+                log->warn("deprecation - remapping nested property set (%s) to (%s)",realname,remap->second.c_str());
                 realname=remap->second.c_str();
             }
         }

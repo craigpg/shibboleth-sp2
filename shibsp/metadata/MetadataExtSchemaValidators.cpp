@@ -1,5 +1,5 @@
 /*
-*  Copyright 2001-2007 Internet2
+*  Copyright 2001-2009 Internet2
  * 
 * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 /**
  * MetadataExtSchemaValidators.cpp
  * 
- * Schema-based validators for Shibboleth metadata extension classes
+ * Schema-based validators for Shibboleth metadata extension classes.
  */
 
 #include "internal.h"
@@ -26,6 +26,7 @@
 
 #include <saml/SAMLConfig.h>
 #include <saml/saml2/metadata/MetadataProvider.h>
+#include <xmltooling/validation/Validator.h>
 #include <xmltooling/validation/ValidatorSuite.h>
 
 using namespace shibsp;

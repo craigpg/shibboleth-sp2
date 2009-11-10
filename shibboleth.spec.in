@@ -1,6 +1,6 @@
 Name:		@PACKAGE@
 Version:	@PACKAGE_VERSION@
-Release:	1
+Release:	2
 Summary:    Open source system for attribute-based Web SSO
 Group:		System Environment/Libraries
 Vendor:     Internet2
@@ -8,18 +8,20 @@ License:	Apache 2.0
 URL:		http://shibboleth.internet2.edu/
 Source:     %{name}-sp-%{version}.tar.gz
 BuildRoot:	%{_tmppath}/%{name}-%{version}-root
+PreReq:     openssl
 %if 0%{?suse_version} > 1030
+PreReq:         %{insserv_prereq}
 BuildRequires:  libXerces-c-devel >= 2.8.0
 BuildRequires:  libxml-security-c-devel >= 1.4.0
-BuildRequires:  libxmltooling-devel >= 1.2
-BuildRequires:  libsaml-devel >= 2.2
+BuildRequires:  libxmltooling-devel >= 1.3
+BuildRequires:  libsaml-devel >= 2.3
 %{?_with_log4cpp:BuildRequires: liblog4cpp-devel >= 1.0}
 %{!?_with_log4cpp:BuildRequires: liblog4shib-devel}
 %else
 BuildRequires:  xerces%{?xercesver}-c-devel >= 2.8.0
 BuildRequires:  xml-security-c-devel >= 1.4.0
-BuildRequires:  xmltooling-devel >= 1.2
-BuildRequires:  opensaml-devel >= 2.2
+BuildRequires:  xmltooling-devel >= 1.3
+BuildRequires:  opensaml-devel >= 2.3
 %{?_with_log4cpp:BuildRequires: log4cpp-devel >= 1.0}
 %{!?_with_log4cpp:BuildRequires: log4shib-devel}
 %endif
@@ -30,6 +32,7 @@ BuildRequires:  zlib-devel
 %{?_with_fastcgi:BuildRequires: fcgi-devel}
 %if "%{_vendor}" == "redhat"
 %{!?_without_builtinapache:BuildRequires: httpd-devel}
+BuildRequires: redhat-rpm-config
 %endif
 %if "%{_vendor}" == "suse"
 %{!?_without_builtinapache:BuildRequires: apache2-devel}
@@ -56,15 +59,15 @@ Requires: %{name} = %{version}
 %if 0%{?suse_version} > 1030
 Requires: libXerces-c-devel >= 2.8.0
 Requires: libxml-security-c-devel >= 1.4.0
-Requires: libxmltooling-devel >= 1.2
-Requires: libsaml-devel >= 2.2
+Requires: libxmltooling-devel >= 1.3
+Requires: libsaml-devel >= 2.3
 %{?_with_log4cpp:Requires: liblog4cpp-devel >= 1.0}
 %{!?_with_log4cpp:Requires: liblog4shib-devel}
 %else
 Requires: xerces%{?xercesver}-c-devel >= 2.8.0
 Requires: xml-security-c-devel >= 1.4.0
-Requires: xmltooling-devel >= 1.2
-Requires: opensaml-devel >= 2.2
+Requires: xmltooling-devel >= 1.3
+Requires: opensaml-devel >= 2.3
 %{?_with_log4cpp:Requires: log4cpp-devel >= 1.0}
 %{!?_with_log4cpp:Requires: log4shib-devel}
 %endif
@@ -122,9 +125,12 @@ fi
 
 %if "%{_vendor}" == "redhat" || "%{_vendor}" == "suse"
 	# %{_initddir} not yet in RHEL5, use deprecated %{_initrddir}
-	mkdir -p $RPM_BUILD_ROOT%{_initrddir}
-	%{__cp} -p $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/shibd-%{_vendor} $RPM_BUILD_ROOT%{_initrddir}/shibd
-	%{__chmod} 755 $RPM_BUILD_ROOT%{_initrddir}/shibd
+	install -d -m 0755 $RPM_BUILD_ROOT%{_initrddir}
+	install -m 0755 $RPM_BUILD_ROOT%{_sysconfdir}/%{name}/shibd-%{_vendor} $RPM_BUILD_ROOT%{_initrddir}/shibd
+%if "%{_vendor}" == "suse"
+	install -d -m 0755 $RPM_BUILD_ROOT/%{_sbindir}
+	%{__ln_s} -f %{_initrddir}/shibd $RPM_BUILD_ROOT%{_sbindir}/rcshibd
+%endif
 %endif
 
 %check
@@ -149,17 +155,13 @@ sh ./keygen.sh -b
     if [ "$1" -gt "1" ] ; then
         /etc/init.d/shibd status 1>/dev/null && /etc/init.d/shibd restart 1>/dev/null
         %{!?_without_builtinapache:/etc/init.d/httpd status 1>/dev/null && /etc/init.d/httpd restart 1>/dev/null}
+        exit 0
     fi
 %endif
 %if "%{_vendor}" == "suse"
     # This adds the proper /etc/rc*.d links for the script
-    /sbin/chkconfig --add shibd
-    cd /usr/sbin && ln -s /etc/init.d/shibd rcshibd
-    # On upgrade, restart components if they're already running.
-    if [ "$1" -gt "1" ] ; then
-        /etc/init.d/shibd status 1>/dev/null && /etc/init.d/shibd restart 1>/dev/null
-        %{!?_without_builtinapache:/etc/init.d/apache2 status 1>/dev/null && /etc/init.d/apache2 restart 1>/dev/null}
-    fi
+    cd /
+    %insserv_force_if_yast shibd
 %endif
 
 %preun
@@ -167,18 +169,26 @@ sh ./keygen.sh -b
 	if [ "$1" = 0 ] ; then
 		/sbin/service shibd stop >/dev/null 2>&1
 		/sbin/chkconfig --del shibd
+        %{!?_without_builtinapache:/etc/init.d/httpd status 1>/dev/null && /etc/init.d/httpd restart 1>/dev/null}
 	fi
 %endif
 %if "%{_vendor}" == "suse"
+    %stop_on_removal shibd
     if [ "$1" = 0 ] ; then
-        /sbin/service shibd stop >/dev/null 2>&1
-        /sbin/chkconfig --del shibd
-        cd /usr/sbin && %{__rm} -f rcshibd
+        %{!?_without_builtinapache:/etc/init.d/apache2 status 1>/dev/null && /etc/init.d/apache2 restart 1>/dev/null}
     fi
 %endif
+exit 0
 
+%postun
 %ifnos solaris2.8 solaris2.9 solaris2.10
-%postun -p /sbin/ldconfig
+/sbin/ldconfig
+%endif
+%if "%{_vendor}" == "suse"
+cd /
+%restart_on_update shibd
+%{!?_without_builtinapache:%restart_on_update apache2}
+%{insserv_cleanup}
 %endif
 
 %posttrans
@@ -212,7 +222,10 @@ sh ./keygen.sh -b
 %config(noreplace) %{_sysconfdir}/%{name}/*.html
 %config(noreplace) %{_sysconfdir}/%{name}/*.logger
 %if "%{_vendor}" == "redhat" || "%{_vendor}" == "suse"
-%attr(755, root, root) %{_initrddir}/shibd
+%config %{_initrddir}/shibd
+%endif
+%if "%{_vendor}" == "suse"
+%{_sbindir}/rcshibd
 %endif
 %{_sysconfdir}/%{name}/*.dist
 %{_sysconfdir}/%{name}/apache*.config
@@ -231,6 +244,11 @@ sh ./keygen.sh -b
 %doc %{pkgdocdir}/api
 
 %changelog
+* Wed Aug 19 2009 Scott Cantor  <cantor.2@osu.edu>  - 2.2.1-2
+- SuSE init script changes
+- Restart Apache on removal, not just upgrade
+- Fix scriptlet exit values when Apache is stopped
+
 * Mon Aug 10 2009 Scott Cantor  <cantor.2@osu.edu>  - 2.2.1-1
 - Doc handling changes
 - SuSE init script

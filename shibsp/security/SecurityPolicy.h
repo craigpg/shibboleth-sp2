@@ -46,7 +46,7 @@ namespace shibsp {
          */
         SecurityPolicy(const Application& application, const xmltooling::QName* role=NULL, bool validate=true, const char* policyId=NULL);
 
-        virtual ~SecurityPolicy() {}
+        virtual ~SecurityPolicy();
 
         opensaml::saml2md::MetadataProvider::Criteria& getMetadataProviderCriteria() const;
 
@@ -55,9 +55,7 @@ namespace shibsp {
          *
          * @return the associated Application
          */
-        const Application& getApplication() const {
-            return m_application;
-        }
+        const Application& getApplication() const;
 
     private:
         const Application& m_application;

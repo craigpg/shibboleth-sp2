@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
  */
 
 #include "internal.h"
+#include "util/PropertySet.h"
 #include "util/TemplateParameters.h"
 
 #include <ctime>
@@ -30,6 +31,16 @@
 using namespace shibsp;
 using namespace xmltooling;
 using namespace std;
+
+TemplateParameters::TemplateParameters(const exception* e, const PropertySet* props)
+    : m_exception(e), m_toolingException(dynamic_cast<const XMLToolingException*>(e))
+{
+    setPropertySet(props);
+}
+
+TemplateParameters::~TemplateParameters()
+{
+}
 
 void TemplateParameters::setPropertySet(const PropertySet* props)
 {
@@ -46,6 +57,11 @@ void TemplateParameters::setPropertySet(const PropertySet* props)
 #else
     m_map["now"] = ctime(&now);
 #endif
+}
+
+const XMLToolingException* TemplateParameters::getRichException() const
+{
+    return m_toolingException;
 }
 
 const char* TemplateParameters::getParameter(const char* name) const

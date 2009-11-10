@@ -27,14 +27,27 @@
 #include <shibsp/remoting/ddf.h>
 #include <shibsp/util/DOMPropertySet.h>
 
-#ifndef SHIBSP_LITE
-# include <saml/binding/MessageEncoder.h>
-# include <saml/saml2/core/Protocols.h>
-#endif
+#include <map>
+#include <string>
 #include <xmltooling/logging.h>
-#include <xmltooling/XMLObject.h>
-#include <xmltooling/io/HTTPRequest.h>
-#include <xmltooling/io/HTTPResponse.h>
+
+#ifndef SHIBSP_LITE
+namespace opensaml {
+    class SAML_API MessageEncoder;
+    namespace saml2md {
+        class SAML_API RoleDescriptor;
+    };
+    namespace saml2p {
+        class SAML_API StatusResponseType;
+    };
+};
+#endif
+
+namespace xmltooling {
+    class XMLTOOL_API HTTPRequest;
+    class XMLTOOL_API HTTPResponse;
+    class XMLTOOL_API XMLObject;
+};
 
 namespace shibsp {
 
@@ -213,7 +226,7 @@ namespace shibsp {
         xmltooling::auto_ptr_char m_configNS;
 
     public:
-        virtual ~AbstractHandler() {}
+        virtual ~AbstractHandler();
 
     private:
         std::pair<std::string,const char*> getPostCookieNameProps(const Application& app, const char* relayState) const;

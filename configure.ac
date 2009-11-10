@@ -1,7 +1,7 @@
 AC_PREREQ([2.50])
-AC_INIT([shibboleth], [2.2.1], [shibboleth-users@internet2.edu], [shibboleth])
+AC_INIT([shibboleth], [2.3], [shibboleth-users@internet2.edu], [shibboleth])
 AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE([shibboleth],[2.2.1])
+AM_INIT_AUTOMAKE([shibboleth],[2.3])
 
 sinclude(doxygen.m4)
 sinclude(acx_pthread.m4)
@@ -258,6 +258,20 @@ LITE_LIBS="-lxmltooling-lite"
 XMLSEC_LIBS="-lxmltooling"
 AC_CHECK_HEADER([xmltooling/base.h],,
                 AC_MSG_ERROR([unable to find xmltooling header files]))
+                
+
+# save and append master libs
+save_LIBS="$LIBS"
+LIBS="$XMLSEC_LIBS $LIBS"
+
+AC_TRY_LINK(
+    [#include <xmltooling/io/HTTPResponse.h>],
+    [xmltooling::HTTPResponse::sanitizeURL("http://test")],
+    [AC_DEFINE(HAVE_XMLTOOLING,1,[Define if xmltooling library was found])],
+    [AC_MSG_ERROR([unable to link with XMLTooling, or version was too old])])
+
+# restore master libs
+LIBS="$save_LIBS"
 
 # Establish location of xmltooling catalog.
 XMLTOOLINGXMLDIR=""
@@ -618,6 +632,7 @@ AC_SUBST(APXS_INCLUDE)
 #   --enable-apache-20
 #   --with-apxs2      (DSO build, the normal way, uses apxs to derive build flags)
 #	--with-apr        (DSO build, APR development package installed separately)
+#   --with-apu        (DSO build, APR-UTIL development package installed separately)
 
 AC_ARG_ENABLE(apache-20,
 	AC_HELP_STRING([--enable-apache-20], [enable the Apache 2.0 module]),
@@ -695,9 +710,30 @@ if test "$WANT_APACHE_20" = "yes" ; then
         AC_MSG_ERROR([Unable to locate apr-config, may need --with-apr option.])
     fi
 
+    # APU settings
+    AC_ARG_WITH(apu, 
+        AC_HELP_STRING([--with-apu=PATH], [where apu-config is installed]),
+        [
+        AC_MSG_CHECKING(for user-specified apu-config name/location)
+        if test "$withval" != "no" ; then
+            if test "$withval" != "yes"; then
+                APR_CONFIG=$withval
+                AC_MSG_RESULT("$withval")
+            fi
+        fi
+        ],
+        [
+        AC_PATH_PROG(APU_CONFIG, apu-config,,[`$APXS2 -q SBINDIR`]:[$PATH])
+        ])
+    if test -f "${APU_CONFIG}"; then
+        APU_CFLAGS="`${APU_CONFIG} --includes`"
+    else
+        AC_MSG_ERROR([Unable to locate apu-config, may need --with-apu option.])
+    fi
+
     # extract settings we need from APXS2 -q
     APXS2_CC="`$APXS2 -q CC`"
-    APXS2_CFLAGS="`$APXS2 -q CPPFLAGS` `$APXS2 -q CFLAGS` $APR_CFLAGS"
+    APXS2_CFLAGS="`$APXS2 -q CPPFLAGS` `$APXS2 -q CFLAGS` $APU_CFLAGS"
     APXS2_INCLUDE="`$APXS2 -q INCLUDEDIR`"
 fi
 
@@ -709,6 +745,7 @@ AC_SUBST(APXS2_INCLUDE)
 #   --enable-apache-22
 #   --with-apxs22     (DSO build, the normal way, uses apxs to derive build flags)
 #	--with-apr1       (DSO build, APR development package installed separately)
+#   --with-apu1       (DSO build, APR-UTIL development package installed separately)
 
 AC_ARG_ENABLE(apache-22,
 	AC_HELP_STRING([--enable-apache-22], [enable the Apache 2.2 module]),
@@ -786,9 +823,30 @@ if test "$WANT_APACHE_22" = "yes" ; then
         AC_MSG_ERROR([Unable to locate apr-1-config, may need --with-apr1 option.])
     fi
 
+    # APU1 settings
+    AC_ARG_WITH(apu1, 
+        AC_HELP_STRING([--with-apu1=PATH], [where apu-1-config is installed]),
+        [
+        AC_MSG_CHECKING(for user-specified apu-1-config name/location)
+        if test "$withval" != "no" ; then
+            if test "$withval" != "yes"; then
+                APR1_CONFIG=$withval
+                AC_MSG_RESULT("$withval")
+            fi
+        fi
+        ],
+        [
+        AC_PATH_PROG(APU1_CONFIG, apu-1-config,,[`$APXS22 -q SBINDIR`]:[$PATH])
+        ])
+    if test -f "${APU1_CONFIG}"; then
+        APU1_CFLAGS="`${APU1_CONFIG} --includes`"
+    else
+        AC_MSG_ERROR([Unable to locate apu-1-config, may need --with-apu1 option.])
+    fi
+
     # extract settings we need from APXS22 -q
     APXS22_CC="`$APXS22 -q CC`"
-    APXS22_CFLAGS="`$APXS22 -q CPPFLAGS` `$APXS22 -q CFLAGS` $APR1_CFLAGS"
+    APXS22_CFLAGS="`$APXS22 -q CPPFLAGS` `$APXS22 -q CFLAGS` $APR1_CFLAGS $APU1_CFLAGS"
     APXS22_INCLUDE="`$APXS22 -q INCLUDEDIR`"
 fi
 

@@ -8,7 +8,7 @@
 	elementFormDefault="qualified"
 	attributeFormDefault="unqualified"
 	blockDefault="substitution"
-	version="2.2">
+	version="2.3">
 
 	<import namespace="urn:oasis:names:tc:SAML:2.0:assertion" schemaLocation="saml-schema-assertion-2.0.xsd"/>
 	<import namespace="urn:oasis:names:tc:SAML:2.0:protocol" schemaLocation="saml-schema-protocol-2.0.xsd"/>
@@ -46,10 +46,10 @@
 	
 	<complexType name="PluggableType">
 		<sequence>
-			<any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+			<any namespace="##any" processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
 		</sequence>
 		<attribute name="type" type="conf:string" use="required"/>
-		<anyAttribute namespace="##any" processContents="lax"/>
+		<anyAttribute namespace="##any" processContents="skip"/>
 	</complexType>
 
 	<element name="SPConfig">
@@ -88,6 +88,7 @@
 			<attribute name="logger" type="anyURI"/>
 			<attribute name="clockSkew" type="unsignedInt"/>
             <attribute name="unsafeChars" type="conf:string"/>
+            <attribute name="allowedSchemes" type="conf:listOfStrings"/>
 			<anyAttribute namespace="##other" processContents="lax"/>
 		</complexType>
 	</element>
@@ -101,11 +102,11 @@
 				<element name="Library" minOccurs="0" maxOccurs="unbounded">
 					<complexType>
 						<sequence>
-							<any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+							<any namespace="##any" processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
 						</sequence>
 						<attribute name="path" type="anyURI" use="required"/>
 						<attribute name="fatal" type="boolean"/>
-						<anyAttribute namespace="##any" processContents="lax"/>
+						<anyAttribute namespace="##any" processContents="skip"/>
 					</complexType>
 				</element>
 				<any namespace="##other" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
@@ -121,11 +122,11 @@
 			<complexContent>
 				<restriction base="conf:PluggableType">
 					<sequence>
-						<any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+						<any namespace="##any" processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
 					</sequence>
 					<attribute name="id" type="ID" use="required"/>
 					<attribute name="cleanupInterval" type="unsignedInt"/>
-					<anyAttribute namespace="##any" processContents="lax"/>
+					<anyAttribute namespace="##any" processContents="skip"/>
 				</restriction>
 			</complexContent>
 		</complexType>
@@ -139,11 +140,11 @@
 			<complexContent>
 				<restriction base="conf:PluggableType">
 					<sequence>
-						<any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+						<any namespace="##any" processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
 					</sequence>
 					<attribute name="StorageService" type="IDREF"/>
 					<attribute name="cacheTimeout" type="unsignedInt"/>
-					<anyAttribute namespace="##any" processContents="lax"/>
+					<anyAttribute namespace="##any" processContents="skip"/>
 				</restriction>
 			</complexContent>
 		</complexType>
@@ -287,10 +288,13 @@
 		<attribute name="exportAssertion" type="boolean"/>
 		<attribute name="redirectToSSL" type="unsignedInt"/>
 		<attribute name="entityID" type="anyURI"/>
+        <attribute name="discoveryURL" type="anyURI"/>
 		<attribute name="isPassive" type="boolean"/>
 		<attribute name="forceAuthn" type="boolean"/>
 		<attribute name="authnContextClassRef" type="anyURI"/>
 		<attribute name="authnContextComparison" type="samlp:AuthnContextComparisonType"/>
+        <attribute name="NameIDFormat" type="anyURI"/>
+        <attribute name="SPNameQualifier" type="conf:string"/>
         <attribute name="redirectErrors" type="anyURI"/>
 		<attribute name="sessionError" type="anyURI"/>
 		<attribute name="metadataError" type="anyURI"/>
@@ -530,11 +534,11 @@
 						<complexContent>
 							<restriction base="conf:PluggableType">
 								<sequence>
-									<any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+									<any namespace="##any" processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
 								</sequence>
 								<attribute name="Location" type="anyURI" use="required"/>
 							    <attribute name="acl" type="conf:listOfStrings"/>
-								<anyAttribute namespace="##any" processContents="lax"/>
+								<anyAttribute namespace="##any" processContents="skip"/>
 							</restriction>
 						</complexContent>
 					</complexType>
@@ -576,7 +580,7 @@
 			<complexContent>
 				<restriction base="conf:PluggableType">
 					<sequence>
-						<any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+						<any namespace="##any" processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
 					</sequence>
 					<attribute name="Location" type="anyURI"/>
 					<attribute name="id" type="conf:string"/>
@@ -589,13 +593,16 @@
 					<attribute name="template" type="anyURI"/>
 					<attribute name="postArtifact" type="boolean"/>
 					<attribute name="acsByIndex" type="boolean"/>
-					<attribute name="defaultACSIndex" type="unsignedShort"/>
+                    <attribute name="acsIndex" type="unsignedShort"/>
+					<attribute name="defaultACSIndex" type="unsignedShort"/>   <!-- deprecated -->
                     <attribute name="isPassive" type="boolean"/>
                     <attribute name="forceAuthn" type="boolean"/>
                     <attribute name="authnContextClassRef" type="anyURI"/>
                     <attribute name="authnContextComparison" type="samlp:AuthnContextComparisonType"/>
+                    <attribute name="NameIDFormat" type="anyURI"/>
+                    <attribute name="SPNameQualifier" type="conf:string"/>
                     <attribute name="requestDelegation" type="boolean"/>
-					<anyAttribute namespace="##any" processContents="lax"/>
+					<anyAttribute namespace="##any" processContents="skip"/>
 				</restriction>
 			</complexContent>
 		</complexType>
@@ -609,14 +616,14 @@
 			<complexContent>
 				<restriction base="conf:PluggableType">
 					<sequence>
-						<any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+						<any namespace="##any" processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
 					</sequence>
 					<attribute name="Location" type="anyURI"/>
 				    <attribute name="relayState" type="conf:string"/>
 					<attribute name="outgoingBindings" type="conf:listOfURIs"/>
 					<attribute name="template" type="anyURI"/>
 					<attribute name="postArtifact" type="boolean"/>
-					<anyAttribute namespace="##any" processContents="lax"/>
+					<anyAttribute namespace="##any" processContents="skip"/>
 				</restriction>
 			</complexContent>
 		</complexType>
@@ -628,7 +635,7 @@
 		</annotation>
 		<complexType>
 			<sequence>
-				<any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+				<any namespace="##any" processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
 			</sequence>
             <attribute name="redirectErrors" type="anyURI"/>
 			<attribute name="session" type="anyURI"/>
@@ -637,10 +644,11 @@
 			<attribute name="ssl" type="anyURI"/>
             <attribute name="localLogout" type="anyURI"/>
             <attribute name="globalLogout" type="anyURI"/>
+            <attribute name="partialLogout" type="anyURI"/>
 			<attribute name="supportContact" type="conf:string"/>
 			<attribute name="logoLocation" type="anyURI"/>
 			<attribute name="styleSheet" type="anyURI"/>
-			<anyAttribute namespace="##any" processContents="lax"/>
+			<anyAttribute namespace="##any" processContents="skip"/>
 		</complexType>
 	</element>
 
@@ -672,7 +680,7 @@
 				</simpleType>
 			</attribute>
 			<attribute name="Location" type="anyURI" use="required"/>
-			<anyAttribute namespace="##any" processContents="lax"/>
+			<anyAttribute namespace="##any" processContents="skip"/>
 		</complexType>
 	</element>
 	
@@ -693,7 +701,7 @@
 						</choice>
 						<attribute name="id" type="conf:string" use="required"/>
 						<attribute name="validate" type="boolean"/>
-						<anyAttribute namespace="##any" processContents="lax"/>
+						<anyAttribute namespace="##any" processContents="skip"/>
 					</complexType>
 				</element>
 			</sequence>

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2001-2007 Internet2
+ *  Copyright 2001-2009 Internet2
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #define __shibsp_dompropset_h__
 
 #include <shibsp/util/PropertySet.h>
+
 #include <xmltooling/logging.h>
 
 namespace shibsp {
@@ -34,18 +35,12 @@ namespace shibsp {
     class SHIBSP_API DOMPropertySet : public virtual PropertySet
     {
     public:
-        DOMPropertySet() : m_parent(NULL), m_root(NULL) {}
+        DOMPropertySet();
         
         virtual ~DOMPropertySet();
 
-        const PropertySet* getParent() const {
-            return m_parent;
-        }
-
-        void setParent(const PropertySet* parent) {
-            m_parent = parent;
-        }
-
+        const PropertySet* getParent() const;
+        void setParent(const PropertySet* parent);
         std::pair<bool,bool> getBool(const char* name, const char* ns=NULL) const;
         std::pair<bool,const char*> getString(const char* name, const char* ns=NULL) const;
         std::pair<bool,const XMLCh*> getXMLString(const char* name, const char* ns=NULL) const;
@@ -53,10 +48,7 @@ namespace shibsp {
         std::pair<bool,int> getInt(const char* name, const char* ns=NULL) const;
         void getAll(std::map<std::string,const char*>& properties) const;
         const PropertySet* getPropertySet(const char* name, const char* ns=shibspconstants::ASCII_SHIB2SPCONFIG_NS) const;
-
-        const xercesc::DOMElement* getElement() const {
-            return m_root;
-        }
+        const xercesc::DOMElement* getElement() const;
 
         /**
          * Loads the property set from a DOM element.

@@ -39,9 +39,9 @@ namespace shibsp {
     {
         MAKE_NONCOPYABLE(Remoted);
     protected:
-        Remoted() {}
+        Remoted();
     public:
-        virtual ~Remoted() {}
+        virtual ~Remoted();
 
         /**
          * Remoted classes implement this method to process incoming messages.
@@ -72,8 +72,10 @@ namespace shibsp {
      */
     class SHIBSP_API ListenerService : public virtual Remoted
     {
+    protected:
+        ListenerService();
     public:
-        virtual ~ListenerService() {}
+        virtual ~ListenerService();
 
         /**
          * Send a remoted message and return the response.
@@ -126,9 +128,7 @@ namespace shibsp {
          * @param force     true iff remnant network state should be forcibly cleared
          * @return true iff the service initialization was successful
          */
-        virtual bool init(bool force) {
-            return true;
-        }
+        virtual bool init(bool force);
 
         /**
          * OutOfProcess servers can implement server-side transport handling by
@@ -142,8 +142,7 @@ namespace shibsp {
         /**
          * OutOfProcess servers can implement server-side termination/cleanup.
          */
-        virtual void term() {
-        }
+        virtual void term();
 
     private:
         std::map<std::string,Remoted*> m_listenerMap;
