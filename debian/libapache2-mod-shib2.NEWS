@@ -1,3 +1,25 @@
+shibboleth-sp2 (2.3+dfsg-1) unstable; urgency=low
+
+  As of this release, running shibd as a non-root user is supported and
+  recommended to limit the impact of any potential security issues.  The
+  package will create a dedicated _shibd user on installation for that
+  purpose.
+
+  In order for shibd to run as user _shibd instead of as root, user _shibd
+  must have read access to the private key of the server.  The easiest way
+  is to make the private key, normally /etc/shibboleth/sp-key.pem, owned
+  by root and readable by group _shibd:
+
+      chown root:_shibd /etc/shibboleth/sp-key.pem
+      chmod 640 /etc/shibboleth/sp-key.pem
+
+  The init script attempts to detect, when starting up shibd, whether it
+  can read the private key specified in the configuration and, if not,
+  falls back on running shibd as root, as was done in previous versions of
+  this package.
+
+ -- Russ Allbery <rra@debian.org>  Tue, 10 Nov 2009 16:48:03 -0800
+
 shibboleth-sp2 (2.2.1+dfsg-2) unstable; urgency=low
 
   There are several changes to the configuration syntax and defaults in

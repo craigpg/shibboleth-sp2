@@ -7,5 +7,10 @@
 # To not start shibd at boot, uncomment this line.
 #NO_START=1
 
-# Replace options passed to shibd by the init script.
+# Options passed to shibd by the init script.  To whatever value is put here,
+# the init script will automatically add the options:
+#
+#     -f -c /etc/shibboleth2.xml -p /var/run/shibboleth/shibboleth.pid -w 30
+#
+# If you need to change those options, edit /etc/init.d/shibd.
 #DAEMON_OPTS=""
