@@ -1,4 +1,4 @@
-shibboleth-sp2 (2.3+dfsg-1) unstable; urgency=low
+shibboleth-sp2 (2.3+dfsg-1) unstable; urgency=high
 
   As of this release, running shibd as a non-root user is supported and
   recommended to limit the impact of any potential security issues.  The
