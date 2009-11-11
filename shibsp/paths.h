@@ -24,7 +24,7 @@
 #define __shibsp_paths_h__
 
 /** Default schema catalogs. */
-#define SHIBSP_SCHEMAS "/usr/share/xml/xmltooling/catalog.xml:/usr/share/xml/opensaml/saml20-catalog.xml:/usr/share/xml/opensaml/saml11-catalog.xml:/usr/share/xml/shibboleth/catalog.xml"
+#define SHIBSP_SCHEMAS "/opt/shibboleth-sp/share/xml/xmltooling/catalog.xml:/opt/shibboleth-sp/share/xml/opensaml/saml20-catalog.xml:/opt/shibboleth-sp/share/xml/opensaml/saml11-catalog.xml:/opt/shibboleth-sp/share/xml/shibboleth/catalog.xml"
 
 /** Default name of SP configuration file. */
 #define SHIBSP_CONFIG "shibboleth2.xml"
@@ -33,21 +33,21 @@
 #define SHIBSP_LOGGING "console.logger"
 
 /** Default prefix for installation (used to resolve relative paths). */
-#define SHIBSP_PREFIX  "/usr"
+#define SHIBSP_PREFIX  "/opt/shibboleth-sp"
 
 /** Library directory for installation (used to resolve relative paths). */
-#define SHIBSP_LIBDIR  "/usr/lib"
+#define SHIBSP_LIBDIR  "/opt/shibboleth-sp/lib"
 
 /** Log directory for installation (used to resolve relative paths). */
-#define SHIBSP_LOGDIR  "/var/log/shibboleth"
+#define SHIBSP_LOGDIR  "/opt/shibboleth-sp/var/log"
 
 /** Configuration directory for installation (used to resolve relative paths). */
-#define SHIBSP_CFGDIR  "/etc/shibboleth"
+#define SHIBSP_CFGDIR  "/opt/shibboleth-sp/etc"
 
 /** Runtime state directory for installation (used to resolve relative paths). */
-#define SHIBSP_RUNDIR  "/var/run/shibboleth"
+#define SHIBSP_RUNDIR  "/opt/shibboleth-sp/var/run"
 
 /** XML directory for installation (used to resolve relative paths). */
-#define SHIBSP_XMLDIR  "/usr/share/xml/shibboleth"
+#define SHIBSP_XMLDIR  "/opt/shibboleth-sp/share/xml"
 
 #endif /* __shibsp_paths_h__ */

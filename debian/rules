@@ -75,7 +75,7 @@ clean:
 	[ ! -f Makefile ] || $(MAKE) distclean
 	find . -name Makefile.in -print0 | xargs -0r rm
 	dh_clean aclocal.m4 config.h config.h.in config.status configure \
-	    config.guess config.sub libtool.m4 ltmain.sh \
+	    config.guess config.sub libtool.m4 ltmain.sh shibsp/paths.h \
 	    debian/libapache2-mod-shib2.shibd.init
 
 install: install-stamp
