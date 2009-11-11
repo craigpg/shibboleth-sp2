@@ -56,15 +56,15 @@ prepare_environment () {
     # Ensure @-PKGRUNDIR-@ exists.  /var/run may be on a tmpfs file system.
     [ -d '@-PKGRUNDIR-@' ] || mkdir -p '@-PKGRUNDIR-@'
 
-    # If $DAEMON_USER is set, try to run _shibd as that user.  However,
+    # If $DAEMON_USER is set, try to run shibd as that user.  However,
     # versions of the Debian package prior to 2.3+dfsg-1 ran shibd as root,
     # and the local administrator may not have made the server's private key
-    # readable by _shibd.  We therefore test first by running shibd -t and
-    # looking for the error code indicating that the private key could not be
-    # read.  If we get that error, we fall back on running shibd as root.
+    # readable by $DAEMON_USER.  We therefore test first by running shibd -t
+    # and looking for the error code indicating that the private key could not
+    # be read.  If we get that error, we fall back on running shibd as root.
     if [ -n "$DAEMON_USER" ]; then
         DIAG=$(su -s $DAEMON $DAEMON_USER -- -t $DAEMON_OPTS 2>/dev/null)
-        if [ $? != 0 ] ; then
+        if [ $? = 0 ] ; then
             # openssl errstr 200100D (hex for 33558541) says:
             # error:0200100D:system library:fopen:Permission denied
             ERROR='ERROR OpenSSL : error code: 33558541 '
