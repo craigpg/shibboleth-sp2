@@ -132,7 +132,7 @@ binary-arch: install-stamp
 	dh_strip
 	dh_compress
 	dh_fixperms
-	DH_OPTIONS="" dh_makeshlibs -plibshibsp3
+	DH_OPTIONS="" dh_makeshlibs -plibshibsp4
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol
