@@ -64,7 +64,7 @@ prepare_environment () {
     # read.  If we get that error, we fall back on running shibd as root.
     if [ -n "$DAEMON_USER" ]; then
         DIAG=$(su -s $DAEMON $DAEMON_USER -- -t $DAEMON_OPTS 2>/dev/null)
-        if [ $? != 0 ] ; then
+        if [ $? = 0 ] ; then
             # openssl errstr 200100D (hex for 33558541) says:
             # error:0200100D:system library:fopen:Permission denied
             ERROR='ERROR OpenSSL : error code: 33558541 '
