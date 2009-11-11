@@ -23,6 +23,7 @@ shibboleth-sp2 (2.3+dfsg-1) UNRELEASED; urgency=high
   * Tighten build and package dependencies on xmltooling and opensaml2 to
     require the versions with the security fix.
   * Fix watch file for the new version mangling.
+  * Improve documentation of DAEMON_OPTS in /etc/default/shibd.
   * Remove unnecessary patches to upstream files regenerated during the
     build from the source package diff.
 
