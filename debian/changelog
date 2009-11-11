@@ -34,7 +34,7 @@ shibboleth-sp2 (2.3+dfsg-1) unstable; urgency=high
   [ Ferenc Wagner ]
   * Run shibd as non-root.
 
- -- Russ Allbery <rra@debian.org>  Tue, 10 Nov 2009 16:56:06 -0800
+ -- Russ Allbery <rra@debian.org>  Wed, 11 Nov 2009 14:39:44 -0800
 
 shibboleth-sp2 (2.2.1+dfsg-2) unstable; urgency=low
 
