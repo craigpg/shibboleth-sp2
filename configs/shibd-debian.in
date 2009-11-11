@@ -109,7 +109,7 @@ restart|force-reload)
     start-stop-daemon --stop --quiet --pidfile $PIDFILE \
         --retry TERM/30/KILL/5 --exec $DAEMON
     start-stop-daemon --start --quiet ${DAEMON_USER:+--chuid $DAEMON_USER} \
-        -- pidfile $PIDFILE --exec $DAEMON -- $DAEMON_OPTS
+        --pidfile $PIDFILE --exec $DAEMON -- $DAEMON_OPTS
     echo "$NAME."
     ;;
 *)
