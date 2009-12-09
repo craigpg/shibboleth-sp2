@@ -387,7 +387,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "listener failure during service\n");
             listener->term();
             conf.term();
-            if (pidfile)
+            if (daemonize && pidfile)
                 unlink(pidfile);
             return -3;
         }
@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
     }
 
     conf.term();
-    if (pidfile)
+    if (daemonize && pidfile)
         unlink(pidfile);
     return 0;
 }
