@@ -14,7 +14,7 @@ shibd="@-PREFIX-@/sbin/shibd"
 SHIBD_USER=root
 pidfile=@-PKGRUNDIR-@/shibd.pid
 prog=shibd
-VER=`cat /etc/redhat-release | awk '{print $3}' | awk -F . '{print $1}'`
+#VER=`cat /etc/redhat-release | awk '{print $3}' | awk -F . '{print $1}'`
 RETVAL=0
 
 start() {
@@ -37,11 +37,7 @@ start() {
 	if [ -x /usr/sbin/selinuxenabled ] && /usr/sbin/selinuxenabled; then
 		/sbin/restorecon $pidfile
 	fi
-	if [ 5 -le $VER ] ; then
-		daemon --user $SHIBD_USER --pidfile $pidfile $shibd -p $pidfile -f -w 30
-	else
-		daemon --user $SHIBD_USER $shibd -p $pidfile -f -w 30
-	fi
+	daemon --user $SHIBD_USER $shibd -p $pidfile -f -w 30
 
 	RETVAL=$?
 	echo
@@ -51,11 +47,7 @@ start() {
 
 stop() {
 	echo -n $"Stopping $prog: "
-	if [ -f $pidfile -a 5 -le $VER ] ; then
-		killproc -p $pidfile shibd
-	else
-		killproc shibd
-	fi
+	killproc shibd
 
 	RETVAL=$?
 	echo

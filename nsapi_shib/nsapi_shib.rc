@@ -28,8 +28,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,3,0,0
- PRODUCTVERSION 2,3,0,0
+ FILEVERSION 2,3,1,0
+ PRODUCTVERSION 2,3,1,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -47,14 +47,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Internet2\0"
             VALUE "FileDescription", "Shibboleth NSAPI Extension\0"
-            VALUE "FileVersion", "2, 3, 0, 0\0"
+            VALUE "FileVersion", "2, 3, 1, 0\0"
             VALUE "InternalName", "nsapi_shib\0"
             VALUE "LegalCopyright", "Copyright © 2009 Internet2\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "nsapi_shib.dll\0"
             VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "Shibboleth 2.3\0"
-            VALUE "ProductVersion", "2, 3, 0, 0\0"
+            VALUE "ProductName", "Shibboleth 2.3.1\0"
+            VALUE "ProductVersion", "2, 3, 1, 0\0"
             VALUE "SpecialBuild", "\0"
         END
     END

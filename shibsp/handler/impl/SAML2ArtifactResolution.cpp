@@ -75,19 +75,42 @@ namespace shibsp {
         const char* getType() const {
             return "ArtifactResolutionService";
         }
+
+        void generateMetadata(SPSSODescriptor& role, const char* handlerURL) const {
+            // Initial guess at index to use.
+            pair<bool,unsigned int> ix = pair<bool,unsigned int>(false,0);
+            if (!strncmp(handlerURL, "https", 5))
+                ix = getUnsignedInt("sslIndex", shibspconstants::ASCII_SHIB2SPCONFIG_NS);
+            if (!ix.first)
+                ix = getUnsignedInt("index");
+            if (!ix.first)
+                ix.second = 1;
+
+            // Find maximum index in use and go one higher.
+            const vector<ArtifactResolutionService*>& services = const_cast<const SPSSODescriptor&>(role).getArtifactResolutionServices();
+            if (!services.empty() && ix.second <= services.back()->getIndex().second)
+                ix.second = services.back()->getIndex().second + 1;
+
+            const char* loc = getString("Location").second;
+            string hurl(handlerURL);
+            if (*loc != '/')
+                hurl += '/';
+            hurl += loc;
+            auto_ptr_XMLCh widen(hurl.c_str());
+
+            ArtifactResolutionService* ep = ArtifactResolutionServiceBuilder::buildArtifactResolutionService();
+            ep->setLocation(widen.get());
+            ep->setBinding(getXMLString("Binding").second);
+            ep->setIndex(ix.second);
+            role.getArtifactResolutionServices().push_back(ep);
+        }
 #endif
 
     private:
         pair<bool,long> processMessage(const Application& application, HTTPRequest& httpRequest, HTTPResponse& httpResponse) const;
 #ifndef SHIBSP_LITE
-        pair<bool,long> samlError(
-            const Application& app,
-            const ArtifactResolve& request,
-            HTTPResponse& httpResponse,
-            const EntityDescriptor* recipient,
-            const XMLCh* code,
-            const XMLCh* subcode=NULL,
-            const char* msg=NULL
+        pair<bool,long> emptyResponse(
+            const Application& app, const ArtifactResolve& request, HTTPResponse& httpResponse, const EntityDescriptor* recipient
             ) const;
 
         MessageEncoder* m_encoder;
@@ -285,7 +308,7 @@ pair<bool,long> SAML2ArtifactResolution::processMessage(const Application& appli
     try {
         auto_ptr_char artifact(req->getArtifact() ? req->getArtifact()->getArtifact() : NULL);
         if (!artifact.get() || !*artifact.get())
-            return samlError(application, *req, httpResponse, entity, StatusCode::REQUESTER, NULL, "Request did not contain an artifact to resolve.");
+            return emptyResponse(application, *req, httpResponse, entity);
         auto_ptr_char issuer(policy.getIssuer() ? policy.getIssuer()->getName() : NULL);
 
         m_log.info("resolving artifact (%s) for (%s)", artifact.get(), issuer.get() ? issuer.get() : "unknown");
@@ -296,7 +319,7 @@ pair<bool,long> SAML2ArtifactResolution::processMessage(const Application& appli
 
         if (!policy.isAuthenticated()) {
             m_log.error("request for artifact was unauthenticated, purging the artifact mapping");
-            return samlError(application, *req, httpResponse, entity, StatusCode::REQUESTER, StatusCode::AUTHN_FAILED, "Unable to authenticate request.");
+            return emptyResponse(application, *req, httpResponse, entity);
         }
 
         m_log.debug("artifact resolved, preparing response");
@@ -315,9 +338,9 @@ pair<bool,long> SAML2ArtifactResolution::processMessage(const Application& appli
         return make_pair(true,ret);
     }
     catch (exception& ex) {
-        // Trap localized errors in a SAML Response.
-        m_log.error("error processing artifact request, returning SAML error: %s", ex.what());
-        return samlError(application, *req, httpResponse, entity, StatusCode::RESPONDER, NULL, ex.what());
+        // Trap localized errors.
+        m_log.error("error processing artifact request: %s", ex.what());
+        return emptyResponse(application, *req, httpResponse, entity);
     }
 #else
     return make_pair(false,0L);
@@ -325,21 +348,15 @@ pair<bool,long> SAML2ArtifactResolution::processMessage(const Application& appli
 }
 
 #ifndef SHIBSP_LITE
-pair<bool,long> SAML2ArtifactResolution::samlError(
-    const Application& app,
-    const ArtifactResolve& request,
-    HTTPResponse& httpResponse,
-    const EntityDescriptor* recipient,
-    const XMLCh* code,
-    const XMLCh* subcode,
-    const char* msg
+pair<bool,long> SAML2ArtifactResolution::emptyResponse(
+    const Application& app, const ArtifactResolve& request, HTTPResponse& httpResponse, const EntityDescriptor* recipient
     ) const
 {
     auto_ptr<ArtifactResponse> resp(ArtifactResponseBuilder::buildArtifactResponse());
     resp->setInResponseTo(request.getID());
     Issuer* me = IssuerBuilder::buildIssuer();
     me->setName(app.getRelyingParty(recipient)->getXMLString("entityID").second);
-    fillStatus(*resp.get(), code, subcode, msg);
+    fillStatus(*resp.get(), StatusCode::SUCCESS);
     long ret = m_encoder->encode(httpResponse, resp.get(), NULL);
     resp.release();  // freed by encoder
     return make_pair(true,ret);

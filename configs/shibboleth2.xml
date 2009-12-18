@@ -227,7 +227,7 @@
         <AttributeExtractor type="XML" validate="true" path="attribute-map.xml"/>
         
         <!-- Use a SAML query if no attributes are supplied during SSO. -->
-        <AttributeResolver type="Query"/>
+        <AttributeResolver type="Query" subjectMatch="true"/>
 
         <!-- Default filtering policy for recognized attributes, lets other data pass. -->
         <AttributeFilter type="XML" validate="true" path="attribute-policy.xml"/>

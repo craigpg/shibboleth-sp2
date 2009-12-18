@@ -1,6 +1,6 @@
 Name:		shibboleth
-Version:	2.3
-Release:	2
+Version:	2.3.1
+Release:	1
 Summary:    Open source system for attribute-based Web SSO
 Group:		System Environment/Libraries
 Vendor:     Internet2
@@ -244,6 +244,9 @@ cd /
 %doc %{pkgdocdir}/api
 
 %changelog
+* Mon Nov 23 2009 Scott Cantor  <cantor.2@osu.edu>  - 2.3.1-1
+- Reset revision for 2.3.1 release
+
 * Wed Aug 19 2009 Scott Cantor  <cantor.2@osu.edu>  - 2.2.1-2
 - SuSE init script changes
 - Restart Apache on removal, not just upgrade

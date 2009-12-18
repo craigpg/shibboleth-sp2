@@ -24,7 +24,7 @@
 #define __shibsp_paths_h__
 
 /** Default schema catalogs. */
-#define SHIBSP_SCHEMAS "/opt/shibboleth-sp/share/xml/xmltooling/catalog.xml:/opt/shibboleth-sp/share/xml/opensaml/saml20-catalog.xml:/opt/shibboleth-sp/share/xml/opensaml/saml11-catalog.xml:/opt/shibboleth-sp/share/xml/shibboleth/catalog.xml"
+#define SHIBSP_SCHEMAS "/opt/shibboleth-sp/share/xml/xmltooling/catalog.xml:/usr/share/xml/opensaml/saml20-catalog.xml:/usr/share/xml/opensaml/saml11-catalog.xml:/opt/shibboleth-sp/share/xml/shibboleth/catalog.xml"
 
 /** Default name of SP configuration file. */
 #define SHIBSP_CONFIG "shibboleth2.xml"

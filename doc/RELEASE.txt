@@ -1,14 +1,14 @@
 Release Notes
 
 Shibboleth Native SP
-2.3
+2.3.1
 
 NOTE: The shibboleth2.xml configuration format in this release
-is fully compatible with the 2.1 release, but there are some small
+is fully compatible with the 2.1 and 2.2 releases, but there are some small
 changes required to eliminate various warnings about deprecated options.
 
 List of issues addressed by this release:
-https://bugs.internet2.edu/jira/browse/SSPCPP/fixforversion/10261
+https://bugs.internet2.edu/jira/browse/SSPCPP/fixforversion/10271
 
 Fully Supported
 

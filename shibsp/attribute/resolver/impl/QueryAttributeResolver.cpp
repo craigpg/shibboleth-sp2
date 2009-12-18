@@ -205,6 +205,7 @@ namespace shibsp {
 
         Category& m_log;
         string m_policyId;
+        bool m_subjectMatch;
         vector<AttributeDesignator*> m_SAML1Designators;
         vector<saml2::Attribute*> m_SAML2Designators;
     };
@@ -214,20 +215,24 @@ namespace shibsp {
         return new QueryResolver(e);
     }
 
-    static const XMLCh _policyId[] = UNICODE_LITERAL_8(p,o,l,i,c,y,I,d);
+    static const XMLCh policyId[] =     UNICODE_LITERAL_8(p,o,l,i,c,y,I,d);
+    static const XMLCh subjectMatch[] = UNICODE_LITERAL_12(s,u,b,j,e,c,t,M,a,t,c,h);
 };
 
-QueryResolver::QueryResolver(const DOMElement* e) : m_log(Category::getInstance(SHIBSP_LOGCAT".AttributeResolver.Query"))
+QueryResolver::QueryResolver(const DOMElement* e) : m_log(Category::getInstance(SHIBSP_LOGCAT".AttributeResolver.Query")), m_subjectMatch(false)
 {
 #ifdef _DEBUG
     xmltooling::NDC ndc("QueryResolver");
 #endif
 
-    const XMLCh* pid = e ? e->getAttributeNS(NULL, _policyId) : NULL;
+    const XMLCh* pid = e ? e->getAttributeNS(NULL, policyId) : NULL;
     if (pid && *pid) {
         auto_ptr_char temp(pid);
         m_policyId = temp.get();
     }
+    pid = e ? e->getAttributeNS(NULL, subjectMatch) : NULL;
+    if (pid && (*pid == chLatin_t || *pid == chDigit_1))
+        m_subjectMatch = true;
 
     DOMElement* child = XMLHelper::getFirstChildElement(e);
     while (child) {
@@ -366,7 +371,7 @@ bool QueryResolver::SAML1Query(QueryContext& ctx) const
     }
 
     newtoken->detach();
-    wrapper.release();
+    wrapper.release();  // detach blows away the Response
     ctx.getResolvedAssertions().push_back(newtoken);
 
     // Finally, extract and filter the result.
@@ -374,7 +379,24 @@ bool QueryResolver::SAML1Query(QueryContext& ctx) const
         AttributeExtractor* extractor = application.getAttributeExtractor();
         if (extractor) {
             Locker extlocker(extractor);
-            extractor->extractAttributes(application, AA, *newtoken, ctx.getResolvedAttributes());
+            const vector<saml1::AttributeStatement*>& statements = const_cast<const saml1::Assertion*>(newtoken)->getAttributeStatements();
+            for (vector<saml1::AttributeStatement*>::const_iterator s = statements.begin(); s!=statements.end(); ++s) {
+                if (m_subjectMatch) {
+                    // Check for subject match.
+                    const NameIdentifier* respName = (*s)->getSubject() ? (*s)->getSubject()->getNameIdentifier() : NULL;
+                    if (!respName || !XMLString::equals(respName->getName(), ctx.getNameID()->getName()) ||
+                        !XMLString::equals(respName->getFormat(), ctx.getNameID()->getFormat()) ||
+                        !XMLString::equals(respName->getNameQualifier(), ctx.getNameID()->getNameQualifier())) {
+                        if (respName)
+                            m_log.warnStream() << "ignoring AttributeStatement without strongly matching NameIdentifier in Subject: " <<
+                                *respName << logging::eol;
+                        else
+                            m_log.warn("ignoring AttributeStatement without NameIdentifier in Subject");
+                        continue;
+                    }
+                }
+                extractor->extractAttributes(application, AA, *(*s), ctx.getResolvedAttributes());
+            }
         }
 
         AttributeFilter* filter = application.getAttributeFilter();
@@ -437,7 +459,6 @@ bool QueryResolver::SAML2Query(QueryContext& ctx) const
             // Encrypt the NameID?
             if (encryption.first && (!strcmp(encryption.second, "true") || !strcmp(encryption.second, "back"))) {
                 auto_ptr<EncryptedID> encrypted(EncryptedIDBuilder::buildEncryptedID());
-                MetadataCredentialCriteria mcc(*AA);
                 encrypted->encrypt(
                     *ctx.getNameID(),
                     *(application.getMetadataProvider()),
@@ -473,33 +494,72 @@ bool QueryResolver::SAML2Query(QueryContext& ctx) const
         m_log.error("unable to obtain a SAML response from attribute authority");
         return false;
     }
+
+    auto_ptr<saml2p::StatusResponseType> wrapper(srt);
+
     saml2p::Response* response = dynamic_cast<saml2p::Response*>(srt);
     if (!response) {
-        delete srt;
         m_log.error("message was not a samlp:Response");
         return true;
     }
     else if (!response->getStatus() || !response->getStatus()->getStatusCode() ||
             !XMLString::equals(response->getStatus()->getStatusCode()->getValue(), saml2p::StatusCode::SUCCESS)) {
-        delete srt;
         m_log.error("attribute authority returned a SAML error");
         return true;
     }
 
+    saml2::Assertion* newtoken = NULL;
     const vector<saml2::Assertion*>& assertions = const_cast<const saml2p::Response*>(response)->getAssertions();
     if (assertions.empty()) {
-        delete srt;
-        m_log.warn("response from attribute authority was empty");
-        return true;
-    }
-    else if (assertions.size()>1)
-        m_log.warn("simple resolver only supports one assertion in the query response");
+        // Check for encryption.
+        const vector<saml2::EncryptedAssertion*>& encassertions = const_cast<const saml2p::Response*>(response)->getEncryptedAssertions();
+        if (encassertions.empty()) {
+            m_log.warn("response from attribute authority was empty");
+            return true;
+        }
+        else if (encassertions.size() > 1) {
+            m_log.warn("simple resolver only supports one assertion in the query response");
+        }
 
-    auto_ptr<saml2p::StatusResponseType> wrapper(srt);
-    saml2::Assertion* newtoken = assertions.front();
+        CredentialResolver* cr=application.getCredentialResolver();
+        if (!cr) {
+            m_log.warn("found encrypted assertion, but no CredentialResolver was available");
+            return true;
+        }
+
+        // Attempt to decrypt it.
+        try {
+            Locker credlocker(cr);
+            auto_ptr<XMLObject> tokenwrapper(encassertions.front()->decrypt(*cr, relyingParty->getXMLString("entityID").second, &mcc));
+            newtoken = dynamic_cast<saml2::Assertion*>(tokenwrapper.get());
+            if (newtoken) {
+                tokenwrapper.release();
+                if (m_log.isDebugEnabled())
+                    m_log.debugStream() << "decrypted Assertion: " << *newtoken << logging::eol;
+            }
+        }
+        catch (exception& ex) {
+            m_log.error(ex.what());
+        }
+        if (newtoken) {
+            // Free the Response now, so we know this is a stand-alone token later.
+            delete wrapper.release();
+        }
+        else {
+            // Nothing decrypted, should already be logged.
+            return true;
+        }
+    }
+    else {
+        if (assertions.size() > 1)
+            m_log.warn("simple resolver only supports one assertion in the query response");
+        newtoken = assertions.front();
+    }
 
     if (!newtoken->getSignature() && signedAssertions.first && signedAssertions.second) {
         m_log.error("assertion unsigned, rejecting it based on signedAssertions policy");
+        if (!wrapper.get())
+            delete newtoken;
         return true;
     }
 
@@ -515,14 +575,60 @@ bool QueryResolver::SAML2Query(QueryContext& ctx) const
         // Now we can check the security status of the policy.
         if (!policy.isAuthenticated())
             throw SecurityPolicyException("Security of SAML 2.0 query result not established.");
+
+        if (m_subjectMatch) {
+            // Check for subject match.
+            bool ownedName = false;
+            NameID* respName = newtoken->getSubject() ? newtoken->getSubject()->getNameID() : NULL;
+            if (!respName) {
+                // Check for encryption.
+                EncryptedID* encname = newtoken->getSubject() ? newtoken->getSubject()->getEncryptedID() : NULL;
+                if (encname) {
+                    CredentialResolver* cr=application.getCredentialResolver();
+                    if (!cr)
+                        m_log.warn("found EncryptedID, but no CredentialResolver was available");
+                    else {
+                        Locker credlocker(cr);
+                        auto_ptr<XMLObject> decryptedID(encname->decrypt(*cr, relyingParty->getXMLString("entityID").second, &mcc));
+                        respName = dynamic_cast<NameID*>(decryptedID.get());
+                        if (respName) {
+                            ownedName = true;
+                            decryptedID.release();
+                            if (m_log.isDebugEnabled())
+                                m_log.debugStream() << "decrypted NameID: " << *respName << logging::eol;
+                        }
+                    }
+                }
+            }
+
+            auto_ptr<NameID> nameIDwrapper(ownedName ? respName : NULL);
+
+            if (!respName || !XMLString::equals(respName->getName(), ctx.getNameID()->getName()) ||
+                !XMLString::equals(respName->getFormat(), ctx.getNameID()->getFormat()) ||
+                !XMLString::equals(respName->getNameQualifier(), ctx.getNameID()->getNameQualifier()) ||
+                !XMLString::equals(respName->getSPNameQualifier(), ctx.getNameID()->getSPNameQualifier())) {
+                if (respName)
+                    m_log.warnStream() << "ignoring Assertion without strongly matching NameID in Subject: " <<
+                        *respName << logging::eol;
+                else
+                    m_log.warn("ignoring Assertion without NameID in Subject");
+                if (!wrapper.get())
+                    delete newtoken;
+                return true;
+            }
+        }
     }
     catch (exception& ex) {
         m_log.error("assertion failed policy validation: %s", ex.what());
+        if (!wrapper.get())
+            delete newtoken;
         return true;
     }
 
-    newtoken->detach();
-    wrapper.release();
+    if (wrapper.get()) {
+        newtoken->detach();
+        wrapper.release();  // detach blows away the Response
+    }
     ctx.getResolvedAssertions().push_back(newtoken);
 
     // Finally, extract and filter the result.
@@ -571,9 +677,11 @@ void QueryResolver::resolveAttributes(ResolutionContext& ctx) const
             m_log.debug("attempting SAML 1.x attribute query");
             SAML1Query(qctx);
         }
-        else
-            m_log.warn("SSO protocol does not allow for attribute query");
+        else {
+            m_log.info("SSO protocol does not allow for attribute query");
+        }
     }
-    else
+    else {
         m_log.warn("can't attempt attribute query, either no NameID or no metadata to use");
+    }
 }
