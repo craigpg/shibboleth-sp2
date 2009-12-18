@@ -1,3 +1,9 @@
+shibboleth-sp2 (2.3.1+dfsg-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+
+ -- Russ Allbery <rra@debian.org>  Thu, 17 Dec 2009 16:51:57 -0800
+
 shibboleth-sp2 (2.3+dfsg-1) unstable; urgency=high
 
   [ Russ Allbery ]
