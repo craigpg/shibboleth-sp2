@@ -73,18 +73,47 @@ namespace shibsp {
 #ifndef SHIBSP_LITE
         void generateMetadata(SPSSODescriptor& role, const char* handlerURL) const {
             static const XMLCh LOCAL_NAME[] = UNICODE_LITERAL_17(D,i,s,c,o,v,e,r,y,R,e,s,p,o,n,s,e);
+
+            // Initial guess at index to use.
+            pair<bool,unsigned int> ix = getUnsignedInt("index");
+            if (!ix.first)
+                ix.second = 1;
+
+            // Find maximum index in use and go one higher.
+            if (role.getExtensions()) {
+                const vector<XMLObject*>& exts = const_cast<const Extensions*>(role.getExtensions())->getUnknownXMLObjects();
+                for (vector<XMLObject*>::const_reverse_iterator i = exts.rbegin(); i != exts.rend(); ++i) {
+                    if (XMLString::equals((*i)->getElementQName().getLocalPart(), LOCAL_NAME) &&
+                        XMLString::equals((*i)->getElementQName().getNamespaceURI(), m_discoNS.get())) {
+                        const AttributeExtensibleXMLObject* sub = dynamic_cast<const AttributeExtensibleXMLObject*>(*i);
+                        if (sub) {
+                            const XMLCh* val = sub->getAttribute(xmltooling::QName(NULL,IndexedEndpointType::INDEX_ATTRIB_NAME));
+                            if (val) {
+                                int maxindex = XMLString::parseInt(val);
+                                if (ix.second <= maxindex)
+                                    ix.second = maxindex + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
             const char* loc = getString("Location").second;
             string hurl(handlerURL);
             if (*loc != '/')
                 hurl += '/';
             hurl += loc;
             auto_ptr_XMLCh widen(hurl.c_str());
+
+            ostringstream os;
+            os << ix.second;
+            auto_ptr_XMLCh widen2(os.str().c_str());
+
             ElementProxy* ep = new AnyElementImpl(m_discoNS.get(), LOCAL_NAME);
             ep->setAttribute(xmltooling::QName(NULL,EndpointType::LOCATION_ATTRIB_NAME), widen.get());
             ep->setAttribute(xmltooling::QName(NULL,EndpointType::BINDING_ATTRIB_NAME), m_discoNS.get());
-            pair<bool,const XMLCh*> ix = getXMLString("index");
-            ep->setAttribute(xmltooling::QName(NULL,IndexedEndpointType::INDEX_ATTRIB_NAME), ix.first ? ix.second : xmlconstants::XML_ONE);
-
+            ep->setAttribute(xmltooling::QName(NULL,IndexedEndpointType::INDEX_ATTRIB_NAME), widen2.get());
             Extensions* ext = role.getExtensions();
             if (!ext) {
                 ext = ExtensionsBuilder::buildExtensions();

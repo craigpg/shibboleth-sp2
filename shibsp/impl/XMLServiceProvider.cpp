@@ -1294,6 +1294,7 @@ XMLConfigImpl::XMLConfigImpl(const DOMElement* e, bool first, const XMLConfig* o
         }
 
         // Re-log library versions now that logging is set up.
+        log.info("Shibboleth SP Version %s", PACKAGE_VERSION);
 #ifndef SHIBSP_LITE
         log.info(
             "Library versions: Xerces-C %s, XML-Security-C %s, XMLTooling-C %s, OpenSAML-C %s, Shibboleth %s",

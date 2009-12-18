@@ -178,6 +178,7 @@ namespace shibsp {
 
         Category& m_log;
         string m_policyId;
+        bool m_subjectMatch;
         vector<string> m_attributeIds;
         xstring m_format;
         MetadataProvider* m_metadata;
@@ -197,12 +198,13 @@ namespace shibsp {
     static const XMLCh format[] =               UNICODE_LITERAL_6(f,o,r,m,a,t);
     static const XMLCh _MetadataProvider[] =    UNICODE_LITERAL_16(M,e,t,a,d,a,t,a,P,r,o,v,i,d,e,r);
     static const XMLCh policyId[] =             UNICODE_LITERAL_8(p,o,l,i,c,y,I,d);
+    static const XMLCh subjectMatch[] =         UNICODE_LITERAL_12(s,u,b,j,e,c,t,M,a,t,c,h);
     static const XMLCh _TrustEngine[] =         UNICODE_LITERAL_11(T,r,u,s,t,E,n,g,i,n,e);
     static const XMLCh _type[] =                UNICODE_LITERAL_4(t,y,p,e);
 };
 
 SimpleAggregationResolver::SimpleAggregationResolver(const DOMElement* e)
-    : m_log(Category::getInstance(SHIBSP_LOGCAT".AttributeResolver.SimpleAggregation")), m_metadata(NULL), m_trust(NULL)
+    : m_log(Category::getInstance(SHIBSP_LOGCAT".AttributeResolver.SimpleAggregation")), m_subjectMatch(false), m_metadata(NULL), m_trust(NULL)
 {
 #ifdef _DEBUG
     xmltooling::NDC ndc("SimpleAggregationResolver");
@@ -213,6 +215,10 @@ SimpleAggregationResolver::SimpleAggregationResolver(const DOMElement* e)
         auto_ptr_char temp(pid);
         m_policyId = temp.get();
     }
+
+    pid = e ? e->getAttributeNS(NULL, subjectMatch) : NULL;
+    if (pid && (*pid == chLatin_t || *pid == chDigit_1))
+        m_subjectMatch = true;
 
     pid = e ? e->getAttributeNS(NULL, attributeId) : NULL;
     if (pid && *pid) {
@@ -235,7 +241,6 @@ SimpleAggregationResolver::SimpleAggregationResolver(const DOMElement* e)
         pid = e->getAttributeNS(NULL, format);
         if (pid && *pid)
             m_format = pid;
-
     }
 
     DOMElement* child = XMLHelper::getFirstChildElement(e, _MetadataProvider);
@@ -295,7 +300,6 @@ SimpleAggregationResolver::SimpleAggregationResolver(const DOMElement* e)
         }
         child = XMLHelper::getNextSiblingElement(child);
     }
-
 }
 
 bool SimpleAggregationResolver::doQuery(SimpleAggregationContext& ctx, const char* entityID, const NameID* name) const
@@ -353,7 +357,6 @@ bool SimpleAggregationResolver::doQuery(SimpleAggregationContext& ctx, const cha
             // Encrypt the NameID?
             if (encryption.first && (!strcmp(encryption.second, "true") || !strcmp(encryption.second, "back"))) {
                 auto_ptr<EncryptedID> encrypted(EncryptedIDBuilder::buildEncryptedID());
-                MetadataCredentialCriteria mcc(*AA);
                 encrypted->encrypt(
                     *name,
                     *(policy.getMetadataProvider()),
@@ -389,33 +392,73 @@ bool SimpleAggregationResolver::doQuery(SimpleAggregationContext& ctx, const cha
         m_log.error("unable to obtain a SAML response from attribute authority (%s)", entityID);
         return false;
     }
+
+    auto_ptr<saml2p::StatusResponseType> wrapper(srt);
+
     saml2p::Response* response = dynamic_cast<saml2p::Response*>(srt);
     if (!response) {
-        delete srt;
         m_log.error("message was not a samlp:Response");
         return true;
     }
     else if (!response->getStatus() || !response->getStatus()->getStatusCode() ||
             !XMLString::equals(response->getStatus()->getStatusCode()->getValue(), saml2p::StatusCode::SUCCESS)) {
-        delete srt;
         m_log.error("attribute authority (%s) returned a SAML error", entityID);
         return true;
     }
 
+    saml2::Assertion* newtoken = NULL;
     const vector<saml2::Assertion*>& assertions = const_cast<const saml2p::Response*>(response)->getAssertions();
     if (assertions.empty()) {
-        delete srt;
-        m_log.warn("response from attribute authority (%s) was empty", entityID);
-        return true;
-    }
-    else if (assertions.size()>1)
-        m_log.warn("resolver only supports one assertion in the query response");
+        // Check for encryption.
+        const vector<saml2::EncryptedAssertion*>& encassertions =
+            const_cast<const saml2p::Response*>(response)->getEncryptedAssertions();
+        if (encassertions.empty()) {
+            m_log.warn("response from attribute authority was empty");
+            return true;
+        }
+        else if (encassertions.size() > 1) {
+            m_log.warn("simple resolver only supports one assertion in the query response");
+        }
 
-    auto_ptr<saml2p::StatusResponseType> wrapper(srt);
-    saml2::Assertion* newtoken = assertions.front();
+        CredentialResolver* cr=application.getCredentialResolver();
+        if (!cr) {
+            m_log.warn("found encrypted assertion, but no CredentialResolver was available");
+            return true;
+        }
+
+        // Attempt to decrypt it.
+        try {
+            Locker credlocker(cr);
+            auto_ptr<XMLObject> tokenwrapper(encassertions.front()->decrypt(*cr, relyingParty->getXMLString("entityID").second, &mcc));
+            newtoken = dynamic_cast<saml2::Assertion*>(tokenwrapper.get());
+            if (newtoken) {
+                tokenwrapper.release();
+                if (m_log.isDebugEnabled())
+                    m_log.debugStream() << "decrypted Assertion: " << *newtoken << logging::eol;
+            }
+        }
+        catch (exception& ex) {
+            m_log.error(ex.what());
+        }
+        if (newtoken) {
+            // Free the Response now, so we know this is a stand-alone token later.
+            delete wrapper.release();
+        }
+        else {
+            // Nothing decrypted, should already be logged.
+            return true;
+        }
+    }
+    else {
+        if (assertions.size() > 1)
+            m_log.warn("simple resolver only supports one assertion in the query response");
+        newtoken = assertions.front();
+    }
 
     if (!newtoken->getSignature() && signedAssertions.first && signedAssertions.second) {
         m_log.error("assertion unsigned, rejecting it based on signedAssertions policy");
+        if (!wrapper.get())
+            delete newtoken;
         return true;
     }
 
@@ -431,14 +474,60 @@ bool SimpleAggregationResolver::doQuery(SimpleAggregationContext& ctx, const cha
         // Now we can check the security status of the policy.
         if (!policy.isAuthenticated())
             throw SecurityPolicyException("Security of SAML 2.0 query result not established.");
+
+        if (m_subjectMatch) {
+            // Check for subject match.
+            bool ownedName = false;
+            NameID* respName = newtoken->getSubject() ? newtoken->getSubject()->getNameID() : NULL;
+            if (!respName) {
+                // Check for encryption.
+                EncryptedID* encname = newtoken->getSubject() ? newtoken->getSubject()->getEncryptedID() : NULL;
+                if (encname) {
+                    CredentialResolver* cr=application.getCredentialResolver();
+                    if (!cr)
+                        m_log.warn("found EncryptedID, but no CredentialResolver was available");
+                    else {
+                        Locker credlocker(cr);
+                        auto_ptr<XMLObject> decryptedID(encname->decrypt(*cr, relyingParty->getXMLString("entityID").second, &mcc));
+                        respName = dynamic_cast<NameID*>(decryptedID.get());
+                        if (respName) {
+                            ownedName = true;
+                            decryptedID.release();
+                            if (m_log.isDebugEnabled())
+                                m_log.debugStream() << "decrypted NameID: " << *respName << logging::eol;
+                        }
+                    }
+                }
+            }
+
+            auto_ptr<NameID> nameIDwrapper(ownedName ? respName : NULL);
+
+            if (!respName || !XMLString::equals(respName->getName(), name->getName()) ||
+                !XMLString::equals(respName->getFormat(), name->getFormat()) ||
+                !XMLString::equals(respName->getNameQualifier(), name->getNameQualifier()) ||
+                !XMLString::equals(respName->getSPNameQualifier(), name->getSPNameQualifier())) {
+                if (respName)
+                    m_log.warnStream() << "ignoring Assertion without strongly matching NameID in Subject: " <<
+                        *respName << logging::eol;
+                else
+                    m_log.warn("ignoring Assertion without NameID in Subject");
+                if (!wrapper.get())
+                    delete newtoken;
+                return true;
+            }
+        }
     }
     catch (exception& ex) {
         m_log.error("assertion failed policy validation: %s", ex.what());
+        if (!wrapper.get())
+            delete newtoken;
         return true;
     }
 
-    newtoken->detach();
-    wrapper.release();
+    if (wrapper.get()) {
+        newtoken->detach();
+        wrapper.release();  // detach blows away the Response
+    }
     ctx.getResolvedAssertions().push_back(newtoken);
 
     // Finally, extract and filter the result.

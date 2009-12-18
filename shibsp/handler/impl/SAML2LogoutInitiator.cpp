@@ -40,9 +40,6 @@
 # include <saml/saml2/metadata/EndpointManager.h>
 # include <saml/saml2/metadata/Metadata.h>
 # include <saml/saml2/metadata/MetadataCredentialCriteria.h>
-# include <saml/signature/ContentReference.h>
-# include <xmltooling/security/Credential.h>
-# include <xmltooling/signature/Signature.h>
 using namespace opensaml::saml2;
 using namespace opensaml::saml2p;
 using namespace opensaml::saml2md;
@@ -361,24 +358,25 @@ pair<bool,long> SAML2LogoutInitiator::doRequest(
                     m_log.warn("IdP didn't respond to logout request");
                 ret = sendLogoutPage(application, httpRequest, httpResponse, "partial");
             }
-
-            // Check the status, looking for non-success or a partial logout code.
-            const StatusCode* sc = logoutResponse->getStatus() ? logoutResponse->getStatus()->getStatusCode() : NULL;
-            bool partial = (!sc || !XMLString::equals(sc->getValue(), StatusCode::SUCCESS));
-            if (!partial) {
-                // Success, but still need to check for partial.
-                partial = XMLString::equals(sc->getStatusCode()->getValue(), StatusCode::PARTIAL_LOGOUT);
-            }
-            delete logoutResponse;
-            if (partial)
-                ret = sendLogoutPage(application, httpRequest, httpResponse, "partial");
             else {
-                const char* returnloc = httpRequest.getParameter("return");
-                if (returnloc) {
-                    ret.second = httpResponse.sendRedirect(returnloc);
-                    ret.first = true;
+                // Check the status, looking for non-success or a partial logout code.
+                const StatusCode* sc = logoutResponse->getStatus() ? logoutResponse->getStatus()->getStatusCode() : NULL;
+                bool partial = (!sc || !XMLString::equals(sc->getValue(), StatusCode::SUCCESS));
+                if (!partial && sc->getStatusCode()) {
+                    // Success, but still need to check for partial.
+                    partial = XMLString::equals(sc->getStatusCode()->getValue(), StatusCode::PARTIAL_LOGOUT);
                 }
-                ret = sendLogoutPage(application, httpRequest, httpResponse, "global");
+                delete logoutResponse;
+                if (partial)
+                    ret = sendLogoutPage(application, httpRequest, httpResponse, "partial");
+                else {
+                    const char* returnloc = httpRequest.getParameter("return");
+                    if (returnloc) {
+                        ret.second = httpResponse.sendRedirect(returnloc);
+                        ret.first = true;
+                    }
+                    ret = sendLogoutPage(application, httpRequest, httpResponse, "global");
+                }
             }
 
             if (session) {
@@ -386,6 +384,7 @@ pair<bool,long> SAML2LogoutInitiator::doRequest(
                 session = NULL;
                 application.getServiceProvider().getSessionCache()->remove(application, httpRequest, &httpResponse);
             }
+
             return ret;
         }
 
@@ -459,49 +458,6 @@ LogoutRequest* SAML2LogoutInitiator::buildRequest(
     }
     else {
         msg->setNameID(nameid->cloneNameID());
-    }
-
-    if (!encoder) {
-        // No encoder being used, so sign for SOAP client manually.
-        flag = relyingParty->getString("signing");
-        if (flag.first && (!strcmp(flag.second, "true") || !strcmp(flag.second, "back"))) {
-            CredentialResolver* credResolver=application.getCredentialResolver();
-            if (credResolver) {
-                Locker credLocker(credResolver);
-                // Fill in criteria to use.
-                MetadataCredentialCriteria mcc(role);
-                mcc.setUsage(Credential::SIGNING_CREDENTIAL);
-                pair<bool,const char*> keyName = relyingParty->getString("keyName");
-                if (keyName.first)
-                    mcc.getKeyNames().insert(keyName.second);
-                pair<bool,const XMLCh*> sigalg = relyingParty->getXMLString("signingAlg");
-                if (sigalg.first)
-                    mcc.setXMLAlgorithm(sigalg.second);
-                const Credential* cred = credResolver->resolve(&mcc);
-                if (cred) {
-                    xmlsignature::Signature* sig = xmlsignature::SignatureBuilder::buildSignature();
-                    msg->setSignature(sig);
-                    if (sigalg.first)
-                        sig->setSignatureAlgorithm(sigalg.second);
-                    sigalg = relyingParty->getXMLString("digestAlg");
-                    if (sigalg.first) {
-                        ContentReference* cr = dynamic_cast<ContentReference*>(sig->getContentReference());
-                        if (cr)
-                            cr->setDigestAlgorithm(sigalg.second);
-                    }
-
-                    // Sign response while marshalling.
-                    vector<xmlsignature::Signature*> sigs(1,sig);
-                    msg->marshall((DOMDocument*)NULL,&sigs,cred);
-                }
-                else {
-                    m_log.warn("no signing credential resolved, leaving message unsigned");
-                }
-            }
-            else {
-                m_log.warn("no credential resolver installed, leaving message unsigned");
-            }
-        }
     }
 
     return msg.release();

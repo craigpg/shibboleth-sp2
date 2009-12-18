@@ -234,25 +234,31 @@ const char* AssertionConsumerService::getType() const
 
 void AssertionConsumerService::generateMetadata(SPSSODescriptor& role, const char* handlerURL) const
 {
+    // Initial guess at index to use.
+    pair<bool,unsigned int> ix = pair<bool,unsigned int>(false,0);
+    if (!strncmp(handlerURL, "https", 5))
+        ix = getUnsignedInt("sslIndex", shibspconstants::ASCII_SHIB2SPCONFIG_NS);
+    if (!ix.first)
+        ix = getUnsignedInt("index");
+    if (!ix.first)
+        ix.second = 1;
+
+    // Find maximum index in use and go one higher.
+    const vector<saml2md::AssertionConsumerService*>& services = const_cast<const SPSSODescriptor&>(role).getAssertionConsumerServices();
+    if (!services.empty() && ix.second <= services.back()->getIndex().second)
+        ix.second = services.back()->getIndex().second + 1;
+
     const char* loc = getString("Location").second;
     string hurl(handlerURL);
     if (*loc != '/')
         hurl += '/';
     hurl += loc;
     auto_ptr_XMLCh widen(hurl.c_str());
+
     saml2md::AssertionConsumerService* ep = saml2md::AssertionConsumerServiceBuilder::buildAssertionConsumerService();
     ep->setLocation(widen.get());
     ep->setBinding(getXMLString("Binding").second);
-    if (!strncmp(handlerURL, "https", 5)) {
-    	pair<bool,const XMLCh*> index = getXMLString("sslIndex", shibspconstants::ASCII_SHIB2SPCONFIG_NS);
-    	if (index.first)
-    		ep->setIndex(index.second);
-    	else
-    		ep->setIndex(getXMLString("index").second);
-    }
-    else {
-    	ep->setIndex(getXMLString("index").second);
-    }
+    ep->setIndex(ix.second);
     role.getAssertionConsumerServices().push_back(ep);
 }
 
@@ -363,6 +369,9 @@ ResolutionContext* AssertionConsumerService::resolveAttributes(
                 resolvedAttributes.clear();
             }
         }
+    }
+    else {
+        m_log.warn("no AttributeExtractor plugin installed, check log during startup");
     }
 
     try {
