@@ -284,7 +284,7 @@ pair<bool,long> SAML2Logout::doRequest(const Application& application, const HTT
                 worked2 = true;
             }
             catch (exception& ex) {
-                m_log.error("error removing session (%s): %s", session_id, ex.what());
+                m_log.error("error removing session (%s): %s", session_id.c_str(), ex.what());
             }
         }
         else {

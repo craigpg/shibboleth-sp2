@@ -127,6 +127,20 @@ namespace shibsp {
             ) const;
         void extractAttributes(
             const Application& application,
+            const char* assertingParty,
+            const char* relyingParty,
+            const saml1::AttributeStatement& statement,
+            vector<Attribute*>& attributes
+            ) const;
+        void extractAttributes(
+            const Application& application,
+            const char* assertingParty,
+            const char* relyingParty,
+            const saml2::AttributeStatement& statement,
+            vector<Attribute*>& attributes
+            ) const;
+        void extractAttributes(
+            const Application& application,
             const ObservableMetadataProvider* observable,
             const XMLCh* entityID,
             const char* relyingParty,
@@ -540,6 +554,32 @@ void XMLExtractorImpl::extractAttributes(
 
 void XMLExtractorImpl::extractAttributes(
     const Application& application,
+    const char* assertingParty,
+    const char* relyingParty,
+    const saml1::AttributeStatement& statement,
+    vector<Attribute*>& attributes
+    ) const
+{
+    const vector<saml1::Attribute*>& attrs = statement.getAttributes();
+    for (vector<saml1::Attribute*>::const_iterator a = attrs.begin(); a!=attrs.end(); ++a)
+        extractAttributes(application, assertingParty, relyingParty, *(*a), attributes);
+}
+
+void XMLExtractorImpl::extractAttributes(
+    const Application& application,
+    const char* assertingParty,
+    const char* relyingParty,
+    const saml2::AttributeStatement& statement,
+    vector<Attribute*>& attributes
+    ) const
+{
+    const vector<saml2::Attribute*>& attrs = statement.getAttributes();
+    for (vector<saml2::Attribute*>::const_iterator a = attrs.begin(); a!=attrs.end(); ++a)
+        extractAttributes(application, assertingParty, relyingParty, *(*a), attributes);
+}
+
+void XMLExtractorImpl::extractAttributes(
+    const Application& application,
     const ObservableMetadataProvider* observable,
     const XMLCh* entityID,
     const char* relyingParty,
@@ -792,6 +832,29 @@ void XMLExtractor::extractAttributes(
     const EntityDescriptor* entity = issuer ? dynamic_cast<const EntityDescriptor*>(issuer->getParent()) : NULL;
     const char* relyingParty = application.getRelyingParty(entity)->getString("entityID").second;
 
+    // Check for statements.
+    if (XMLString::equals(xmlObject.getElementQName().getLocalPart(), saml1::AttributeStatement::LOCAL_NAME)) {
+        const saml2::AttributeStatement* statement2 = dynamic_cast<const saml2::AttributeStatement*>(&xmlObject);
+        if (statement2) {
+            auto_ptr_char assertingParty(entity ? entity->getEntityID() : NULL);
+            m_impl->extractAttributes(application, assertingParty.get(), relyingParty, *statement2, attributes);
+            // Handle EncryptedAttributes inline so we have access to the role descriptor.
+            const vector<saml2::EncryptedAttribute*>& encattrs = statement2->getEncryptedAttributes();
+            for (vector<saml2::EncryptedAttribute*>::const_iterator ea = encattrs.begin(); ea!=encattrs.end(); ++ea)
+                extractAttributes(application, issuer, *(*ea), attributes);
+            return;
+        }
+
+        const saml1::AttributeStatement* statement1 = dynamic_cast<const saml1::AttributeStatement*>(&xmlObject);
+        if (statement1) {
+            auto_ptr_char assertingParty(entity ? entity->getEntityID() : NULL);
+            m_impl->extractAttributes(application, assertingParty.get(), relyingParty, *statement1, attributes);
+            return;
+        }
+
+        throw AttributeExtractionException("Unable to extract attributes, unknown object type.");
+    }
+
     // Check for assertions.
     if (XMLString::equals(xmlObject.getElementQName().getLocalPart(), saml1::Assertion::LOCAL_NAME)) {
         const saml2::Assertion* token2 = dynamic_cast<const saml2::Assertion*>(&xmlObject);
@@ -799,10 +862,8 @@ void XMLExtractor::extractAttributes(
             auto_ptr_char assertingParty(entity ? entity->getEntityID() : NULL);
             const vector<saml2::AttributeStatement*>& statements = token2->getAttributeStatements();
             for (vector<saml2::AttributeStatement*>::const_iterator s = statements.begin(); s!=statements.end(); ++s) {
-                const vector<saml2::Attribute*>& attrs = const_cast<const saml2::AttributeStatement*>(*s)->getAttributes();
-                for (vector<saml2::Attribute*>::const_iterator a = attrs.begin(); a!=attrs.end(); ++a)
-                    m_impl->extractAttributes(application, assertingParty.get(), relyingParty, *(*a), attributes);
-
+                m_impl->extractAttributes(application, assertingParty.get(), relyingParty, *(*s), attributes);
+                // Handle EncryptedAttributes inline so we have access to the role descriptor.
                 const vector<saml2::EncryptedAttribute*>& encattrs = const_cast<const saml2::AttributeStatement*>(*s)->getEncryptedAttributes();
                 for (vector<saml2::EncryptedAttribute*>::const_iterator ea = encattrs.begin(); ea!=encattrs.end(); ++ea)
                     extractAttributes(application, issuer, *(*ea), attributes);
@@ -814,11 +875,8 @@ void XMLExtractor::extractAttributes(
         if (token1) {
             auto_ptr_char assertingParty(entity ? entity->getEntityID() : NULL);
             const vector<saml1::AttributeStatement*>& statements = token1->getAttributeStatements();
-            for (vector<saml1::AttributeStatement*>::const_iterator s = statements.begin(); s!=statements.end(); ++s) {
-                const vector<saml1::Attribute*>& attrs = const_cast<const saml1::AttributeStatement*>(*s)->getAttributes();
-                for (vector<saml1::Attribute*>::const_iterator a = attrs.begin(); a!=attrs.end(); ++a)
-                    m_impl->extractAttributes(application, assertingParty.get(), relyingParty, *(*a), attributes);
-            }
+            for (vector<saml1::AttributeStatement*>::const_iterator s = statements.begin(); s!=statements.end(); ++s)
+                m_impl->extractAttributes(application, assertingParty.get(), relyingParty, *(*s), attributes);
             return;
         }
 

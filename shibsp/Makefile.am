@@ -206,8 +206,8 @@ libshibsp_la_SOURCES = \
 
 # this is different from the project version
 # http://sources.redhat.com/autobook/autobook/autobook_91.html
-libshibsp_la_LDFLAGS = $(XMLSEC_LIBS) -version-info 4:0:0
-libshibsp_lite_la_LDFLAGS = $(LITE_LIBS) -version-info 4:0:0
+libshibsp_la_LDFLAGS = $(XMLSEC_LIBS) -version-info 4:1:0
+libshibsp_lite_la_LDFLAGS = $(LITE_LIBS) -version-info 4:1:0
 libshibsp_lite_la_CPPFLAGS = -DSHIBSP_LITE
 
 pkgsysconfdir = $(sysconfdir)/@PACKAGE@

@@ -360,7 +360,7 @@ void CmdInstallService(LPCSTR name)
         return;
     }
     
-    string dispName = string("Shibboleth ") + PACKAGE_VERSION + " Daemon (" + name + ")";
+    string dispName = string("Shibboleth 2 Daemon (") + name + ")";
     string realName = string("shibd_") + name;
     string cmd(szPath);
     if (shar_prefix)
