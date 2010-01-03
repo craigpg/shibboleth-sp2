@@ -1,6 +1,13 @@
 shibboleth-sp2 (2.3.1+dfsg-1) UNRELEASED; urgency=low
 
   * New upstream release.
+    - Don't sign messages for SOAP requests twice.
+    - Correctly generate metadata in the artifact resolution handler.
+    - Artifact resolution should return empty success on errors.
+    - Fixed crash in backchannel global logout.
+    - Fix duplicate indexes in metadata generation when multiple base URLs
+      are supplied.
+    - Correctly decrypt assertions in attribute responses.
 
  -- Russ Allbery <rra@debian.org>  Thu, 17 Dec 2009 16:51:57 -0800
 
