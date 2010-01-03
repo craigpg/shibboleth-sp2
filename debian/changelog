@@ -1,4 +1,4 @@
-shibboleth-sp2 (2.3.1+dfsg-1) UNRELEASED; urgency=low
+shibboleth-sp2 (2.3.1+dfsg-1) unstable; urgency=low
 
   * New upstream release.
     - Don't sign messages for SOAP requests twice.
@@ -14,7 +14,7 @@ shibboleth-sp2 (2.3.1+dfsg-1) UNRELEASED; urgency=low
   * Add ${shlibs:Depends} to the libshibsp-dev package dependencies.
   * Add ${misc:Depends} to all package dependencies.
 
- -- Russ Allbery <rra@debian.org>  Thu, 17 Dec 2009 16:51:57 -0800
+ -- Russ Allbery <rra@debian.org>  Sun, 03 Jan 2010 13:54:55 -0800
 
 shibboleth-sp2 (2.3+dfsg-1) unstable; urgency=high
 
