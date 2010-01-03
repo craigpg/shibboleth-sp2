@@ -11,6 +11,8 @@ shibboleth-sp2 (2.3.1+dfsg-1) UNRELEASED; urgency=low
   * Apply upstream fix for shibd removing the PID file when called with
     the -F option.  This prevents the check of certificate permissions in
     the init script from removing the PID file of a running shibd.
+  * Add ${shlibs:Depends} to the libshibsp-dev package dependencies.
+  * Add ${misc:Depends} to all package dependencies.
 
  -- Russ Allbery <rra@debian.org>  Thu, 17 Dec 2009 16:51:57 -0800
 
