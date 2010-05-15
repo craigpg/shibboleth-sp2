@@ -66,6 +66,11 @@ subjectAltName=$ALTNAME
 subjectKeyIdentifier=hash
 EOF
 
+# Added for Debian.  Make the key mode 640 and readable by group _shibd so
+# that the Debian shibd can use a non-root user.
+touch sp-key.pem
+chgrp _shibd sp-key.pem
+chmod 640 sp-key.pem
 if [ -z "$BATCH" ] ; then
     openssl req -config sp-cert.cnf -new -x509 -days $DAYS -keyout sp-key.pem -out sp-cert.pem
 else
@@ -73,7 +78,3 @@ else
 fi
 
 rm sp-cert.cnf
-
-if  [ -s sp-key.pem ] ; then
-    chmod 600 sp-key.pem
-fi
