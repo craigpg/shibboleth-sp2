@@ -1,0 +1,20 @@
+Patch supplied from Craig
+--- a/shibsp/handler/impl/Shib1SessionInitiator.cpp
++++ b/shibsp/handler/impl/Shib1SessionInitiator.cpp
+@@ -310,10 +310,15 @@
+     sprintf(timebuf,"%lu",time(NULL));
+     const URLEncoder* urlenc = XMLToolingConfig::getConfig().getURLEncoder();
+     auto_ptr_char dest(ep->getLocation());
++#if 0
+     string req=string(dest.get()) + (strchr(dest.get(),'?') ? '&' : '?') + "shire=" + urlenc->encode(acsLocation) +
+         "&time=" + timebuf + "&target=" + urlenc->encode(relayState.c_str()) +
+         "&providerId=" + urlenc->encode(app.getRelyingParty(entity.first)->getString("entityID").second);
+-
++#else
++    string req=string(dest.get()) + (strchr(dest.get(),'?') ? '&' : '?') +
++       "&TARGET=" + urlenc->encode(relayState.c_str()) +
++        "&SP_PROVIDER_ID=" + urlenc->encode(app.getRelyingParty(entity.first)->getString("entityID").second);
++#endif
+     if (httpRequest) {
+         // If the request object is available, we're responsible for the POST data.
+         preservePostData(app, *httpRequest, httpResponse, relayState.c_str());
